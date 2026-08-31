@@ -212,6 +212,43 @@ async def analyze_raw_text(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
     return _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "pasted-text.txt", b"", {})
 
 
+@app.post("/api/gateway-milter-check")
+@app.post(f"{settings.API_V1_STR}/gateway-milter-check")
+async def gateway_milter_check(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
+    """Endpoint specifically designed for Cyber Squad Milter Daemon and Mail Flow Gateways."""
+    headers = {str(key).lower(): str(value) for key, value in (req.headers or {}).items()}
+    result = _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "gateway-stream.eml", b"", {})
+    score = result.get("threat", {}).get("risk_score", 0)
+    category = result.get("category_analysis", {})
+    
+    if score >= 75:
+        postfix_code = "Milter.REJECT"
+        policy_action = "REJECT"
+        smtp_reply = "550 5.7.1 Message rejected by Cyber Squad ESG: Malicious threat detected"
+    elif score >= 40:
+        postfix_code = "Milter.QUARANTINE"
+        policy_action = "TAG_SUBJECT"
+        smtp_reply = "250 2.0.0 Message accepted with suspicious tag"
+    else:
+        postfix_code = "Milter.CONTINUE"
+        policy_action = "ACCEPT"
+        smtp_reply = "250 2.0.0 Message accepted"
+        
+    return {
+        "status": "success",
+        "case_id": result.get("case_id"),
+        "threat_score": score,
+        "policy_action": policy_action,
+        "postfix_code": postfix_code,
+        "smtp_reply": smtp_reply,
+        "category": category.get("category_label", "General Email"),
+        "category_id": category.get("category_id", "unknown"),
+        "reasons": [s.get("label") for s in result.get("threat", {}).get("signals", []) if isinstance(s, dict)],
+        "evidence_sha256": result.get("evidence", {}).get("sha256"),
+        "dns_auth": result.get("dns_auth", {})
+    }
+
+
 @app.post(f"{settings.API_V1_STR}/attachment")
 async def analyze_attachment_endpoint(file: UploadFile = File(...)) -> Dict[str, Any]:
     filename = file.filename or "standalone-file"

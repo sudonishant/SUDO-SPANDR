@@ -1,32 +1,32 @@
 #!/bin/bash
 export DISPLAY=:99
+export HOME=/tmp/vnc_sandbox_home
+export USER=cyberuser
 
-# Clean locks
-rm -f /tmp/.X99-lock /tmp/.X11-unix/X99 2>/dev/null || true
-rm -rf /tmp/vnc_chromium/Singleton* 2>/dev/null || true
+# Clean old chromium & wm
+pkill -9 -f "chromium" 2>/dev/null || true
+pkill -9 -f "xfwm4" 2>/dev/null || true
 
-# Launch Window Manager
-xfwm4 --replace >/dev/null 2>&1 &
+# Start Window Manager
+xfwm4 --display=:99 --replace >/dev/null 2>&1 &
+sleep 1
 
-# High-Performance Chromium Supervisor Loop
-while true; do
-    if ! pgrep -f "chromium.*vnc_chromium" > /dev/null; then
-        echo "Launching Optimized Zero-Lag Chromium on :99..."
-        chromium \
-            --no-sandbox \
-            --user-data-dir=/tmp/vnc_chromium \
-            --disable-gpu \
-            --disable-software-rasterizer \
-            --disable-dev-shm-usage \
-            --disable-background-timer-throttling \
-            --disable-backgrounding-occluded-windows \
-            --disable-renderer-backgrounding \
-            --num-raster-threads=4 \
-            --window-size=1280,720 \
-            --window-position=0,0 \
-            --start-maximized \
-            "https://www.google.com" \
-            "https://mail.google.com" >/tmp/vnc_chrome_runner.log 2>&1
-    fi
-    sleep 2
-done
+# Launch Chromium Pristine
+chromium \
+    --no-sandbox \
+    --test-type \
+    --user-data-dir=/tmp/cyber_sandbox/browser_data \
+    --disable-gpu \
+    --disable-software-rasterizer \
+    --disable-dev-shm-usage \
+    --hide-crash-restore-bubble \
+    --no-first-run \
+    --no-default-browser-check \
+    --disable-session-crashed-bubble \
+    --window-size=1260,700 \
+    --window-position=10,10 \
+    "http://127.0.0.1:8000" \
+    "https://mail.google.com" \
+    "https://www.virustotal.com" >/dev/null 2>&1 &
+
+echo "Clean Detonation Desktop Started"
