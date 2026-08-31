@@ -1,0 +1,19 @@
+{
+  "version": "1.0.0",
+  "confidence_note": "Confidence is an evidence-coverage score for triage, not a calibrated probability and never a guarantee.",
+  "categories": [
+    {"id":"phishing_bec","label":"Phishing / BEC","description":"Credential theft, impersonation, payment redirection, or social-engineering indicators.","default_alert":"critical","action":"Quarantine and verify through an independent trusted channel. Do not click links or approve payments."},
+    {"id":"malware_related","label":"Malware / dangerous attachment","description":"Executable, script, suspicious macro, file-type mismatch, or attachment payload indicators.","default_alert":"critical","action":"Quarantine the file. Do not execute or open it on an analyst workstation."},
+    {"id":"banking_financial","label":"Banking / financial","description":"Banking, invoice, payment, transfer, remittance, or financial-service communication.","default_alert":"review","action":"Verify the sender and payment details independently before any transfer or account change."},
+    {"id":"otp_security","label":"OTP / security alert","description":"Authentication code, password reset, suspicious-login, account-lock, or security notification.","default_alert":"info","action":"Never share an OTP. Use the official app or website rather than an email link."},
+    {"id":"delivery_order","label":"Delivery / order","description":"Shipping, parcel, order confirmation, tracking, return, or delivery update.","default_alert":"info","action":"Review the order reference and use the retailer’s official app or website for tracking."},
+    {"id":"promotional","label":"Promotional / marketing","description":"Sales, discounts, coupons, offers, product marketing, or unsubscribe-driven mail.","default_alert":"low","action":"Treat as marketing; use the sender’s legitimate unsubscribe flow if desired."},
+    {"id":"newsletter","label":"Newsletter / digest","description":"Recurring digest, publication, blog, bulletin, or subscription update.","default_alert":"low","action":"Review as informational content; unsubscribe only through a trusted channel."},
+    {"id":"social","label":"Social / community","description":"Social-network notifications, community activity, comments, mentions, or invitations.","default_alert":"low","action":"Review normally; do not reuse passwords from links in notification emails."},
+    {"id":"corporate","label":"Corporate / internal","description":"Meeting, HR, payroll, policy, project, executive, or business-operation communication.","default_alert":"info","action":"Follow normal internal verification procedures for sensitive requests."},
+    {"id":"support","label":"Customer support","description":"Service desk, ticket, case, help, account-support, or customer-care correspondence.","default_alert":"info","action":"Check the ticket or case in the official support portal before sharing information."},
+    {"id":"transactional","label":"Transactional / receipt","description":"Routine receipt, statement, booking, confirmation, or service transaction.","default_alert":"info","action":"Keep for your records and verify unexpected transactions through the official service."},
+    {"id":"legitimate","label":"Legitimate / general","description":"Routine correspondence without a stronger category signal.","default_alert":"info","action":"No high-risk signal was observed. Continue normal caution with links and attachments."},
+    {"id":"unknown","label":"Unknown / insufficient evidence","description":"Not enough reliable content to classify the message safely.","default_alert":"review","action":"Request more context or inspect the original message headers before acting."}
+  ]
+}

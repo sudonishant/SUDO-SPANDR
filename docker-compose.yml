@@ -1,0 +1,26 @@
+services:
+  # 1. Main SentinelMail Triage Web App & FastAPI Backend
+  web-app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: cybersquad-web
+    ports:
+      - "8000:8000"
+    environment:
+      - PROJECT_NAME=SentinelMail
+      - PORT=8000
+    restart: unless-stopped
+    depends_on:
+      - isolated-sandbox
+
+  # 2. Air-Gapped Isolated Chromium Browser Sandbox (noVNC on Port 7860)
+  isolated-sandbox:
+    build:
+      context: .
+      dockerfile: Dockerfile.sandbox
+    container_name: cybersquad-sandbox
+    ports:
+      - "7860:7860"
+    shm_size: "1gb"
+    restart: unless-stopped

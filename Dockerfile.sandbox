@@ -1,0 +1,81 @@
+# ==============================================================================
+# Cyber Squad — Isolated Cloud Chromium Detonation Sandbox
+# Port 7860 | noVNC / Xvfb / Chromium Isolation
+# ==============================================================================
+
+FROM debian:bookworm-slim
+
+ENV DEBIAN_FRONTEND=noninteractive \
+    DISPLAY=:0 \
+    SCREEN_WIDTH=1366 \
+    SCREEN_HEIGHT=768 \
+    SCREEN_DEPTH=24 \
+    HOME=/home/user
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    chromium \
+    xvfb \
+    fluxbox \
+    x11vnc \
+    novnc \
+    websockify \
+    supervisor \
+    ca-certificates \
+    curl \
+    fonts-liberation \
+    fonts-noto-color-emoji \
+    libnss3 \
+    procps \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN useradd -m -u 1000 user && \
+    mkdir -p /home/user/.fluxbox /home/user/.config/chromium /var/log/supervisor && \
+    chown -R user:user /home/user /var/log/supervisor
+
+RUN echo "session.screen0.toolbar.visible: false" > /home/user/.fluxbox/init && \
+    chown -R user:user /home/user/.fluxbox
+
+COPY --chown=user:user <<'CONFIG' /etc/supervisor/conf.d/supervisord.conf
+[supervisord]
+nodaemon=true
+user=user
+logfile=/tmp/supervisord.log
+pidfile=/tmp/supervisord.pid
+
+[program:xvfb]
+command=Xvfb :0 -screen 0 %(ENV_SCREEN_WIDTH)sx%(ENV_SCREEN_HEIGHT)sx%(ENV_SCREEN_DEPTH)s -nolisten tcp -ac
+autorestart=true
+priority=100
+
+[program:fluxbox]
+command=fluxbox
+autorestart=true
+environment=DISPLAY=":0"
+priority=200
+
+[program:x11vnc]
+command=x11vnc -display :0 -nopw -listen 127.0.0.1 -xkb -ncache 10 -ncache_cr -forever -shared
+autorestart=true
+priority=300
+
+[program:novnc]
+command=websockify --web /usr/share/novnc 7860 127.0.0.1:5900
+autorestart=true
+priority=400
+
+[program:chromium]
+command=chromium --no-sandbox --disable-dev-shm-usage --disable-gpu --disable-software-rasterizer --window-size=%(ENV_SCREEN_WIDTH)s,%(ENV_SCREEN_HEIGHT)s --window-position=0,0 --start-maximized --no-first-run --no-default-browser-check https://duckduckgo.com
+autorestart=true
+environment=DISPLAY=":0",HOME="/home/user"
+priority=500
+CONFIG
+
+RUN chmod 644 /etc/supervisor/conf.d/supervisord.conf
+
+USER user
+WORKDIR /home/user
+
+EXPOSE 7860
+
+CMD ["/usr/bin/supervisord", "-c", "/etc/supervisor/conf.d/supervisord.conf"]
