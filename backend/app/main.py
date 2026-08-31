@@ -515,3 +515,4 @@ async def novnc_websocket_proxy(websocket: WebSocket):
 novnc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "novnc"))
 if os.path.exists(novnc_dir):
     app.mount("/novnc", StaticFiles(directory=novnc_dir, html=True), name="novnc")
+# Render Build Version 4.0 - Clean UI Route
