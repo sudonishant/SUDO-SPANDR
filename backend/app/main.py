@@ -26,9 +26,11 @@ from app.config import settings
 from app.core.attachment_carver import disassemble_attachment
 from app.core.blockchain_ledger import notarize_evidence_on_chain, verify_chain_record
 from app.core.category_engine import calculate_threat_score, classify_mail
+from app.core.neo4j_engine import generate_cypher_statements, sync_to_neo4j_instance
 from app.core.nlp_forensic_engine import analyze_body_paragraphs
 from app.core.openrouter_client import request_ai_second_opinion
 from app.core.parser_engine import parse_eml_stream
+from app.core.supabase_engine import sync_to_supabase, SUPABASE_SCHEMA_SQL, get_supabase_config
 from app.static_index import HTML_CONTENT
 
 app = FastAPI(
@@ -285,7 +287,7 @@ def _build_result(subject: str, sender: str, recipient: str, body: str, headers:
         "hops": hops,
         "defects": parsed.get("defects", []),
     }
-    return {
+    result_dict = {
         "case_id": f"CS-{sha256[:12].upper()}",
         "parse_error": parsed.get("parse_error"),
         "team": settings.TEAM_NAME,
@@ -344,11 +346,26 @@ def _build_result(subject: str, sender: str, recipient: str, body: str, headers:
         "limitations": [category.get("note", ""), "Authentication and IP intelligence correlated from immutable header metadata."],
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
+    
+    # Neo4j Cypher Graph Ingestion & Supabase Real-time Cloud Sync
+    result_dict["neo4j_graph"] = sync_to_neo4j_instance(result_dict)
+    result_dict["supabase_sync"] = sync_to_supabase(result_dict)
+    return result_dict
 
 
 @app.get(f"{settings.API_V1_STR}/blockchain/verify/{{tx_hash}}")
 def verify_blockchain_record(tx_hash: str) -> Dict[str, Any]:
     return verify_chain_record(tx_hash, "SHA256-VERIFIED")
+
+
+@app.get(f"{settings.API_V1_STR}/export/cypher/{{case_id}}")
+def export_neo4j_cypher(case_id: str) -> Dict[str, Any]:
+    return generate_cypher_statements({"parsed": {"meta": {"from": "sender@target.com", "to": "victim@org.in"}}})
+
+
+@app.get(f"{settings.API_V1_STR}/supabase/schema")
+def get_supabase_sql_schema() -> Dict[str, Any]:
+    return {"schema_sql": SUPABASE_SCHEMA_SQL, "config": get_supabase_config()}
 
 
 @app.get("/", response_class=HTMLResponse)
