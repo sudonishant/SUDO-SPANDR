@@ -1,12 +1,12 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
-import { fileURLToPath, URL } from 'node:url'
+import path from 'node:path'
 
 export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: {
-      'iconv-lite': fileURLToPath(new URL('./src/lib/iconv-lite-browser.js', import.meta.url)),
+      'iconv-lite': path.resolve('./src/lib/iconv-lite-browser.js'),
     },
   },
   server: {
