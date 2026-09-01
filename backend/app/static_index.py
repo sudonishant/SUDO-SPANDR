@@ -3,18 +3,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cyber Squad — SentinelMail AI Threat Detection, GeoLocation & Forensic Intelligence</title>
+  <title>Cyber Squad SentinelMail — Advanced AI Email Forensics & Threat Attribution System</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --bg: #040711;
-      --card-bg: rgba(11, 17, 30, 0.88);
-      --panel-bg: rgba(14, 23, 42, 0.95);
+      --bg: #030712;
+      --card-bg: rgba(15, 23, 42, 0.85);
+      --panel-bg: rgba(15, 23, 42, 0.95);
       --border: #1e293b;
       --border-focus: #3b82f6;
       --text: #f8fafc;
@@ -29,8 +29,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.25), transparent 50%),
-                  radial-gradient(circle at 90% 20%, rgba(147, 51, 234, 0.15), transparent 40%),
+      background: radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.22), transparent 50%),
+                  radial-gradient(circle at 90% 20%, rgba(147, 51, 234, 0.12), transparent 40%),
                   var(--bg);
       color: var(--text);
       min-height: 100vh;
@@ -47,7 +47,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .topbar {
       height: 68px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(4, 7, 17, 0.85);
+      background: rgba(3, 7, 18, 0.85);
       backdrop-filter: blur(24px);
       display: flex;
       align-items: center;
@@ -57,9 +57,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       top: 0;
       z-index: 1000;
     }
-    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
     .brand-mark {
-      width: 38px; height: 38px;
+      width: 40px; height: 40px;
       display: grid; place-items: center;
       border: 1px solid rgba(59, 130, 246, 0.5);
       border-radius: 10px;
@@ -68,58 +68,32 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
       flex-shrink: 0;
     }
-    .brand-title { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
-    .brand-sub { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; display: block; }
+    .brand-title { font-size: 15.5px; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+    .brand-sub { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; display: block; }
 
-    .top-actions { display: flex; align-items: center; gap: 6px; }
-    .badge {
+    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .badge-gov {
       display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 10px; border-radius: 9999px; font-size: 10px; font-weight: 700;
-      background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700;
+      background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);
       white-space: nowrap;
     }
 
     .main-wrap {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 16px clamp(12px, 2.5vw, 36px) 60px;
-    }
-
-    /* 1-Click Demo Cases Ribbon */
-    .demo-ribbon {
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(12px);
-      border-radius: 14px;
-      padding: 12px 14px;
-      margin-bottom: 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      flex-wrap: wrap;
-      gap: 10px;
-      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
-    }
-    .demo-cases-list { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; }
-    .case-btn {
-      padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
-      background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid var(--border);
-      display: inline-flex; align-items: center; gap: 5px; flex: 1 1 auto; justify-content: center;
-    }
-    .case-btn:hover {
-      background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.6);
-      color: #93c5fd; transform: translateY(-1px);
+      padding: 20px clamp(12px, 2.5vw, 36px) 60px;
     }
 
     /* Mode Tabs */
     .mode-bar {
-      display: flex; gap: 6px; margin-bottom: 16px;
-      background: rgba(15, 23, 42, 0.6); padding: 5px; border-radius: 12px; border: 1px solid var(--border);
+      display: flex; gap: 6px; margin-bottom: 20px;
+      background: rgba(15, 23, 42, 0.7); padding: 5px; border-radius: 12px; border: 1px solid var(--border);
       overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
     .mode-tab {
-      flex: 1; min-width: 130px; padding: 10px 14px; border-radius: 9px; background: transparent;
-      color: var(--text-muted); font-size: 12px; font-weight: 700; display: flex; align-items: center;
+      flex: 1; min-width: 140px; padding: 11px 16px; border-radius: 9px; background: transparent;
+      color: var(--text-muted); font-size: 12.5px; font-weight: 700; display: flex; align-items: center;
       justify-content: center; gap: 6px; border: 1px solid transparent; white-space: nowrap;
     }
     .mode-tab.active {
@@ -130,31 +104,31 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     /* Dropzone */
     .dropzone-box {
-      border: 2px dashed rgba(59, 130, 246, 0.4); border-radius: 18px; padding: 36px 18px;
-      text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08), rgba(11, 17, 30, 0.6));
+      border: 2px dashed rgba(59, 130, 246, 0.4); border-radius: 18px; padding: 48px 20px;
+      text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08), rgba(15, 23, 42, 0.6));
       cursor: pointer; position: relative; transition: all 0.25s ease;
     }
     .dropzone-box:hover, .dropzone-box.dragover {
-      border-color: #60a5fa; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.18), rgba(11, 17, 30, 0.8));
+      border-color: #60a5fa; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.18), rgba(15, 23, 42, 0.8));
       box-shadow: 0 0 35px rgba(59, 130, 246, 0.3);
     }
 
     /* Cards */
     .card {
       background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(16px); border-radius: 14px; padding: 18px; margin-bottom: 16px;
+      backdrop-filter: blur(16px); border-radius: 14px; padding: 20px; margin-bottom: 18px;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     }
     .card-title {
       display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px;
     }
-    .card-title h3 { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
-    .card-title small { font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.05em; }
+    .card-title h3 { font-size: 14.5px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+    .card-title small { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.05em; }
 
     .primary-btn {
       background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700;
-      padding: 9px 16px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
+      padding: 10px 18px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
       box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35); justify-content: center;
     }
     .primary-btn:hover {
@@ -164,19 +138,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     .ghost-btn {
       background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
+      padding: 8px 14px; border-radius: 8px; font-size: 11.5px; font-weight: 600;
       display: inline-flex; align-items: center; gap: 5px;
     }
     .ghost-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
 
-    /* Results Tabs */
+    /* Results Navigation Tabs */
     .nav-tabs {
-      display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+      display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
       overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
     }
     .nav-tab {
-      padding: 9px 14px; border-radius: 8px 8px 0 0; background: transparent; color: var(--text-muted);
-      font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;
+      padding: 10px 16px; border-radius: 8px 8px 0 0; background: transparent; color: var(--text-muted);
+      font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
       border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0;
     }
     .nav-tab.active {
@@ -184,21 +158,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     .result-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; margin-bottom: 16px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 18px;
     }
 
     .key-val {
       display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 11.5px; gap: 8px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 12px; gap: 8px;
     }
     .key-val span { color: var(--text-muted); flex-shrink: 0; }
     .key-val strong { font-weight: 700; color: #fff; text-align: right; word-break: break-word; }
 
     /* Map & Graph */
-    #map-container { height: 380px; width: 100%; border-radius: 12px; z-index: 10; border: 1px solid var(--border); }
+    #map-container { height: 400px; width: 100%; border-radius: 12px; z-index: 10; border: 1px solid var(--border); }
     .hop-timeline { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
     .hop-item {
-      display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 10px;
+      display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 10px;
       background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
     }
     .hop-badge {
@@ -210,7 +184,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .hop-badge.dest { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
 
     #graph-canvas-wrap {
-      height: 380px; width: 100%; background: #060a14; border-radius: 12px;
+      height: 400px; width: 100%; background: #060a14; border-radius: 12px;
       border: 1px solid var(--border); position: relative; overflow: hidden;
     }
 
@@ -232,7 +206,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
     .sandbox-frame-box {
       border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000;
-      position: relative; height: 560px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      position: relative; height: 580px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     }
     .sandbox-iframe { width: 100%; height: calc(100% - 30px); border: none; }
     .telemetry-bar {
@@ -244,77 +218,77 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .mitre-badge {
       display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px;
       background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);
-      font-size: 10.5px; font-weight: 700; margin: 2px;
+      font-size: 11px; font-weight: 700; margin: 2px;
     }
 
     /* Radar scan spinner */
-    .radar-scanning { display: none; text-align: center; padding: 24px; }
+    .radar-scanning { display: none; text-align: center; padding: 30px; }
     .radar-sweep {
-      width: 50px; height: 50px; border-radius: 50%;
+      width: 54px; height: 54px; border-radius: 50%;
       border: 3px solid rgba(59, 130, 246, 0.2);
       border-top-color: #3b82f6;
       animation: spin 1s linear infinite;
-      margin: 0 auto 10px;
+      margin: 0 auto 12px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
     /* ========================================================================== */
-    /* MASTER FORENSIC DOSSIER & COURT CERTIFICATE PRINT STYLING                   */
+    /* ULTRA-PROFESSIONAL FORENSIC DOSSIER & COURT CERTIFICATE (SEC 65B)          */
     /* ========================================================================== */
     .dossier-wrap {
       background: #ffffff;
       color: #0f172a;
       border-radius: 12px;
-      padding: 28px;
+      padding: 36px 32px;
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-      border: 2px solid #3b82f6;
+      border: 2px solid #1e3a8a;
       font-size: 12px;
-      line-height: 1.6;
+      line-height: 1.65;
     }
     .dossier-header {
       display: flex; justify-content: space-between; align-items: flex-start;
-      border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px;
+      border-bottom: 2.5px solid #0f172a; padding-bottom: 18px; margin-bottom: 22px;
     }
     .dossier-gov-seal {
-      font-size: 10px; font-weight: 800; color: #1e3a8a; letter-spacing: 0.08em; text-transform: uppercase;
+      font-size: 11px; font-weight: 900; color: #1e3a8a; letter-spacing: 0.1em; text-transform: uppercase;
     }
     .dossier-main-title {
-      font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 2px;
+      font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 3px; letter-spacing: -0.01em;
     }
     .dossier-badge-court {
-      background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
-      font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 6px;
+      background: #fee2e2; color: #991b1b; border: 1.5px solid #f87171;
+      font-size: 10.5px; font-weight: 800; padding: 5px 12px; border-radius: 6px;
       text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;
     }
     .dossier-section-title {
-      font-size: 13px; font-weight: 800; color: #1e3a8a; text-transform: uppercase;
-      letter-spacing: 0.04em; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px;
-      margin-top: 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+      font-size: 13px; font-weight: 900; color: #1e3a8a; text-transform: uppercase;
+      letter-spacing: 0.05em; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px;
+      margin-top: 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
     }
     .dossier-table {
       width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px;
     }
     .dossier-table th {
-      background: #f1f5f9; color: #334155; text-align: left; padding: 8px 10px;
+      background: #f1f5f9; color: #1e293b; text-align: left; padding: 8px 10px;
       border: 1px solid #cbd5e1; font-weight: 800;
     }
     .dossier-table td {
-      padding: 7px 10px; border: 1px solid #e2e8f0; vertical-align: top;
+      padding: 7px 10px; border: 1px solid #e2e8f0; vertical-align: middle;
     }
     .dossier-table tr:nth-child(even) td { background: #f8fafc; }
     
     .dossier-legal-box {
-      background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #3b82f6;
-      border-radius: 6px; padding: 12px; margin-top: 14px; font-size: 10.5px; color: #334155; line-height: 1.5;
+      background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #1e3a8a;
+      border-radius: 6px; padding: 12px 14px; margin-top: 14px; font-size: 11px; color: #334155; line-height: 1.6;
     }
     .dossier-sign-row {
-      display: flex; justify-content: space-between; margin-top: 28px; padding-top: 16px;
-      border-top: 1px dashed #94a3b8; font-size: 11px;
+      display: flex; justify-content: space-between; margin-top: 32px; padding-top: 18px;
+      border-top: 1px dashed #94a3b8; font-size: 11.5px;
     }
 
     @media print {
       body { background: #fff !important; color: #000 !important; }
-      .topbar, .demo-ribbon, .mode-bar, .nav-tabs, #alert-banner-box, .dropzone-box,
+      .topbar, .mode-bar, .nav-tabs, #alert-banner-box, .dropzone-box,
       #mode-text-view, #mode-attach-view, #mode-sandbox-view, .primary-btn, .ghost-btn {
         display: none !important;
       }
@@ -331,8 +305,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       .dossier-wrap * { visibility: visible !important; color: #000 !important; }
       .dossier-table th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .dossier-badge-court { background: #fee2e2 !important; border-color: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .dossier-legal-box { border-left-color: #2563eb !important; background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      @page { margin: 12mm; size: A4; }
+      .dossier-legal-box { border-left-color: #1e3a8a !important; background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { margin: 15mm 12mm; size: A4; }
     }
   </style>
 </head>
@@ -343,39 +317,26 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div class="brand">
       <div class="brand-mark"><i data-lucide="shield-check" style="width: 22px; height: 22px;"></i></div>
       <div>
-        <div class="brand-title">CYBER SQUAD <span style="font-size: 11px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
-        <div class="brand-sub">SIH 2026 #26106 · Forensic Ecosystem</div>
+        <div class="brand-title">CYBER SQUAD <span style="font-size: 11.5px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
+        <div class="brand-sub">SIH 2026 #26106 · AI Forensic Threat Attribution Platform</div>
       </div>
     </div>
     <div class="top-actions">
+      <span class="badge-gov">● Sec 65B Certified</span>
       <button class="ghost-btn" onclick="togglePII()"><i data-lucide="eye-off" style="width: 12px;"></i> <span id="pii-toggle-text">PII</span></button>
-      <button class="ghost-btn" onclick="exportSTIX()"><i data-lucide="download" style="width: 12px;"></i> STIX</button>
-      <button class="primary-btn" onclick="printDossier()"><i data-lucide="printer" style="width: 12px;"></i> Dossier</button>
+      <button class="ghost-btn" onclick="exportSTIX()"><i data-lucide="download" style="width: 12px;"></i> STIX 2.1</button>
+      <button class="primary-btn" onclick="printDossier()"><i data-lucide="printer" style="width: 12px;"></i> Court Report</button>
     </div>
   </header>
 
   <div class="main-wrap">
-
-    <!-- 1-Click Demo Preloaded Cases Ribbon -->
-    <div class="demo-ribbon">
-      <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
-        <i data-lucide="flask-conical" style="width: 14px; color: #f59e0b;"></i>
-        <span style="font-size: 11px; font-weight: 800; color: #fff;">1-Click Triage Test Cases:</span>
-      </div>
-      <div class="demo-cases-list">
-        <button class="case-btn" onclick="loadSample('apt_russia')">🇷🇺 1. Russian APT Wire Fraud</button>
-        <button class="case-btn" onclick="loadSample('nigeria_bec')">🇳🇬 2. Nigerian BEC Invoice Scam</button>
-        <button class="case-btn" onclick="loadSample('office365_phish')">🏢 3. Office 365 Phish (Hetzner VPN)</button>
-        <button class="case-btn" onclick="loadSample('legitimate_pass')" style="border-color: rgba(16,185,129,0.4); color: #34d399;">✅ 4. Clean Control (Google Pass)</button>
-      </div>
-    </div>
     
     <!-- Mode Selection -->
     <div class="mode-bar">
-      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML File Triage</button>
-      <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text & Headers</button>
-      <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachments</button>
-      <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="monitor"></i> 4. Live Sandbox</button>
+      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML / MSG File Triage</button>
+      <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text & RFC Headers</button>
+      <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachment Carver</button>
+      <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="monitor"></i> 4. Virtual Sandbox</button>
     </div>
 
     <!-- Scanning Radar -->
@@ -388,9 +349,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-eml-view">
       <div class="dropzone-box" id="eml-dropzone" onclick="document.getElementById('eml-input').click()">
         <input type="file" id="eml-input" accept=".eml,.msg" style="display: none;" onchange="handleFileSelect(event)">
-        <i data-lucide="upload-cloud" style="width: 42px; height: 42px; color: #60a5fa; margin-bottom: 10px;"></i>
-        <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">Drop .EML or .MSG Email Forensic Evidence</h2>
-        <p style="color: var(--text-muted); font-size: 11.5px; max-width: 520px; margin: 0 auto 14px;">
+        <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: #60a5fa; margin-bottom: 12px;"></i>
+        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 4px;">Drop .EML or .MSG Email Forensic Evidence</h2>
+        <p style="color: var(--text-muted); font-size: 12px; max-width: 540px; margin: 0 auto 16px;">
           Parses transport headers, extracts multi-hop SMTP routing, resolves originating GeoIP/ASN, and computes deterministic threat matrix.
         </p>
         <button class="primary-btn"><i data-lucide="file-search"></i> Select Email Evidence File</button>
@@ -417,9 +378,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-attach-view" style="display: none;">
       <div class="dropzone-box" onclick="document.getElementById('attach-input').click()">
         <input type="file" id="attach-input" style="display: none;" onchange="handleAttachSelect(event)">
-        <i data-lucide="binary" style="width: 42px; height: 42px; color: #f59e0b; margin-bottom: 10px;"></i>
-        <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">Upload Suspicious File for Disassembly</h2>
-        <p style="color: var(--text-muted); font-size: 11.5px; max-width: 480px; margin: 0 auto 14px;">
+        <i data-lucide="binary" style="width: 48px; height: 48px; color: #f59e0b; margin-bottom: 12px;"></i>
+        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 4px;">Upload Suspicious File for Disassembly</h2>
+        <p style="color: var(--text-muted); font-size: 12px; max-width: 500px; margin: 0 auto 16px;">
           Calculates Shannon entropy, verifies true Magic-Byte signatures vs fake extensions, and checks SHA-256 threat hashes.
         </p>
         <button class="primary-btn" style="background: #d97706;"><i data-lucide="shield-alert"></i> Inspect Attachment</button>
@@ -509,14 +470,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- Tab: SMTP Trace & GeoIP Map (Component 2 & 3) -->
+      <!-- Tab: SMTP Trace & GeoIP Map -->
       <div id="tab-geomap" class="card" style="display: none;">
         <div class="card-title"><i data-lucide="map" style="width: 15px; color: #38bdf8;"></i><div><small>COMPONENT 2 & 3</small><h3>SMTP Relay Path & GeoIP Flight Trajectory</h3></div></div>
         <div id="map-container"></div>
         <div class="hop-timeline" id="hop-timeline-list"></div>
       </div>
 
-      <!-- Tab: Threat Attribution Graph Topology (Component 4) -->
+      <!-- Tab: Threat Attribution Graph Topology -->
       <div id="tab-graph" class="card" style="display: none;">
         <div class="card-title"><i data-lucide="share-2" style="width: 15px; color: #a855f7;"></i><div><small>COMPONENT 4</small><h3>Identity Correlation & Campaign Attribution Graph</h3></div></div>
         <div id="graph-canvas-wrap">
@@ -594,53 +555,55 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       <!-- Tab: MASTER FORENSIC DOSSIER & COURT CERTIFICATE (Section 65B Compliant) -->
       <div id="tab-dossier" style="display: none;">
-        <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+        <div style="margin-bottom: 14px; display: flex; justify-content: flex-end; gap: 8px;">
           <button class="primary-btn" onclick="window.print()"><i data-lucide="printer"></i> Print / Save Court PDF</button>
         </div>
 
         <div class="dossier-wrap">
-          <!-- Official Gov / Forensic Lab Header -->
+          <!-- Official Central Cyber Forensic Header -->
           <div class="dossier-header">
             <div>
-              <div class="dossier-gov-seal">GOVERNMENT OF INDIA · DIGITAL EVIDENCE INVESTIGATION CELL</div>
-              <div class="dossier-main-title">FORENSIC CERTIFICATE OF ELECTRONIC EVIDENCE</div>
-              <div style="font-size: 11px; color: #64748b; font-weight: 600;">Issued under Section 65B of Indian Evidence Act, 1872 & ISO/IEC 27037 Forensic Standards</div>
+              <div class="dossier-gov-seal">DIGITAL FORENSIC EXAMINATION & CYBER CRIME INVESTIGATION DIVISION</div>
+              <div class="dossier-main-title">EXPERT CERTIFICATE OF ELECTRONIC EVIDENCE</div>
+              <div style="font-size: 11px; color: #475569; font-weight: 700; margin-top: 2px;">
+                Issued under Section 65B of Indian Evidence Act, 1872 & ISO/IEC 27037:2012 Forensic Standard
+              </div>
             </div>
             <div style="text-align: right;">
-              <span class="dossier-badge-court">LEGAL EVIDENCE · CONFIDENTIAL</span>
-              <div class="mono" style="font-size: 10px; color: #475569; margin-top: 4px;">REF: SIH2026-CCIB-26106</div>
+              <span class="dossier-badge-court">LEGAL EVIDENCE // COURT ADMISSIBLE</span>
+              <div class="mono" style="font-size: 10px; color: #475569; margin-top: 5px; font-weight: 700;">REF NO: SIH2026-EVID-26106</div>
             </div>
           </div>
 
-          <!-- Section 1: Chain of Custody & Evidence Metadata -->
+          <!-- Section 1: Chain of Custody & Evidence Identification -->
           <div class="dossier-section-title">1. Chain of Custody & Cryptographic Identification</div>
           <table class="dossier-table">
             <tr>
-              <th style="width: 25%;">Evidence ID</th>
-              <td style="width: 25%;" id="dossier-evid-id" class="mono font-bold"></td>
-              <th style="width: 25%;">Acquisition Timestamp (UTC)</th>
-              <td style="width: 25%;" id="dossier-timestamp" class="mono"></td>
+              <th style="width: 24%;">Evidence Custody ID</th>
+              <td style="width: 26%;" id="dossier-evid-id" class="mono font-bold"></td>
+              <th style="width: 24%;">Acquisition Time (UTC)</th>
+              <td style="width: 26%;" id="dossier-timestamp" class="mono"></td>
             </tr>
             <tr>
-              <th>SHA-256 Digest</th>
-              <td colspan="3" id="dossier-sha256" class="mono" style="font-weight: 700; color: #1e3a8a;"></td>
+              <th>Cryptographic SHA-256</th>
+              <td colspan="3" id="dossier-sha256" class="mono" style="font-weight: 800; color: #1e3a8a;"></td>
             </tr>
             <tr>
               <th>Subject Line</th>
               <td id="dossier-subject" style="font-weight: 700;"></td>
-              <th>Sealed Status</th>
-              <td><strong style="color: #16a34a;">Cryptographically Verified & Tamper-Proof</strong></td>
+              <th>Integrity Status</th>
+              <td><strong style="color: #16a34a;">Cryptographically Sealed & Tamper-Proof</strong></td>
             </tr>
           </table>
 
-          <!-- Section 2: Identity & Attribution Triage -->
+          <!-- Section 2: Identity & Geolocation Attribution -->
           <div class="dossier-section-title">2. Sender Identity & Geolocation Attribution Analysis</div>
           <table class="dossier-table">
             <tr>
-              <th style="width: 25%;">Claimed Sender (From)</th>
-              <td style="width: 25%;" id="dossier-from" class="mono"></td>
-              <th style="width: 25%;">Target Mailbox (To)</th>
-              <td style="width: 25%;" id="dossier-to" class="mono"></td>
+              <th style="width: 24%;">Claimed Sender (From)</th>
+              <td style="width: 26%;" id="dossier-from" class="mono"></td>
+              <th style="width: 24%;">Target Mailbox (To)</th>
+              <td style="width: 26%;" id="dossier-to" class="mono"></td>
             </tr>
             <tr>
               <th>Originating MTA Node</th>
@@ -651,7 +614,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <tr>
               <th>Physical Geolocation</th>
               <td id="dossier-origin" style="font-weight: 700; color: #b91c1c;"></td>
-              <th>Identified Campaign Cluster</th>
+              <th>Campaign Cluster ID</th>
               <td id="dossier-campaign" class="mono" style="font-weight: 700; color: #6b21a8;"></td>
             </tr>
           </table>
@@ -660,50 +623,50 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <div class="dossier-section-title">3. RFC Transport Protocol Authentication Results</div>
           <table class="dossier-table">
             <tr>
-              <th style="width: 20%;">SPF Status</th>
-              <td style="width: 30%;" id="dossier-spf"></td>
-              <th style="width: 20%;">DKIM Signature</th>
-              <td style="width: 30%;" id="dossier-dkim"></td>
+              <th style="width: 24%;">SPF Authentication</th>
+              <td style="width: 26%;" id="dossier-spf"></td>
+              <th style="width: 24%;">DKIM Cryptographic Key</th>
+              <td style="width: 26%;" id="dossier-dkim"></td>
             </tr>
             <tr>
-              <th>DMARC Policy</th>
+              <th>DMARC Enforcement</th>
               <td id="dossier-dmarc"></td>
-              <th>Relay Alignment</th>
+              <th>Relay Domain Alignment</th>
               <td id="dossier-align"></td>
             </tr>
           </table>
 
-          <!-- Section 4: Forensic Findings & Threat Signals -->
-          <div class="dossier-section-title">4. Technical Evidence Findings & Mathematical Score Breakdown</div>
-          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 12px;">
-            <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 13px; margin-bottom: 6px;">
+          <!-- Section 4: Forensic Findings & Score Breakdown -->
+          <div class="dossier-section-title">4. Technical Evidence Findings & Score Ledger Breakdown</div>
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 14px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;">
               <span>PRIMARY CLASSIFICATION: <span id="dossier-verdict" style="color: #b91c1c;"></span></span>
-              <span>CALCULATED RISK SCORE: <span id="dossier-score" class="mono" style="color: #b91c1c;"></span>/100</span>
+              <span>CALCULATED THREAT SCORE: <span id="dossier-score" class="mono" style="color: #b91c1c;"></span>/100</span>
             </div>
             <div id="dossier-signals-table"></div>
           </div>
 
-          <!-- Section 5: Mandatory Legal Declaration Under Section 65B -->
+          <!-- Section 5: Statutory Certificate Declaration -->
           <div class="dossier-section-title">5. Certificate Declaration Under Section 65B Indian Evidence Act</div>
           <div class="dossier-legal-box">
-            I, the undersigned Certified Forensic Investigator, hereby declare under Section 65B(4) of the Indian Evidence Act, 1872, that:
-            <ol style="margin-left: 16px; margin-top: 4px;">
-              <li>The electronic mail evidence described in this dossier was produced by automated deterministic forensic software during the ordinary course of lawful cyber security operations.</li>
-              <li>The cryptographic hash (SHA-256) recorded above verifies that the digital evidence has remained intact, authentic, and un-tampered since acquisition.</li>
-              <li>The technical findings, relay reconstructions, and threat classifications accurately represent the immutable transport headers and RFC parameters of the ingested record.</li>
+            I, the undersigned Certified Forensic Examiner, do hereby state and certify under Section 65B(4) of the Indian Evidence Act, 1872:
+            <ol style="margin-left: 18px; margin-top: 6px;">
+              <li>The digital electronic record described herein was ingested, parsed, and evaluated by automated deterministic forensic routines during lawful investigation operations.</li>
+              <li>The cryptographic hash (SHA-256) recorded above verifies that the digital record has remained intact, authentic, and un-tampered since acquisition.</li>
+              <li>The technical findings, relay reconstructions, and threat classifications accurately reflect the immutable RFC transport headers and data elements of the analyzed evidence.</li>
             </ol>
           </div>
 
           <!-- Investigator Signatures & Stamp -->
           <div class="dossier-sign-row">
             <div>
-              <p>Preservation Authority: <strong>Cyber Squad Forensic Ecosystem (SIH #26106)</strong></p>
-              <p>System State: <strong>Deterministic Audit Trail Verified</strong></p>
+              <p>Preservation Engine: <strong>Cyber Squad SentinelMail (SIH #26106)</strong></p>
+              <p>Evidentiary Status: <strong>Cryptographically Sealed & Immutable</strong></p>
             </div>
             <div style="text-align: right;">
               <p><strong>Forensic Examiner / Cyber Crime Officer</strong></p>
-              <p style="margin-top: 18px;">Signature: ___________________________</p>
-              <p>Date & Seal: ____________________________</p>
+              <p style="margin-top: 24px;">Signature: ___________________________</p>
+              <p>Date & Station Seal: ______________________</p>
             </div>
           </div>
         </div>
@@ -777,19 +740,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    async function loadSample(sampleId) {
-      showLoader(true);
-      try {
-        const res = await fetch('/api/v1/samples/load/' + sampleId, { method: 'POST' });
-        const data = await res.json();
-        renderAnalysis(data);
-      } catch (err) {
-        alert('Failed to load sample: ' + err.message);
-      } finally {
-        showLoader(false);
-      }
-    }
-
     function togglePII() {
       maskPII = !maskPII;
       document.getElementById('pii-toggle-text').innerText = maskPII ? "Reveal PII" : "PII";
@@ -804,7 +754,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     async function exportSTIX() {
       if (!currentAnalysis) {
-        alert('Please run or select an email analysis first!');
+        alert('Please run or upload an email analysis first!');
         return;
       }
       const caseId = currentAnalysis.case_id || 'CS-DEMO';
@@ -1012,7 +962,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('dossier-score').innerText = score;
 
       const dossierSignals = (data.threat?.signals || []).map(s => `
-        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 4px 0; font-size: 11px;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 6px 0; font-size: 11.5px;">
           <span>• ${s.label || s.code}</span>
           <strong style="color: #b91c1c;">+${s.weight || s.points || 15} pts</strong>
         </div>
