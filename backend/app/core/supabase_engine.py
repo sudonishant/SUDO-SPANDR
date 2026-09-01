@@ -10,13 +10,13 @@ import urllib.request
 from typing import Any, Dict, Optional
 
 
-SUPABASE_URL = os.getenv("SUPABASE_URL", "").rstrip("/")
-SUPABASE_KEY = os.getenv("SUPABASE_KEY", "") or os.getenv("SUPABASE_SERVICE_ROLE_KEY", "")
+SUPABASE_URL = os.getenv("SUPABASE_URL", "https://jpoppmxygbtxsmxgpacz.supabase.co").rstrip("/")
+SUPABASE_KEY = os.getenv("SUPABASE_KEY", "***REMOVED_SECRET***")
 
 
 SUPABASE_SCHEMA_SQL = """-- =============================================================================
 -- CYBER SQUAD SENTINELMAIL: SUPABASE POSTGRESQL SCHEMA (SIH 2026 #26106)
--- Run this in your Supabase SQL Editor to create forensic evidence tables
+-- Run this in your Supabase SQL Editor: https://supabase.com/dashboard/project/jpoppmxygbtxsmxgpacz/sql/new
 -- =============================================================================
 
 CREATE TABLE IF NOT EXISTS forensic_cases (
@@ -39,7 +39,7 @@ CREATE TABLE IF NOT EXISTS forensic_cases (
     created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Enable Row Level Security (RLS) for law enforcement access
+-- Enable Row Level Security (RLS)
 ALTER TABLE forensic_cases ENABLE ROW LEVEL SECURITY;
 
 CREATE POLICY "Allow authenticated investigators to read cases"
@@ -47,18 +47,20 @@ CREATE POLICY "Allow authenticated investigators to read cases"
     TO authenticated
     USING (true);
 
-CREATE POLICY "Allow service role to insert forensic cases"
-    ON forensic_cases FOR INSERT
+CREATE POLICY "Allow service role full access"
+    ON forensic_cases FOR ALL
     TO service_role
+    USING (true)
     WITH CHECK (true);
 """
 
 
-def get_supabase_config() -> Dict[str, str]:
+def get_supabase_config() -> Dict[str, Any]:
     return {
-        "url": SUPABASE_URL or "https://your-project.supabase.co",
+        "url": SUPABASE_URL,
         "has_credentials": bool(SUPABASE_URL and SUPABASE_KEY),
-        "table_name": "forensic_cases"
+        "table_name": "forensic_cases",
+        "sql_editor_url": "https://supabase.com/dashboard/project/jpoppmxygbtxsmxgpacz/sql/new"
     }
 
 
@@ -90,11 +92,10 @@ def sync_to_supabase(case_data: Dict[str, Any]) -> Dict[str, Any]:
 
     if not SUPABASE_URL or not SUPABASE_KEY:
         return {
-            "status": "CONFIG_READY",
-            "url": SUPABASE_URL or "https://your-project.supabase.co",
+            "status": "CONFIG_PENDING",
+            "url": SUPABASE_URL,
             "table": "forensic_cases",
-            "payload_prepared": payload,
-            "note": "Case prepared for cloud sync. Add SUPABASE_URL and SUPABASE_KEY in .env to enable instant live sync."
+            "payload_prepared": payload
         }
 
     try:
@@ -109,10 +110,24 @@ def sync_to_supabase(case_data: Dict[str, Any]) -> Dict[str, Any]:
         with urllib.request.urlopen(req, timeout=5) as response:
             res_body = json.loads(response.read().decode("utf-8"))
             return {
-                "status": "SYNCED_TO_SUPABASE",
+                "status": "LIVE_SYNCED_TO_SUPABASE",
                 "record_id": res_body[0].get("id") if res_body else "inserted",
-                "table": "forensic_cases"
+                "table": "forensic_cases",
+                "supabase_url": SUPABASE_URL
             }
+    except urllib.error.HTTPError as e:
+        if e.code == 404:
+            return {
+                "status": "TABLE_CREATION_REQUIRED",
+                "note": "Supabase connected! Table 'forensic_cases' needs to be created via SQL Editor.",
+                "sql_editor_url": "https://supabase.com/dashboard/project/jpoppmxygbtxsmxgpacz/sql/new",
+                "payload_prepared": payload
+            }
+        return {
+            "status": "SYNC_FAILED",
+            "error": f"HTTP {e.code}: {e.reason}",
+            "payload_prepared": payload
+        }
     except Exception as err:
         return {
             "status": "SYNC_FAILED",
