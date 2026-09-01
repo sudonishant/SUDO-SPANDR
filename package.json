@@ -4,10 +4,11 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "dev": "vite",
-    "build": "vite build",
+    "dev": "vite --config vite.config.mjs",
+    "build": "vite build --config vite.config.mjs",
     "lint": "node scripts/check-forensic-claims.mjs",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "deploy": "npx wrangler pages deploy dist"
   },
   "dependencies": {
     "@kenjiuno/msgreader": "^1.28.0",
