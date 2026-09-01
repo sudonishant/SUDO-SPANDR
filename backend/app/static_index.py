@@ -37,7 +37,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
-      padding-bottom: 70px;
     }
     code, .mono { font-family: 'DM Mono', monospace; word-break: break-all; }
     button, input, textarea, select { font-family: inherit; }
@@ -233,18 +232,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       margin: 0 auto 10px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
-
-    /* Floating Bottom Action Bar for Mobile */
-    .mobile-floating-bar {
-      display: none; position: fixed; bottom: 0; left: 0; right: 0;
-      background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 16px;
-      z-index: 999; justify-content: space-between; align-items: center;
-    }
-    @media (max-width: 768px) {
-      .mobile-floating-bar { display: flex; }
-      body { padding-bottom: 80px; }
-    }
 
     /* ========================================================================== */
     /* MASTER FORENSIC DOSSIER & COURT CERTIFICATE (SEC 65B)                      */
@@ -744,17 +731,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </section>
   </div>
 
-  <!-- Mobile Floating Quick Summary Bar -->
-  <div class="mobile-floating-bar" id="mobile-summary-bar">
-    <div>
-      <span id="m-status-badge" style="font-size: 10px; font-weight: 800; color: #f87171;">HIGH RISK</span>
-      <div id="m-score-badge" style="font-size: 17px; font-weight: 800; color: #fff; font-family: 'DM Mono', monospace;">Score: 78/100</div>
-    </div>
-    <button class="primary-btn" style="padding: 8px 14px; font-size: 11px;" onclick="printDossier()">
-      <i data-lucide="printer" style="width: 12px;"></i> View PDF
-    </button>
-  </div>
-
   <script>
     lucide.createIcons();
     let currentAnalysis = null;
@@ -893,11 +869,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('alert-banner-box').style.borderLeftColor = scoreColor;
       document.getElementById('res-verdict-title').innerText = data.category_analysis?.category_label || "Email Threat Assessment";
       document.getElementById('res-verdict-sub').innerText = data.category_analysis?.description || "";
-
-      // Mobile Floating Bar update
-      document.getElementById('m-status-badge').innerText = data.threat?.status || "ANALYZED";
-      document.getElementById('m-status-badge').style.color = scoreColor;
-      document.getElementById('m-score-badge').innerText = `Risk: ${score}/100`;
 
       // Overview Tab
       document.getElementById('cat-label').innerText = data.category_analysis?.category_label || "Phishing";
