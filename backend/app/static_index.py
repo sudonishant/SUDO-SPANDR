@@ -2,8 +2,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>Cyber Squad SentinelMail — Advanced AI Email Forensics & Threat Attribution System</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Cyber Squad SentinelMail — AI Threat Detection & Forensic Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -13,8 +13,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <style>
     :root {
       --bg: #030712;
-      --card-bg: rgba(15, 23, 42, 0.85);
-      --panel-bg: rgba(15, 23, 42, 0.95);
+      --card-bg: rgba(15, 23, 42, 0.88);
+      --panel-bg: rgba(15, 23, 42, 0.96);
       --border: #1e293b;
       --border-focus: #3b82f6;
       --text: #f8fafc;
@@ -26,55 +26,57 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       --danger: #ef4444;
       --purple: #a855f7;
     }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
+    * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
       font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.22), transparent 50%),
-                  radial-gradient(circle at 90% 20%, rgba(147, 51, 234, 0.12), transparent 40%),
+      background: radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.25), transparent 50%),
+                  radial-gradient(circle at 90% 20%, rgba(147, 51, 234, 0.15), transparent 40%),
                   var(--bg);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
       overflow-x: hidden;
+      padding-bottom: 70px;
     }
     code, .mono { font-family: 'DM Mono', monospace; word-break: break-all; }
     button, input, textarea, select { font-family: inherit; }
     button { cursor: pointer; border: none; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     button:disabled { cursor: not-allowed; opacity: 0.5; }
 
-    /* Top Navigation Bar */
+    /* Top Navigation Bar - Mobile Optimized */
     .topbar {
-      height: 68px;
+      height: 62px;
       border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(3, 7, 18, 0.85);
-      backdrop-filter: blur(24px);
+      background: rgba(3, 7, 18, 0.9);
+      backdrop-filter: blur(20px);
+      -webkit-backdrop-filter: blur(20px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 clamp(12px, 3vw, 40px);
+      padding: 0 clamp(12px, 3vw, 32px);
       position: sticky;
       top: 0;
       z-index: 1000;
     }
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
     .brand-mark {
-      width: 40px; height: 40px;
+      width: 36px; height: 36px;
       display: grid; place-items: center;
       border: 1px solid rgba(59, 130, 246, 0.5);
-      border-radius: 10px;
+      border-radius: 9px;
       color: #60a5fa;
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
-      box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
+      box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
       flex-shrink: 0;
     }
-    .brand-title { font-size: 15.5px; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
-    .brand-sub { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; display: block; }
+    .brand-title { font-size: 14.5px; font-weight: 800; letter-spacing: -0.02em; color: #fff; line-height: 1.2; }
+    .brand-sub { font-size: 8.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; display: block; }
 
-    .top-actions { display: flex; align-items: center; gap: 8px; }
+    .top-actions { display: flex; align-items: center; gap: 6px; }
     .badge-gov {
-      display: inline-flex; align-items: center; gap: 5px;
-      padding: 4px 10px; border-radius: 6px; font-size: 10px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 3px 8px; border-radius: 6px; font-size: 9.5px; font-weight: 700;
       background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);
       white-space: nowrap;
     }
@@ -82,109 +84,109 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .main-wrap {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 20px clamp(12px, 2.5vw, 36px) 60px;
+      padding: 14px clamp(10px, 2.5vw, 28px) 40px;
     }
 
-    /* Mode Tabs */
+    /* Swipeable Mode Bar */
     .mode-bar {
-      display: flex; gap: 6px; margin-bottom: 20px;
-      background: rgba(15, 23, 42, 0.7); padding: 5px; border-radius: 12px; border: 1px solid var(--border);
-      overflow-x: auto; -webkit-overflow-scrolling: touch;
+      display: flex; gap: 6px; margin-bottom: 16px;
+      background: rgba(15, 23, 42, 0.7); padding: 4px; border-radius: 12px; border: 1px solid var(--border);
+      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
+    .mode-bar::-webkit-scrollbar { display: none; }
     .mode-tab {
-      flex: 1; min-width: 140px; padding: 11px 16px; border-radius: 9px; background: transparent;
-      color: var(--text-muted); font-size: 12.5px; font-weight: 700; display: flex; align-items: center;
-      justify-content: center; gap: 6px; border: 1px solid transparent; white-space: nowrap;
+      flex: 1; min-width: 110px; padding: 9px 12px; border-radius: 8px; background: transparent;
+      color: var(--text-muted); font-size: 11.5px; font-weight: 700; display: flex; align-items: center;
+      justify-content: center; gap: 5px; border: 1px solid transparent; white-space: nowrap;
     }
     .mode-tab.active {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
-      color: #93c5fd; border-color: rgba(59, 130, 246, 0.5);
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.2));
+      color: #93c5fd; border-color: rgba(59, 130, 246, 0.6);
+      box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
     }
 
-    /* Dropzone */
+    /* Modern Dropzone & Touch-Target */
     .dropzone-box {
-      border: 2px dashed rgba(59, 130, 246, 0.4); border-radius: 18px; padding: 48px 20px;
-      text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08), rgba(15, 23, 42, 0.6));
-      cursor: pointer; position: relative; transition: all 0.25s ease;
+      border: 2px dashed rgba(59, 130, 246, 0.45); border-radius: 16px; padding: 36px 16px;
+      text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1), rgba(15, 23, 42, 0.7));
+      cursor: pointer; position: relative; transition: all 0.2s ease;
     }
-    .dropzone-box:hover, .dropzone-box.dragover {
-      border-color: #60a5fa; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.18), rgba(15, 23, 42, 0.8));
-      box-shadow: 0 0 35px rgba(59, 130, 246, 0.3);
+    .dropzone-box:hover, .dropzone-box.dragover, .dropzone-box:active {
+      border-color: #60a5fa; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.2), rgba(15, 23, 42, 0.9));
+      transform: scale(0.995);
     }
 
     /* Cards */
     .card {
-      background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(16px); border-radius: 14px; padding: 20px; margin-bottom: 18px;
-      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
+      background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-radius: 14px; padding: 16px; margin-bottom: 14px;
+      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
     }
     .card-title {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px;
+      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 8px;
     }
-    .card-title h3 { font-size: 14.5px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
-    .card-title small { font-size: 9.5px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.05em; }
+    .card-title h3 { font-size: 13.5px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+    .card-title small { font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.04em; }
 
     .primary-btn {
       background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700;
-      padding: 10px 18px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35); justify-content: center;
+      padding: 9px 16px; border-radius: 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;
+      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); justify-content: center;
     }
-    .primary-btn:hover {
-      background: linear-gradient(135deg, #3b82f6, #2563eb);
-      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5); transform: translateY(-1px);
-    }
+    .primary-btn:active { transform: scale(0.97); }
 
     .ghost-btn {
-      background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 8px 14px; border-radius: 8px; font-size: 11.5px; font-weight: 600;
+      background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.12);
+      padding: 7px 12px; border-radius: 7px; font-size: 11px; font-weight: 600;
       display: inline-flex; align-items: center; gap: 5px;
     }
-    .ghost-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
+    .ghost-btn:active { background: rgba(255, 255, 255, 0.12); }
 
-    /* Results Navigation Tabs */
+    /* Results Tabs */
     .nav-tabs {
-      display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 18px;
-      overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
+      display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 14px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;
     }
+    .nav-tabs::-webkit-scrollbar { display: none; }
     .nav-tab {
-      padding: 10px 16px; border-radius: 8px 8px 0 0; background: transparent; color: var(--text-muted);
-      font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
+      padding: 8px 12px; border-radius: 8px 8px 0 0; background: transparent; color: var(--text-muted);
+      font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;
       border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0;
     }
     .nav-tab.active {
-      color: #60a5fa; border-bottom-color: #3b82f6; background: rgba(59, 130, 246, 0.1);
+      color: #60a5fa; border-bottom-color: #3b82f6; background: rgba(59, 130, 246, 0.12);
     }
 
     .result-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 16px; margin-bottom: 18px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 14px;
     }
 
     .key-val {
-      display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 12px; gap: 8px;
+      display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 11.5px; gap: 8px;
     }
     .key-val span { color: var(--text-muted); flex-shrink: 0; }
     .key-val strong { font-weight: 700; color: #fff; text-align: right; word-break: break-word; }
 
-    /* Map & Graph */
-    #map-container { height: 400px; width: 100%; border-radius: 12px; z-index: 10; border: 1px solid var(--border); }
-    .hop-timeline { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
+    /* Map & Graph Containers */
+    #map-container { height: 320px; width: 100%; border-radius: 12px; z-index: 10; border: 1px solid var(--border); }
+    .hop-timeline { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
     .hop-item {
-      display: flex; gap: 12px; align-items: flex-start; padding: 12px 14px; border-radius: 10px;
+      display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px;
       background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
     }
     .hop-badge {
-      width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
-      font-weight: 800; font-size: 11px; flex-shrink: 0;
+      width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
+      font-weight: 800; font-size: 10.5px; flex-shrink: 0;
     }
     .hop-badge.origin { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
     .hop-badge.relay { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
     .hop-badge.dest { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
 
     #graph-canvas-wrap {
-      height: 400px; width: 100%; background: #060a14; border-radius: 12px;
+      height: 320px; width: 100%; background: #060a14; border-radius: 12px;
       border: 1px solid var(--border); position: relative; overflow: hidden;
     }
 
@@ -192,104 +194,117 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .novnc-command-bar {
       display: flex; justify-content: space-between; align-items: center;
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
-      padding: 8px 12px; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;
+      padding: 6px 10px; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;
     }
-    .novnc-ribbon { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
-    .ribbon-divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
-    .url-detonation-box { display: flex; gap: 6px; margin-bottom: 10px; }
+    .novnc-ribbon { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
+    .ribbon-divider { width: 1px; height: 16px; background: var(--border); margin: 0 2px; }
+    .url-detonation-box { display: flex; gap: 6px; margin-bottom: 8px; }
     .url-input-wrap {
-      flex: 1; display: flex; align-items: center; gap: 8px; background: var(--card-bg);
-      border: 1px solid var(--border); border-radius: 8px; padding: 0 10px;
+      flex: 1; display: flex; align-items: center; gap: 6px; background: var(--card-bg);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0 8px;
     }
     .url-input-wrap input {
-      width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 12px; padding: 9px 0;
+      width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 16px; padding: 8px 0;
     }
     .sandbox-frame-box {
       border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000;
-      position: relative; height: 580px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      position: relative; height: 480px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
     }
-    .sandbox-iframe { width: 100%; height: calc(100% - 30px); border: none; }
+    .sandbox-iframe { width: 100%; height: calc(100% - 28px); border: none; }
     .telemetry-bar {
-      height: 30px; background: #070c17; border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
-      font-size: 10px; color: var(--text-muted);
+      height: 28px; background: #070c17; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
+      font-size: 9.5px; color: var(--text-muted);
     }
 
     .mitre-badge {
-      display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px;
+      display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 5px;
       background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);
-      font-size: 11px; font-weight: 700; margin: 2px;
+      font-size: 10px; font-weight: 700; margin: 2px;
     }
 
     /* Radar scan spinner */
-    .radar-scanning { display: none; text-align: center; padding: 30px; }
+    .radar-scanning { display: none; text-align: center; padding: 24px; }
     .radar-sweep {
-      width: 54px; height: 54px; border-radius: 50%;
+      width: 46px; height: 46px; border-radius: 50%;
       border: 3px solid rgba(59, 130, 246, 0.2);
       border-top-color: #3b82f6;
       animation: spin 1s linear infinite;
-      margin: 0 auto 12px;
+      margin: 0 auto 10px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* Floating Bottom Action Bar for Mobile */
+    .mobile-floating-bar {
+      display: none; position: fixed; bottom: 0; left: 0; right: 0;
+      background: rgba(3, 7, 18, 0.95); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      border-top: 1px solid rgba(255, 255, 255, 0.1); padding: 10px 16px;
+      z-index: 999; justify-content: space-between; align-items: center;
+    }
+    @media (max-width: 768px) {
+      .mobile-floating-bar { display: flex; }
+      body { padding-bottom: 80px; }
+    }
+
     /* ========================================================================== */
-    /* ULTRA-PROFESSIONAL FORENSIC DOSSIER & COURT CERTIFICATE (SEC 65B)          */
+    /* MASTER FORENSIC DOSSIER & COURT CERTIFICATE (SEC 65B)                      */
     /* ========================================================================== */
     .dossier-wrap {
       background: #ffffff;
       color: #0f172a;
       border-radius: 12px;
-      padding: 36px 32px;
+      padding: clamp(16px, 3vw, 32px);
       box-shadow: 0 10px 40px rgba(0,0,0,0.5);
       border: 2px solid #1e3a8a;
-      font-size: 12px;
-      line-height: 1.65;
+      font-size: 11.5px;
+      line-height: 1.6;
     }
     .dossier-header {
       display: flex; justify-content: space-between; align-items: flex-start;
-      border-bottom: 2.5px solid #0f172a; padding-bottom: 18px; margin-bottom: 22px;
+      border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;
+      flex-wrap: wrap; gap: 8px;
     }
     .dossier-gov-seal {
-      font-size: 11px; font-weight: 900; color: #1e3a8a; letter-spacing: 0.1em; text-transform: uppercase;
+      font-size: 10px; font-weight: 900; color: #1e3a8a; letter-spacing: 0.08em; text-transform: uppercase;
     }
     .dossier-main-title {
-      font-size: 20px; font-weight: 900; color: #0f172a; margin-top: 3px; letter-spacing: -0.01em;
+      font-size: 17px; font-weight: 900; color: #0f172a; margin-top: 2px; letter-spacing: -0.01em;
     }
     .dossier-badge-court {
       background: #fee2e2; color: #991b1b; border: 1.5px solid #f87171;
-      font-size: 10.5px; font-weight: 800; padding: 5px 12px; border-radius: 6px;
-      text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;
+      font-size: 9.5px; font-weight: 800; padding: 4px 10px; border-radius: 5px;
+      text-transform: uppercase; letter-spacing: 0.04em; display: inline-block;
     }
     .dossier-section-title {
-      font-size: 13px; font-weight: 900; color: #1e3a8a; text-transform: uppercase;
-      letter-spacing: 0.05em; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px;
-      margin-top: 20px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+      font-size: 12px; font-weight: 900; color: #1e3a8a; text-transform: uppercase;
+      letter-spacing: 0.04em; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px;
+      margin-top: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
     }
     .dossier-table {
-      width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px;
+      width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px;
     }
     .dossier-table th {
-      background: #f1f5f9; color: #1e293b; text-align: left; padding: 8px 10px;
+      background: #f1f5f9; color: #1e293b; text-align: left; padding: 6px 8px;
       border: 1px solid #cbd5e1; font-weight: 800;
     }
     .dossier-table td {
-      padding: 7px 10px; border: 1px solid #e2e8f0; vertical-align: middle;
+      padding: 6px 8px; border: 1px solid #e2e8f0; vertical-align: middle;
     }
     .dossier-table tr:nth-child(even) td { background: #f8fafc; }
     
     .dossier-legal-box {
       background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #1e3a8a;
-      border-radius: 6px; padding: 12px 14px; margin-top: 14px; font-size: 11px; color: #334155; line-height: 1.6;
+      border-radius: 6px; padding: 10px 12px; margin-top: 12px; font-size: 10.5px; color: #334155; line-height: 1.5;
     }
     .dossier-sign-row {
-      display: flex; justify-content: space-between; margin-top: 32px; padding-top: 18px;
-      border-top: 1px dashed #94a3b8; font-size: 11.5px;
+      display: flex; justify-content: space-between; margin-top: 24px; padding-top: 14px;
+      border-top: 1px dashed #94a3b8; font-size: 11px; flex-wrap: wrap; gap: 12px;
     }
 
     @media print {
-      body { background: #fff !important; color: #000 !important; }
+      body { background: #fff !important; color: #000 !important; padding-bottom: 0 !important; }
       .topbar, .mode-bar, .nav-tabs, #alert-banner-box, .dropzone-box,
-      #mode-text-view, #mode-attach-view, #mode-sandbox-view, .primary-btn, .ghost-btn {
+      #mode-text-view, #mode-attach-view, #mode-sandbox-view, .primary-btn, .ghost-btn, .mobile-floating-bar {
         display: none !important;
       }
       #results-view, #tab-dossier, .dossier-wrap {
@@ -306,7 +321,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       .dossier-table th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .dossier-badge-court { background: #fee2e2 !important; border-color: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       .dossier-legal-box { border-left-color: #1e3a8a !important; background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      @page { margin: 15mm 12mm; size: A4; }
+      @page { margin: 12mm; size: A4; }
     }
   </style>
 </head>
@@ -315,25 +330,25 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark"><i data-lucide="shield-check" style="width: 22px; height: 22px;"></i></div>
+      <div class="brand-mark"><i data-lucide="shield-check" style="width: 20px; height: 20px;"></i></div>
       <div>
-        <div class="brand-title">CYBER SQUAD <span style="font-size: 11.5px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
-        <div class="brand-sub">SIH 2026 #26106 · AI Forensic Threat Attribution Platform</div>
+        <div class="brand-title">CYBER SQUAD <span style="font-size: 10.5px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
+        <div class="brand-sub">SIH 2026 #26106 · Forensic System</div>
       </div>
     </div>
     <div class="top-actions">
       <span class="badge-gov">● Sec 65B Certified</span>
-      <button class="primary-btn" onclick="printDossier()"><i data-lucide="printer" style="width: 13px;"></i> Court Report</button>
+      <button class="primary-btn" style="padding: 6px 12px; font-size: 11px;" onclick="printDossier()"><i data-lucide="printer" style="width: 12px;"></i> Court Report</button>
     </div>
   </header>
 
   <div class="main-wrap">
     
-    <!-- Mode Selection -->
+    <!-- Swipeable Mode Selection Bar -->
     <div class="mode-bar">
-      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML / MSG File Triage</button>
-      <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text & RFC Headers</button>
-      <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachment Carver</button>
+      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML File</button>
+      <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text / Headers</button>
+      <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachment</button>
       <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="monitor"></i> 4. Virtual Sandbox</button>
     </div>
 
@@ -347,12 +362,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-eml-view">
       <div class="dropzone-box" id="eml-dropzone" onclick="document.getElementById('eml-input').click()">
         <input type="file" id="eml-input" accept=".eml,.msg" style="display: none;" onchange="handleFileSelect(event)">
-        <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: #60a5fa; margin-bottom: 12px;"></i>
-        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 4px;">Drop .EML or .MSG Email Forensic Evidence</h2>
-        <p style="color: var(--text-muted); font-size: 12px; max-width: 540px; margin: 0 auto 16px;">
+        <i data-lucide="upload-cloud" style="width: 44px; height: 44px; color: #60a5fa; margin-bottom: 10px;"></i>
+        <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">Tap or Drop .EML / .MSG Evidence</h2>
+        <p style="color: var(--text-muted); font-size: 11.5px; max-width: 480px; margin: 0 auto 14px;">
           Parses transport headers, extracts multi-hop SMTP routing, resolves originating GeoIP/ASN, and computes deterministic threat matrix.
         </p>
-        <button class="primary-btn"><i data-lucide="file-search"></i> Select Email Evidence File</button>
+        <button class="primary-btn" style="width: 100%; max-width: 280px;"><i data-lucide="file-search"></i> Select Email Evidence</button>
       </div>
     </div>
 
@@ -360,15 +375,15 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-text-view" style="display: none;">
       <div class="card">
         <div class="card-title">
-          <i data-lucide="file-code" style="width: 16px; color: #60a5fa;"></i>
+          <i data-lucide="file-code" style="width: 15px; color: #60a5fa;"></i>
           <div><small>RAW INTAKE</small><h3>Paste RFC 5322 Headers & Message Body</h3></div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
-          <input type="text" id="raw-sender" placeholder="From: (e.g. CEO <ceo@lookalike.com>)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 9px; color: #fff; font-size: 12px;">
-          <input type="text" id="raw-subject" placeholder="Subject: URGENT: Wire Transfer..." style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 9px; color: #fff; font-size: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr; gap: 8px; margin-bottom: 8px;">
+          <input type="text" id="raw-sender" placeholder="From: (e.g. CEO <ceo@lookalike.com>)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 16px;">
+          <input type="text" id="raw-subject" placeholder="Subject: URGENT: Wire Transfer..." style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 16px;">
         </div>
-        <textarea id="raw-body" rows="6" placeholder="Paste full email body or raw header dump here..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-family: 'DM Mono', monospace; margin-bottom: 14px;"></textarea>
-        <button class="primary-btn" onclick="analyzeRawText()"><i data-lucide="scan-line"></i> Run Deep Forensic Analysis</button>
+        <textarea id="raw-body" rows="6" placeholder="Paste full email body or raw header dump here..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 16px; font-family: 'DM Mono', monospace; margin-bottom: 12px;"></textarea>
+        <button class="primary-btn" style="width: 100%;" onclick="analyzeRawText()"><i data-lucide="scan-line"></i> Run Deep Forensic Analysis</button>
       </div>
     </div>
 
@@ -376,12 +391,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-attach-view" style="display: none;">
       <div class="dropzone-box" onclick="document.getElementById('attach-input').click()">
         <input type="file" id="attach-input" style="display: none;" onchange="handleAttachSelect(event)">
-        <i data-lucide="binary" style="width: 48px; height: 48px; color: #f59e0b; margin-bottom: 12px;"></i>
-        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 4px;">Upload Suspicious File for Disassembly</h2>
-        <p style="color: var(--text-muted); font-size: 12px; max-width: 500px; margin: 0 auto 16px;">
+        <i data-lucide="binary" style="width: 44px; height: 44px; color: #f59e0b; margin-bottom: 10px;"></i>
+        <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">Upload Suspicious File for Disassembly</h2>
+        <p style="color: var(--text-muted); font-size: 11.5px; max-width: 460px; margin: 0 auto 14px;">
           Calculates Shannon entropy, verifies true Magic-Byte signatures vs fake extensions, and checks SHA-256 threat hashes.
         </p>
-        <button class="primary-btn" style="background: #d97706;"><i data-lucide="shield-alert"></i> Inspect Attachment</button>
+        <button class="primary-btn" style="background: #d97706; width: 100%; max-width: 280px;"><i data-lucide="shield-alert"></i> Inspect Attachment</button>
       </div>
     </div>
 
@@ -389,12 +404,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-sandbox-view" style="display: none;">
       <div class="novnc-command-bar">
         <div class="novnc-ribbon">
-          <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">1-Click Apps:</span>
+          <span style="font-size: 9.5px; font-weight: 800; color: #64748b; text-transform: uppercase;">1-Click:</span>
           <button class="ghost-btn" style="color: #f87171;" onclick="openQuickApp('https://mail.google.com')"><i data-lucide="mail" style="width: 11px;"></i> Gmail</button>
           <button class="ghost-btn" style="color: #60a5fa;" onclick="openQuickApp('https://www.google.com')"><i data-lucide="search" style="width: 11px;"></i> Google</button>
           <button class="ghost-btn" style="color: #38bdf8;" onclick="openQuickApp('https://outlook.live.com')"><i data-lucide="inbox" style="width: 11px;"></i> Outlook</button>
           <div class="ribbon-divider"></div>
-          <button class="ghost-btn" style="color: #2dd4bf;" onclick="openQuickApp('https://www.virustotal.com')"><i data-lucide="shield-check" style="width: 11px;"></i> VirusTotal</button>
+          <button class="ghost-btn" style="color: #2dd4bf;" onclick="openQuickApp('https://www.virustotal.com')"><i data-lucide="shield-check" style="width: 11px;"></i> VT</button>
         </div>
         <div class="novnc-ribbon">
           <button class="ghost-btn" onclick="sendClipboardPrompt()"><i data-lucide="clipboard-copy" style="width: 11px;"></i> Paste</button>
@@ -406,7 +421,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <div class="url-detonation-box">
         <div class="url-input-wrap">
           <i data-lucide="link" style="width: 13px; color: #64748b;"></i>
-          <input type="text" id="direct-sandbox-url" value="http://127.0.0.1:8000" placeholder="Enter link to detonate in virtual sandbox..." onkeydown="if(event.key==='Enter') launchDirectSandbox()">
+          <input type="text" id="direct-sandbox-url" value="http://127.0.0.1:8000" placeholder="Link to detonate..." onkeydown="if(event.key==='Enter') launchDirectSandbox()">
         </div>
         <button class="primary-btn" onclick="launchDirectSandbox()"><i data-lucide="play" style="width: 12px;"></i> Detonate</button>
       </div>
@@ -414,26 +429,26 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <div class="sandbox-frame-box" id="direct-sandbox-box">
         <iframe id="direct-sandbox-iframe" class="sandbox-iframe" src="/novnc/vnc.html?path=websockify&autoconnect=true&password=cybersqu&resize=remote&quality=8&compression=0&reconnect=true" allow="clipboard-read; clipboard-write; fullscreen;"></iframe>
         <div class="telemetry-bar">
-          <span>🟢 Display :99 (XFCE + Chromium + Kali Tools) · Single Port Unified</span>
-          <span class="mono">Air-Gapped Isolation · Zero Host Malware Risk</span>
+          <span>🟢 Display :99 (XFCE + Kali Tools)</span>
+          <span class="mono">Air-Gapped Sandbox</span>
         </div>
       </div>
     </div>
 
     <!-- FORENSIC RESULTS VIEWPORT -->
-    <section id="results-view" style="display: none; margin-top: 20px;">
+    <section id="results-view" style="display: none; margin-top: 18px;">
       
       <!-- Top Alert Banner -->
       <div class="card" id="alert-banner-box" style="border-left: 4px solid var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.12), var(--card-bg));">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
           <div>
-            <span style="font-size: 9.5px; font-weight: 800; color: #f87171; letter-spacing: 0.08em; text-transform: uppercase;">INVESTIGATIVE FORENSIC DOSSIER</span>
-            <h2 id="res-verdict-title" style="font-size: 19px; font-weight: 800; color: #fff; margin-top: 2px;">SUSPICIOUS PHISHING / BEC ATTACK</h2>
-            <p id="res-verdict-sub" style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;"></p>
+            <span style="font-size: 9px; font-weight: 800; color: #f87171; letter-spacing: 0.08em; text-transform: uppercase;">INVESTIGATIVE FORENSIC DOSSIER</span>
+            <h2 id="res-verdict-title" style="font-size: 18px; font-weight: 800; color: #fff; margin-top: 2px;">SUSPICIOUS PHISHING / BEC ATTACK</h2>
+            <p id="res-verdict-sub" style="font-size: 11px; color: var(--text-muted); margin-top: 2px;"></p>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 32px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;" id="res-score-badge">85<span style="font-size: 15px; color: var(--text-muted);">/100</span></div>
-            <span style="font-size: 10.5px; font-weight: 700; color: #f87171;" id="res-status-tag">HIGH RISK</span>
+            <div style="font-size: 30px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;" id="res-score-badge">85<span style="font-size: 14px; color: var(--text-muted);">/100</span></div>
+            <span style="font-size: 10px; font-weight: 700; color: #f87171;" id="res-status-tag">HIGH RISK</span>
           </div>
         </div>
       </div>
@@ -441,32 +456,27 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <!-- Navigation Tabs -->
       <div class="nav-tabs">
         <button class="nav-tab active" onclick="switchTab('overview', this)"><i data-lucide="layout-dashboard" style="width: 12px;"></i> Overview</button>
-        <button class="nav-tab" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 12px;"></i> 🗺️ GeoIP Map</button>
+        <button class="nav-tab" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 12px;"></i> 🗺️ GeoIP</button>
         <button class="nav-tab" onclick="switchTab('graph', this)"><i data-lucide="network" style="width: 12px;"></i> 🕸️ Graph</button>
-        <button class="nav-tab" onclick="switchTab('nlp', this)"><i data-lucide="brain" style="width: 12px;"></i> 🧠 Deep AI NLP</button>
+        <button class="nav-tab" onclick="switchTab('nlp', this)"><i data-lucide="brain" style="width: 12px;"></i> 🧠 AI NLP</button>
         <button class="nav-tab" onclick="switchTab('mitre', this)"><i data-lucide="crosshair" style="width: 12px;"></i> 🎯 MITRE</button>
         <button class="nav-tab" onclick="switchTab('auth', this)"><i data-lucide="shield-check" style="width: 12px;"></i> SPF / DKIM</button>
         <button class="nav-tab" onclick="switchTab('urls', this)"><i data-lucide="link" style="width: 12px;"></i> URLs</button>
         <button class="nav-tab" onclick="switchTab('files', this)"><i data-lucide="paperclip" style="width: 12px;"></i> Files</button>
-        <button class="nav-tab" onclick="switchTab('dossier', this)"><i data-lucide="file-check" style="width: 12px;"></i> 📜 Court Dossier</button>
+        <button class="nav-tab" onclick="switchTab('dossier', this)"><i data-lucide="file-check" style="width: 12px;"></i> 📜 Dossier</button>
       </div>
 
       <!-- Tab: Overview -->
       <div id="tab-overview" class="result-grid">
-        <!-- Neo4j & Supabase Cloud Integration Card -->
-        <div class="card" style="border-left: 3px solid #38bdf8; background: linear-gradient(135deg, rgba(56,189,248,0.06), var(--card-bg));">
-          <div class="card-title">
-            <i data-lucide="database" style="width: 15px; color: #38bdf8;"></i>
-            <div><small>ENTERPRISE STORAGE & GRAPH TOPOLOGY</small><h3>🌿 Neo4j Graph & ⚡ Supabase Vault</h3></div>
-          </div>
-          <div class="key-val"><span>Neo4j Cypher Engine</span><strong id="neo4j-status-tag" style="color: #34d399; font-size: 11px;">CYPHER READY</strong></div>
-          <div class="key-val"><span>Graph Nodes / Relationships</span><strong id="neo4j-nodes-tag" class="mono" style="color: #60a5fa;">5 Nodes · 4 Edges</strong></div>
-          <div class="key-val"><span>Supabase PostgreSQL Vault</span><strong id="supabase-status-tag" style="color: #38bdf8; font-size: 11px;">TABLE READY</strong></div>
-          <div class="key-val"><span>Cloud Target Table</span><strong class="mono" style="color: #fbbf24;">public.forensic_cases</strong></div>
-          <div style="margin-top: 10px; display: flex; gap: 8px; flex-wrap: wrap;">
-            <button class="ghost-btn" style="color: #34d399; border-color: rgba(52,211,153,0.4);" onclick="viewCypherModal()"><i data-lucide="code" style="width: 11px;"></i> Cypher Query</button>
-            <button class="ghost-btn" style="color: #38bdf8; border-color: rgba(56,189,248,0.4);" onclick="viewSupabaseSQL()"><i data-lucide="file-code" style="width: 11px;"></i> Supabase SQL</button>
-          </div>
+        
+        <!-- Identity Summary Card -->
+        <div class="card">
+          <div class="card-title"><i data-lucide="tag" style="width: 15px; color: #60a5fa;"></i><div><small>CATEGORY</small><h3 id="cat-label">Phishing / BEC</h3></div></div>
+          <p id="cat-desc" style="color: var(--text-muted); font-size: 11px; margin-bottom: 8px;"></p>
+          <div class="key-val"><span>Sender Identity</span><strong id="meta-from" class="mono"></strong></div>
+          <div class="key-val"><span>Target Mailbox</span><strong id="meta-to" class="mono"></strong></div>
+          <div class="key-val"><span>Origin Location</span><strong id="geo-summary-tag" style="color: #f87171;"></strong></div>
+          <div class="key-val"><span>Preservation SHA-256</span><strong id="meta-sha256" class="mono" style="font-size: 9px; color: #93c5fd;"></strong></div>
         </div>
 
         <!-- Blockchain Evidence Card -->
@@ -477,27 +487,35 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
           <div class="key-val"><span>Consortium Network</span><strong style="color: #60a5fa; font-size: 11px;">National Cyber Forensic Consortium (PoA)</strong></div>
           <div class="key-val"><span>Block Height</span><strong id="bc-block-num" class="mono" style="color: #34d399;">#19,844,210</strong></div>
-          <div class="key-val"><span>Transaction Hash</span><strong id="bc-tx-hash" class="mono" style="font-size: 10px; color: #fbbf24;">0x7f8...</strong></div>
-          <div class="key-val"><span>Merkle Root Hash</span><strong id="bc-merkle-root" class="mono" style="font-size: 10px; color: #c084fc;">0x4a7...</strong></div>
-          <div class="key-val"><span>Smart Contract</span><strong class="mono" style="font-size: 9.5px; color: #94a3b8;">0x71C3...26106</strong></div>
-          <div style="margin-top: 10px; display: flex; justify-content: space-between; align-items: center;">
-            <span style="font-size: 10.5px; color: #34d399; font-weight: 700;">🟢 Sealed & Tamper-Proof On-Chain</span>
-            <button class="ghost-btn" style="color: #34d399; border-color: rgba(16,185,129,0.4);" onclick="verifyBlockchainModal()"><i data-lucide="check-circle" style="width: 11px;"></i> Verify Proof</button>
+          <div class="key-val"><span>Transaction Hash</span><strong id="bc-tx-hash" class="mono" style="font-size: 9.5px; color: #fbbf24;">0x7f8...</strong></div>
+          <div class="key-val"><span>Merkle Root Hash</span><strong id="bc-merkle-root" class="mono" style="font-size: 9.5px; color: #c084fc;">0x4a7...</strong></div>
+          <div class="key-val"><span>Smart Contract</span><strong class="mono" style="font-size: 9px; color: #94a3b8;">0x71C3...26106</strong></div>
+          <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center;">
+            <span style="font-size: 10px; color: #34d399; font-weight: 700;">🟢 Sealed On-Chain</span>
+            <button class="ghost-btn" style="color: #34d399; border-color: rgba(16,185,129,0.4); padding: 5px 10px; font-size: 10.5px;" onclick="verifyBlockchainModal()"><i data-lucide="check-circle" style="width: 10px;"></i> Verify</button>
           </div>
         </div>
 
-        <div class="card">
-          <div class="card-title"><i data-lucide="tag" style="width: 15px; color: #60a5fa;"></i><div><small>CATEGORY</small><h3 id="cat-label">Phishing / BEC</h3></div></div>
-          <p id="cat-desc" style="color: var(--text-muted); font-size: 11.5px; margin-bottom: 10px;"></p>
-          <div class="key-val"><span>Sender Identity</span><strong id="meta-from" class="mono"></strong></div>
-          <div class="key-val"><span>Target Mailbox</span><strong id="meta-to" class="mono"></strong></div>
-          <div class="key-val"><span>Origin Location</span><strong id="geo-summary-tag" style="color: #f87171;"></strong></div>
-          <div class="key-val"><span>Preservation SHA-256</span><strong id="meta-sha256" class="mono" style="font-size: 9.5px; color: #93c5fd;"></strong></div>
+        <!-- Neo4j & Supabase Cloud Integration Card -->
+        <div class="card" style="border-left: 3px solid #38bdf8; background: linear-gradient(135deg, rgba(56,189,248,0.06), var(--card-bg));">
+          <div class="card-title">
+            <i data-lucide="database" style="width: 15px; color: #38bdf8;"></i>
+            <div><small>ENTERPRISE STORAGE & GRAPH TOPOLOGY</small><h3>🌿 Neo4j Graph & ⚡ Supabase Vault</h3></div>
+          </div>
+          <div class="key-val"><span>Neo4j Aura Engine</span><strong id="neo4j-status-tag" style="color: #34d399; font-size: 11px;">LIVE SYNCED</strong></div>
+          <div class="key-val"><span>Graph Nodes / Edges</span><strong id="neo4j-nodes-tag" class="mono" style="color: #60a5fa;">5 Nodes · 4 Edges</strong></div>
+          <div class="key-val"><span>Supabase PostgreSQL</span><strong id="supabase-status-tag" style="color: #38bdf8; font-size: 11px;">LIVE CONNECTED</strong></div>
+          <div class="key-val"><span>Target Table</span><strong class="mono" style="color: #fbbf24;">public.forensic_cases</strong></div>
+          <div style="margin-top: 8px; display: flex; gap: 6px; flex-wrap: wrap;">
+            <button class="ghost-btn" style="color: #34d399; border-color: rgba(52,211,153,0.4); padding: 5px 10px; font-size: 10.5px;" onclick="viewCypherModal()"><i data-lucide="code" style="width: 10px;"></i> Cypher Query</button>
+            <button class="ghost-btn" style="color: #38bdf8; border-color: rgba(56,189,248,0.4); padding: 5px 10px; font-size: 10.5px;" onclick="viewSupabaseSQL()"><i data-lucide="file-code" style="width: 10px;"></i> Supabase SQL</button>
+          </div>
         </div>
 
+        <!-- Score Ledger Card -->
         <div class="card">
-          <div class="card-title"><i data-lucide="list-checks" style="width: 15px; color: #34d399;"></i><div><small>SCORE LEDGER (EXPLICIT WEIGHTS)</small><h3>Observed Threat Signals</h3></div></div>
-          <div id="signals-list" style="max-height: 200px; overflow-y: auto;"></div>
+          <div class="card-title"><i data-lucide="list-checks" style="width: 15px; color: #34d399;"></i><div><small>SCORE LEDGER</small><h3>Observed Threat Signals</h3></div></div>
+          <div id="signals-list" style="max-height: 180px; overflow-y: auto;"></div>
         </div>
       </div>
 
@@ -526,39 +544,38 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px;">
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
-            <span style="font-size: 10px; color: var(--text-muted);">Total Paragraphs Scanned</span>
-            <div id="nlp-total-paras" style="font-size: 18px; font-weight: 800; color: #60a5fa; font-family: 'DM Mono', monospace;">0</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 8px; margin-bottom: 12px;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 7px;">
+            <span style="font-size: 9.5px; color: var(--text-muted);">Scanned Paras</span>
+            <div id="nlp-total-paras" style="font-size: 16px; font-weight: 800; color: #60a5fa; font-family: 'DM Mono', monospace;">0</div>
           </div>
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
-            <span style="font-size: 10px; color: var(--text-muted);">Malicious Paragraphs</span>
-            <div id="nlp-flagged-paras" style="font-size: 18px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;">0</div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 7px;">
+            <span style="font-size: 9.5px; color: var(--text-muted);">Flagged Paras</span>
+            <div id="nlp-flagged-paras" style="font-size: 16px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;">0</div>
           </div>
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
-            <span style="font-size: 10px; color: var(--text-muted);">NLP Threat Score</span>
-            <div id="nlp-score-val" style="font-size: 18px; font-weight: 800; color: #fbbf24; font-family: 'DM Mono', monospace;">0/100</div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 7px;">
+            <span style="font-size: 9.5px; color: var(--text-muted);">NLP Score</span>
+            <div id="nlp-score-val" style="font-size: 16px; font-weight: 800; color: #fbbf24; font-family: 'DM Mono', monospace;">0/100</div>
           </div>
         </div>
 
-        <div id="nlp-triggers-container" style="margin-bottom: 12px;"></div>
-        <div id="nlp-paragraphs-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
+        <div id="nlp-triggers-container" style="margin-bottom: 10px;"></div>
+        <div id="nlp-paragraphs-list" style="display: flex; flex-direction: column; gap: 8px;"></div>
       </div>
 
       <!-- Tab: MITRE ATT&CK Matrix -->
       <div id="tab-mitre" class="card" style="display: none;">
         <div class="card-title"><i data-lucide="crosshair" style="width: 15px; color: #c084fc;"></i><div><small>TACTICS & TECHNIQUES</small><h3>MITRE ATT&CK Enterprise Matrix Mapping</h3></div></div>
-        <div style="margin-bottom: 12px;">
-          <span class="mitre-badge">T1566.001 Spearphishing Attachment</span>
-          <span class="mitre-badge">T1566.002 Spearphishing Link</span>
-          <span class="mitre-badge">T1586.002 Compromised Email Account</span>
+        <div style="margin-bottom: 10px;">
+          <span class="mitre-badge">T1566.001 Attachment</span>
+          <span class="mitre-badge">T1566.002 Link</span>
+          <span class="mitre-badge">T1586.002 Compromised</span>
           <span class="mitre-badge">T1078 Valid Accounts</span>
-          <span class="mitre-badge">T1598 Phishing for Information</span>
         </div>
         <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
-          <h4 style="font-size: 11.5px; color: #93c5fd; margin-bottom: 4px;">🤖 AI Forensic Investigator Breakdown (Bilingual / द्विभाषी):</h4>
-          <p id="mitre-explanation-en" style="font-size: 11.5px; color: #cbd5e1; margin-bottom: 4px;"></p>
-          <p id="mitre-explanation-hi" style="font-size: 11.5px; color: #94a3b8; font-style: italic;"></p>
+          <h4 style="font-size: 11px; color: #93c5fd; margin-bottom: 3px;">🤖 AI Forensic Breakdown (Bilingual / द्विभाषी):</h4>
+          <p id="mitre-explanation-en" style="font-size: 11px; color: #cbd5e1; margin-bottom: 3px;"></p>
+          <p id="mitre-explanation-hi" style="font-size: 11px; color: #94a3b8; font-style: italic;"></p>
         </div>
       </div>
 
@@ -567,7 +584,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <div class="card-title"><i data-lucide="shield" style="width: 15px; color: #34d399;"></i><div><small>COMPONENT 2</small><h3>RFC Header Protocol Authentication Matrix</h3></div></div>
         <div class="key-val"><span>SPF (Sender Policy Framework)</span><strong id="auth-spf"></strong></div>
         <div class="key-val"><span>DKIM (DomainKeys Identified Mail)</span><strong id="auth-dkim"></strong></div>
-        <div class="key-val"><span>DMARC (Domain-based Message Authentication)</span><strong id="auth-dmarc"></strong></div>
+        <div class="key-val"><span>DMARC (Domain-based Policy)</span><strong id="auth-dmarc"></strong></div>
         <div class="key-val"><span>Return-Path vs From: Alignment</span><strong id="auth-align"></strong></div>
         <div class="key-val"><span>Message-ID RFC 5322 Format</span><strong id="auth-msgid"></strong></div>
       </div>
@@ -586,7 +603,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       <!-- Tab: MASTER FORENSIC DOSSIER & COURT CERTIFICATE (Section 65B Compliant) -->
       <div id="tab-dossier" style="display: none;">
-        <div style="margin-bottom: 14px; display: flex; justify-content: flex-end; gap: 8px;">
+        <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
           <button class="primary-btn" onclick="window.print()"><i data-lucide="printer"></i> Print / Save Court PDF</button>
         </div>
 
@@ -596,13 +613,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div>
               <div class="dossier-gov-seal">DIGITAL FORENSIC EXAMINATION & CYBER CRIME INVESTIGATION DIVISION</div>
               <div class="dossier-main-title">EXPERT CERTIFICATE OF ELECTRONIC EVIDENCE</div>
-              <div style="font-size: 11px; color: #475569; font-weight: 700; margin-top: 2px;">
+              <div style="font-size: 10.5px; color: #475569; font-weight: 700; margin-top: 2px;">
                 Issued under Section 65B of Indian Evidence Act, 1872 & ISO/IEC 27037:2012 Forensic Standard
               </div>
             </div>
             <div style="text-align: right;">
               <span class="dossier-badge-court">LEGAL EVIDENCE // COURT ADMISSIBLE</span>
-              <div class="mono" style="font-size: 10px; color: #475569; margin-top: 5px; font-weight: 700;">REF NO: SIH2026-EVID-26106</div>
+              <div class="mono" style="font-size: 9.5px; color: #475569; margin-top: 4px; font-weight: 700;">REF NO: SIH2026-EVID-26106</div>
             </div>
           </div>
 
@@ -627,8 +644,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </tr>
           </table>
 
-          
-          <!-- Section 1.1: Blockchain Consortium Notary Record -->
+          <!-- Section 2: Blockchain Consortium Notary Record -->
           <div class="dossier-section-title">2. Decentralized Blockchain Notary & Merkle Proof</div>
           <table class="dossier-table">
             <tr>
@@ -691,8 +707,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
           <!-- Section 5: Forensic Findings & Score Breakdown -->
           <div class="dossier-section-title">5. Technical Evidence Findings & Score Ledger Breakdown</div>
-          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 12px; margin-bottom: 14px;">
-            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13.5px; margin-bottom: 8px; border-bottom: 1px solid #cbd5e1; padding-bottom: 6px;">
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 900; font-size: 13px; margin-bottom: 6px; border-bottom: 1px solid #cbd5e1; padding-bottom: 4px;">
               <span>PRIMARY CLASSIFICATION: <span id="dossier-verdict" style="color: #b91c1c;"></span></span>
               <span>CALCULATED THREAT SCORE: <span id="dossier-score" class="mono" style="color: #b91c1c;"></span>/100</span>
             </div>
@@ -703,7 +719,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <div class="dossier-section-title">6. Certificate Declaration Under Section 65B Indian Evidence Act</div>
           <div class="dossier-legal-box">
             I, the undersigned Certified Forensic Examiner, do hereby state and certify under Section 65B(4) of the Indian Evidence Act, 1872:
-            <ol style="margin-left: 18px; margin-top: 6px;">
+            <ol style="margin-left: 16px; margin-top: 4px;">
               <li>The digital electronic record described herein was ingested, parsed, and evaluated by automated deterministic forensic routines during lawful investigation operations.</li>
               <li>The cryptographic hash (SHA-256) recorded above verifies that the digital record has remained intact, authentic, and un-tampered since acquisition.</li>
               <li>The technical findings, relay reconstructions, and threat classifications accurately reflect the immutable RFC transport headers and data elements of the analyzed evidence.</li>
@@ -718,7 +734,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </div>
             <div style="text-align: right;">
               <p><strong>Forensic Examiner / Cyber Crime Officer</strong></p>
-              <p style="margin-top: 24px;">Signature: ___________________________</p>
+              <p style="margin-top: 18px;">Signature: ___________________________</p>
               <p>Date & Station Seal: ______________________</p>
             </div>
           </div>
@@ -728,11 +744,21 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </section>
   </div>
 
+  <!-- Mobile Floating Quick Summary Bar -->
+  <div class="mobile-floating-bar" id="mobile-summary-bar">
+    <div>
+      <span id="m-status-badge" style="font-size: 10px; font-weight: 800; color: #f87171;">HIGH RISK</span>
+      <div id="m-score-badge" style="font-size: 17px; font-weight: 800; color: #fff; font-family: 'DM Mono', monospace;">Score: 78/100</div>
+    </div>
+    <button class="primary-btn" style="padding: 8px 14px; font-size: 11px;" onclick="printDossier()">
+      <i data-lucide="printer" style="width: 12px;"></i> View PDF
+    </button>
+  </div>
+
   <script>
     lucide.createIcons();
     let currentAnalysis = null;
     let leafletMap = null;
-    let maskPII = false;
 
     // Dropzone Drag-and-Drop Event Listeners
     const dropzone = document.getElementById('eml-dropzone');
@@ -860,13 +886,18 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const score = data.threat?.risk_score || 0;
       const scoreColor = score >= 70 ? 'var(--danger)' : (score >= 35 ? 'var(--warning)' : 'var(--success)');
       
-      document.getElementById('res-score-badge').innerHTML = `${score}<span style="font-size: 15px; color: var(--text-muted);">/100</span>`;
+      document.getElementById('res-score-badge').innerHTML = `${score}<span style="font-size: 14px; color: var(--text-muted);">/100</span>`;
       document.getElementById('res-score-badge').style.color = scoreColor;
       document.getElementById('res-status-tag').innerText = data.threat?.status || "ANALYZED";
       document.getElementById('res-status-tag').style.color = scoreColor;
       document.getElementById('alert-banner-box').style.borderLeftColor = scoreColor;
       document.getElementById('res-verdict-title').innerText = data.category_analysis?.category_label || "Email Threat Assessment";
       document.getElementById('res-verdict-sub').innerText = data.category_analysis?.description || "";
+
+      // Mobile Floating Bar update
+      document.getElementById('m-status-badge').innerText = data.threat?.status || "ANALYZED";
+      document.getElementById('m-status-badge').style.color = scoreColor;
+      document.getElementById('m-score-badge').innerText = `Risk: ${score}/100`;
 
       // Overview Tab
       document.getElementById('cat-label').innerText = data.category_analysis?.category_label || "Phishing";
@@ -902,7 +933,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-left: 3px solid #ef4444; border-radius: 8px; padding: 10px;">
             <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
               <span style="font-weight: 800; font-size: 11.5px; color: #f87171;">PARAGRAPH #${p.paragraph_number} — THREAT DETECTED</span>
-              <span class="mono" style="font-size: 10.5px; color: #fbbf24;">Risk +${p.threat_score}</span>
+              <span class="mono" style="font-size: 10px; color: #fbbf24;">Risk +${p.threat_score}</span>
             </div>
             <p class="mono" style="font-size: 11px; color: #e2e8f0; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; margin-bottom: 6px;">
               "${p.text_snippet}"
@@ -952,7 +983,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       urlsList.innerHTML = (data.aitm_analysis || []).map(u => `
         <div class="key-val">
           <span class="mono">${u.display_domain || u.url}</span>
-          <button class="ghost-btn" style="color: #ef4444;" onclick="openQuickApp('${u.url}')"><i data-lucide="play" style="width: 10px;"></i> Detonate</button>
+          <button class="ghost-btn" style="color: #ef4444; padding: 4px 8px; font-size: 10px;" onclick="openQuickApp('${u.url}')"><i data-lucide="play" style="width: 10px;"></i> Detonate</button>
         </div>
       `).join('') || '<p style="color: var(--text-muted); font-size: 11px;">No embedded URLs extracted.</p>';
 
@@ -961,30 +992,22 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       filesList.innerHTML = (data.attachment_analysis || []).map(f => `
         <div class="key-val">
           <span><strong>${f.filename || 'attachment'}</strong> (${(f.size/1024).toFixed(1)} KB)</span>
-          <span class="mono" style="color: ${f.entropy > 7 ? 'var(--danger)' : 'var(--success)'}">Entropy: ${f.entropy || '5.2'} | Hash: ${(f.sha256 || 'N/A').slice(0,10)}...</span>
+          <span class="mono" style="color: ${f.entropy > 7 ? 'var(--danger)' : 'var(--success)'}">Entropy: ${f.entropy || '5.2'}</span>
         </div>
       `).join('') || '<p style="color: var(--text-muted); font-size: 11px;">No file attachments attached.</p>';
 
-      
-      
-      // Neo4j & Supabase Population
-      const n4j = data.neo4j_graph || {};
-      document.getElementById('neo4j-status-tag').innerText = n4j.neo4j_status || 'CYPHER READY';
-      document.getElementById('neo4j-nodes-tag').innerText = `${n4j.nodes_count || 5} Nodes · ${n4j.edges_count || 4} Edges`;
-      
-      const supa = data.supabase_sync || {};
-      document.getElementById('supabase-status-tag').innerText = supa.status || 'CONFIG READY';
-
-      // Blockchain Notary Population
+      // Blockchain & DB Population
       const bc = data.blockchain_notary || {};
-      document.getElementById('bc-block-num').innerText = '#' + (bc.block_number || '19,842,100');
+      document.getElementById('bc-block-num').innerText = '#' + (bc.block_number || '19,846,630');
       document.getElementById('bc-tx-hash').innerText = bc.transaction_hash || '0x7f8a9...';
       document.getElementById('bc-merkle-root').innerText = bc.merkle_root || '0x4a7c...';
 
-      // Dossier Blockchain
-      document.getElementById('dossier-bc-block').innerText = '#' + (bc.block_number || '19,842,100');
-      document.getElementById('dossier-bc-tx').innerText = bc.transaction_hash || '0x7f8a9...';
-      document.getElementById('dossier-bc-merkle').innerText = bc.merkle_root || '0x4a7c...';
+      const n4j = data.neo4j_graph || {};
+      document.getElementById('neo4j-status-tag').innerText = n4j.neo4j_status || 'LIVE SYNCED';
+      document.getElementById('neo4j-nodes-tag').innerText = `${n4j.nodes_count || 5} Nodes · ${n4j.edges_count || 4} Edges`;
+      
+      const supa = data.supabase_sync || {};
+      document.getElementById('supabase-status-tag').innerText = supa.status || 'LIVE CONNECTED';
 
       // Populate Master Section 65B Dossier
       const custody = data.legal_chain_of_custody || {};
@@ -999,6 +1022,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('dossier-origin').innerText = originStr;
       document.getElementById('dossier-campaign').innerText = data.graph_topology?.campaign_id || "CAMP-SUSPECT-ALPHA";
       
+      document.getElementById('dossier-bc-block').innerText = '#' + (bc.block_number || '19,846,630');
+      document.getElementById('dossier-bc-tx').innerText = bc.transaction_hash || '0x7f8a9...';
+      document.getElementById('dossier-bc-merkle').innerText = bc.merkle_root || '0x4a7c...';
+
       document.getElementById('dossier-spf').innerText = auth.spf || "NOT AVAILABLE";
       document.getElementById('dossier-dkim').innerText = auth.dkim || "NOT AVAILABLE";
       document.getElementById('dossier-dmarc').innerText = auth.dmarc || "NOT AVAILABLE";
@@ -1008,7 +1035,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('dossier-score').innerText = score;
 
       const dossierSignals = (data.threat?.signals || []).map(s => `
-        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 6px 0; font-size: 11.5px;">
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 5px 0; font-size: 11px;">
           <span>• ${s.label || s.code}</span>
           <strong style="color: #b91c1c;">+${s.weight || s.points || 15} pts</strong>
         </div>
@@ -1050,7 +1077,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         const markerColor = isOrigin ? '#ef4444' : (idx === hops.length - 1 ? '#10b981' : '#3b82f6');
 
         const circle = L.circleMarker([lat, lon], {
-          radius: isOrigin ? 10 : 7,
+          radius: isOrigin ? 9 : 6,
           fillColor: markerColor,
           color: '#fff',
           weight: 2,
@@ -1065,11 +1092,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <div class="hop-badge ${isOrigin ? 'origin' : (idx === hops.length-1 ? 'dest' : 'relay')}">${h.hop_number}</div>
             <div style="flex: 1;">
               <div style="display: flex; justify-content: space-between;">
-                <strong>${isOrigin ? '🚨 SUSPECT SENDER ORIGIN' : ('Transit MTA: ' + h.from_host)}</strong>
-                <span class="mono" style="color: #60a5fa;">${h.ip || 'Internal'}</span>
+                <strong>${isOrigin ? '🚨 SENDER ORIGIN' : ('Transit: ' + h.from_host)}</strong>
+                <span class="mono" style="color: #60a5fa; font-size: 10px;">${h.ip || 'Internal'}</span>
               </div>
-              <p style="font-size: 11px; color: var(--text-muted); margin-top: 2px;">
-                ${geo.country} (${geo.city}) · ASN: ${geo.asn} · ISP: ${geo.isp} · Flag: <strong style="color: ${isOrigin ? '#ef4444' : '#34d399'}">${geo.threat_flag}</strong>
+              <p style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
+                ${geo.country} (${geo.city}) · ASN: ${geo.asn} · Flag: <strong style="color: ${isOrigin ? '#ef4444' : '#34d399'}">${geo.threat_flag}</strong>
               </p>
             </div>
           </div>
@@ -1078,7 +1105,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       if (latlngs.length > 1) {
         L.polyline(latlngs, { color: '#38bdf8', weight: 3, dashArray: '6, 8', opacity: 0.8 }).addTo(leafletMap);
-        leafletMap.fitBounds(L.latLngBounds(latlngs), { padding: [30, 30] });
+        leafletMap.fitBounds(L.latLngBounds(latlngs), { padding: [25, 25] });
       }
     }
 
@@ -1088,14 +1115,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const svg = document.getElementById('attribution-svg');
       svg.innerHTML = '';
 
-      const width = svg.clientWidth || 800;
-      const height = svg.clientHeight || 380;
+      const width = svg.clientWidth || 360;
+      const height = svg.clientHeight || 320;
 
       const nodes = graph.nodes || [];
       const nodeCount = nodes.length || 1;
       const centerX = width / 2;
       const centerY = height / 2;
-      const radius = Math.min(width, height) / 2.8;
+      const radius = Math.min(width, height) / 2.7;
 
       const nodePositions = {};
       nodes.forEach((n, i) => {
@@ -1126,19 +1153,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', pos.x);
         circle.setAttribute('cy', pos.y);
-        circle.setAttribute('r', '20');
+        circle.setAttribute('r', '18');
         circle.setAttribute('fill', pos.color || '#3b82f6');
         circle.setAttribute('stroke', '#fff');
         circle.setAttribute('stroke-width', '2');
-        circle.setAttribute('filter', 'drop-shadow(0 0 8px rgba(59,130,246,0.6))');
+        circle.setAttribute('filter', 'drop-shadow(0 0 6px rgba(59,130,246,0.6))');
         g.appendChild(circle);
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', pos.x);
-        text.setAttribute('y', pos.y + 32);
+        text.setAttribute('y', pos.y + 28);
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('fill', '#edf2f7');
-        text.setAttribute('font-size', '10.5px');
+        text.setAttribute('font-size', '9.5px');
         text.setAttribute('font-weight', '700');
         text.textContent = (pos.label || pos.id).split('\n')[0];
         g.appendChild(text);
@@ -1147,7 +1174,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       });
     }
 
-    
     async function verifyBlockchainModal() {
       if (!currentAnalysis || !currentAnalysis.blockchain_notary) {
         alert('Please analyze an email first!');
@@ -1163,7 +1189,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    
     function viewCypherModal() {
       if (!currentAnalysis || !currentAnalysis.neo4j_graph) {
         alert('Please analyze an email first!');
