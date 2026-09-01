@@ -127,14 +127,16 @@ def _auth_snapshot(headers: Dict[str, str]) -> Dict[str, Any]:
 
 def _extract_domain(val: str) -> str:
     val = str(val or "").strip().lower()
+    # Extract email from within brackets if present e.g. "Name <email@domain.com>"
+    m = re.search(r"<([^>]+)>", val)
+    if m:
+        val = m.group(1).strip().lower()
     if "@" in val:
         val = val.split("@", 1)[-1]
-    if "<" in val and ">" in val:
-        m = re.search(r"<([^>]+)>", val)
-        if m and "@" in m.group(1):
-            val = m.group(1).split("@", 1)[-1]
-    val = re.sub(r"[\[\]\(\):]", "", val).strip()
+    val = re.sub(r"[\[\]\(\):<>\s]", "", val).strip()
     parts = [p for p in val.split(".") if p]
+    if len(parts) >= 3 and parts[-2] in {"ac", "co", "gov", "edu", "org", "net", "nic"}:
+        return ".".join(parts[-3:])
     return ".".join(parts[-2:]) if len(parts) >= 2 else (parts[0] if parts else "")
 
 
