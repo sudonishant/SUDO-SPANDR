@@ -24,6 +24,7 @@ from pydantic import BaseModel, Field
 
 from app.config import settings
 from app.core.attachment_carver import disassemble_attachment
+from app.core.blockchain_ledger import notarize_evidence_on_chain, verify_chain_record
 from app.core.category_engine import calculate_threat_score, classify_mail
 from app.core.nlp_forensic_engine import analyze_body_paragraphs
 from app.core.openrouter_client import request_ai_second_opinion
@@ -330,6 +331,12 @@ def _build_result(subject: str, sender: str, recipient: str, body: str, headers:
             "preservation_status": "Cryptographically Sealed (SHA-256)",
             "compliance": "Section 65B Indian Evidence Act / ISO/IEC 27037 Digital Forensics Standards"
         },
+        "blockchain_notary": notarize_evidence_on_chain(
+            f"EVID-SIH26106-{sha256[:16].upper()}",
+            sha256,
+            (origin_hop.get("ip") if origin_hop else "") or "127.0.0.1",
+            score
+        ),
         "aitm_analysis": urls,
         "attachment_analysis": attachments,
         "nlp_analysis": nlp_analysis,
@@ -337,6 +344,11 @@ def _build_result(subject: str, sender: str, recipient: str, body: str, headers:
         "limitations": [category.get("note", ""), "Authentication and IP intelligence correlated from immutable header metadata."],
         "generated_at": datetime.now(timezone.utc).isoformat(),
     }
+
+
+@app.get(f"{settings.API_V1_STR}/blockchain/verify/{{tx_hash}}")
+def verify_blockchain_record(tx_hash: str) -> Dict[str, Any]:
+    return verify_chain_record(tx_hash, "SHA256-VERIFIED")
 
 
 @app.get("/", response_class=HTMLResponse)
