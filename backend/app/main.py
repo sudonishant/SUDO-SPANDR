@@ -463,6 +463,7 @@ async def analyze_attachment_endpoint(file: UploadFile = File(...)) -> Dict[str,
 
 
 @app.post(f"{settings.API_V1_STR}/upload")
+@app.post(f"{settings.API_V1_STR}/analyze-eml")
 async def upload_email(file: UploadFile = File(...)) -> Dict[str, Any]:
     filename = file.filename or "uploaded.eml"
     extension = filename.lower().rsplit(".", 1)[-1] if "." in filename else ""
