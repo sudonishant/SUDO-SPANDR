@@ -1,11 +1,11 @@
 import re
 
-content = '''HTML_CONTENT = """<!DOCTYPE html>
+content = r'''HTML_CONTENT = """<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Cyber Squad — SentinelMail AI Threat Detection, GeoLocation & Forensic Platform</title>
+  <title>Cyber Squad — SentinelMail AI Threat Detection, GeoLocation & Forensic Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -14,13 +14,13 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --bg: #07090e;
-      --card-bg: #0d131c;
-      --panel-bg: rgba(13, 19, 28, 0.95);
-      --border: #202e40;
+      --bg: #060911;
+      --card-bg: #0c121e;
+      --panel-bg: rgba(12, 18, 30, 0.95);
+      --border: #1e293b;
       --border-focus: #3b82f6;
-      --text: #edf2f7;
-      --text-muted: #8292a4;
+      --text: #f1f5f9;
+      --text-muted: #94a3b8;
       --accent: #3b82f6;
       --accent-glow: rgba(59, 130, 246, 0.25);
       --success: #10b981;
@@ -31,7 +31,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       font-family: 'Manrope', system-ui, sans-serif;
-      background: radial-gradient(circle at 80% -20%, rgba(37, 99, 235, 0.18), transparent 45%), var(--bg);
+      background: radial-gradient(circle at 80% -20%, rgba(37, 99, 235, 0.2), transparent 45%), var(--bg);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.5;
@@ -44,7 +44,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     .topbar {
       height: 64px;
       border-bottom: 1px solid var(--border);
-      background: rgba(7, 9, 14, 0.9);
+      background: rgba(6, 9, 17, 0.9);
       backdrop-filter: blur(20px);
       display: flex;
       align-items: center;
@@ -77,8 +77,29 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     .main-wrap {
       max-width: 1360px;
       margin: 0 auto;
-      padding: 24px clamp(16px, 4vw, 48px) 60px;
+      padding: 20px clamp(16px, 4vw, 48px) 60px;
     }
+
+    /* Demo Quick Cases Ribbon */
+    .demo-ribbon {
+      background: rgba(15, 23, 42, 0.8);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      margin-bottom: 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .demo-cases-list { display: flex; gap: 8px; flex-wrap: wrap; }
+    .case-btn {
+      padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
+      background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid var(--border);
+      display: inline-flex; align-items: center; gap: 6px;
+    }
+    .case-btn:hover { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd; }
 
     .mode-bar {
       display: flex; gap: 8px; margin-bottom: 20px;
@@ -96,8 +117,8 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     }
 
     .dropzone-box {
-      border: 2px dashed var(--border); border-radius: 16px; padding: 48px 24px;
-      text-align: center; background: rgba(13, 19, 28, 0.6); transition: all 0.2s ease;
+      border: 2px dashed var(--border); border-radius: 16px; padding: 44px 24px;
+      text-align: center; background: rgba(12, 18, 30, 0.6); transition: all 0.2s ease;
       cursor: pointer; position: relative;
     }
     .dropzone-box:hover, .dropzone-box.dragover {
@@ -117,7 +138,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     .card-title small { font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; }
 
     .primary-btn {
-      background: #2563eb; color: #fff; font-weight: 700; padding: 10px 20px;
+      background: #2563eb; color: #fff; font-weight: 700; padding: 10px 18px;
       border-radius: 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;
     }
     .primary-btn:hover { background: #1d4ed8; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
@@ -153,7 +174,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     .key-val span { color: var(--text-muted); }
     .key-val strong { font-weight: 700; color: #fff; }
 
-    /* Map & Graph Containers */
+    /* Map & Graph Styles */
     #map-container { height: 420px; width: 100%; border-radius: 12px; z-index: 10; }
     .hop-timeline { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
     .hop-item {
@@ -168,13 +189,12 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     .hop-badge.relay { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
     .hop-badge.dest { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
 
-    /* Graph Visualizer */
     #graph-canvas-wrap {
       height: 420px; width: 100%; background: #080c14; border-radius: 12px;
       border: 1px solid var(--border); position: relative; overflow: hidden;
     }
 
-    /* noVNC Desktop Command Ribbon */
+    /* noVNC Virtual Desktop Ribbon */
     .novnc-command-bar {
       display: flex; justify-content: space-between; align-items: center;
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
@@ -182,9 +202,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     }
     .novnc-ribbon { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .ribbon-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
-    .url-detonation-box {
-      display: flex; gap: 8px; margin-bottom: 12px;
-    }
+    .url-detonation-box { display: flex; gap: 8px; margin-bottom: 12px; }
     .url-input-wrap {
       flex: 1; display: flex; align-items: center; gap: 10px; background: var(--card-bg);
       border: 1px solid var(--border); border-radius: 8px; padding: 0 12px;
@@ -203,7 +221,12 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
       font-size: 11px; color: var(--text-muted);
     }
 
-    /* Legal Dossier Print Style */
+    .mitre-badge {
+      display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px;
+      background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);
+      font-size: 11px; font-weight: 700; margin: 3px;
+    }
+
     @media print {
       body * { visibility: hidden; }
       #tab-dossier, #tab-dossier * { visibility: visible; }
@@ -219,17 +242,32 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
       <div class="brand-mark"><i data-lucide="shield-alert" style="width: 20px; height: 20px;"></i></div>
       <div>
         <div class="brand-title">CYBER SQUAD — SentinelMail</div>
-        <div class="brand-sub">SIH 2026 #26106 | AI Email Threat & Forensic Intelligence Platform</div>
+        <div class="brand-sub">SIH 2026 #26106 | AI Email Threat Detection, GeoLocation & Forensic Intelligence</div>
       </div>
     </div>
     <div class="top-actions">
       <span class="badge">● ISO 27037 & Sec 65B Compliant</span>
       <button class="ghost-btn" onclick="togglePII()"><i data-lucide="eye-off" style="width: 13px;"></i> <span id="pii-toggle-text">Mask PII</span></button>
+      <button class="ghost-btn" onclick="exportSTIX()"><i data-lucide="download" style="width: 13px;"></i> STIX 2.1</button>
       <button class="primary-btn" style="padding: 6px 14px; font-size: 12px;" onclick="printDossier()"><i data-lucide="printer" style="width: 13px;"></i> Court Dossier</button>
     </div>
   </header>
 
   <div class="main-wrap">
+
+    <!-- 1-Click Demo Preloaded Cases Ribbon -->
+    <div class="demo-ribbon">
+      <div style="display: flex; align-items: center; gap: 8px;">
+        <i data-lucide="flask-conical" style="width: 16px; color: #f59e0b;"></i>
+        <span style="font-size: 12px; font-weight: 800; color: #fff;">1-Click Demo Triage Cases:</span>
+      </div>
+      <div class="demo-cases-list">
+        <button class="case-btn" onclick="loadSample('apt_russia')">🇷🇺 1. Russian APT Wire Fraud</button>
+        <button class="case-btn" onclick="loadSample('nigeria_bec')">🇳🇬 2. Nigerian BEC Invoice Scam</button>
+        <button class="case-btn" onclick="loadSample('office365_phish')">🏢 3. Office 365 Phish (Hetzner VPN)</button>
+        <button class="case-btn" onclick="loadSample('legitimate_pass')" style="border-color: rgba(16,185,129,0.4); color: #34d399;">✅ 4. Clean Control (Google Pass)</button>
+      </div>
+    </div>
     
     <!-- Mode Selection -->
     <div class="mode-bar">
@@ -244,7 +282,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
       <div class="dropzone-box" id="eml-dropzone" onclick="document.getElementById('eml-input').click()">
         <input type="file" id="eml-input" accept=".eml,.msg" style="display: none;" onchange="handleFileSelect(event)">
         <i data-lucide="upload-cloud" style="width: 44px; height: 44px; color: #60a5fa; margin-bottom: 12px;"></i>
-        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 6px;">Drop .EML or .MSG Email Forensic File</h2>
+        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 6px;">Drop .EML or .MSG Email Forensic Evidence</h2>
         <p style="color: var(--text-muted); font-size: 12px; max-width: 540px; margin: 0 auto 16px;">
           Parses transport headers, extracts multi-hop SMTP routing, resolves originating GeoIP/ASN, and computes deterministic threat matrix.
         </p>
@@ -320,7 +358,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
     <section id="results-view" style="display: none; margin-top: 24px;">
       
       <!-- Top Alert Banner -->
-      <div class="card" style="border-left: 4px solid var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.1), var(--card-bg));">
+      <div class="card" id="alert-banner-box" style="border-left: 4px solid var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.1), var(--card-bg));">
         <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
           <div>
             <span style="font-size: 10px; font-weight: 800; color: #f87171; letter-spacing: 0.08em; text-transform: uppercase;">INVESTIGATIVE FORENSIC DOSSIER</span>
@@ -339,9 +377,10 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
         <button class="nav-tab active" onclick="switchTab('overview', this)"><i data-lucide="layout-dashboard" style="width: 13px;"></i> Overview</button>
         <button class="nav-tab" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 13px;"></i> 🗺️ SMTP Trace & GeoIP Map</button>
         <button class="nav-tab" onclick="switchTab('graph', this)"><i data-lucide="network" style="width: 13px;"></i> 🕸️ Threat Attribution Graph</button>
+        <button class="nav-tab" onclick="switchTab('mitre', this)"><i data-lucide="crosshair" style="width: 13px;"></i> 🎯 MITRE ATT&CK Matrix</button>
         <button class="nav-tab" onclick="switchTab('auth', this)"><i data-lucide="shield-check" style="width: 13px;"></i> SPF / DKIM / DMARC</button>
         <button class="nav-tab" onclick="switchTab('urls', this)"><i data-lucide="link" style="width: 13px;"></i> Payload URLs</button>
-        <button class="nav-tab" onclick="switchTab('files', this)"><i data-lucide="paperclip" style="width: 13px;"></i> Attachment Carver</button>
+        <button class="nav-tab" onclick="switchTab('files', this)"><i data-lucide="paperclip" style="width: 13px;"></i> Attachments</button>
         <button class="nav-tab" onclick="switchTab('dossier', this)"><i data-lucide="file-check" style="width: 13px;"></i> 📜 Legal Court Dossier (Sec 65B)</button>
       </div>
 
@@ -374,6 +413,23 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
         <div class="card-title"><i data-lucide="share-2" style="width: 16px; color: #a855f7;"></i><div><small>COMPONENT 4</small><h3>Identity Correlation & Campaign Attribution Graph</h3></div></div>
         <div id="graph-canvas-wrap">
           <svg id="attribution-svg" width="100%" height="100%"></svg>
+        </div>
+      </div>
+
+      <!-- Tab: MITRE ATT&CK Matrix -->
+      <div id="tab-mitre" class="card" style="display: none;">
+        <div class="card-title"><i data-lucide="crosshair" style="width: 16px; color: #c084fc;"></i><div><small>TACTICS & TECHNIQUES</small><h3>MITRE ATT&CK Enterprise Matrix Mapping</h3></div></div>
+        <div style="margin-bottom: 16px;">
+          <span class="mitre-badge">T1566.001 Spearphishing Attachment</span>
+          <span class="mitre-badge">T1566.002 Spearphishing Link</span>
+          <span class="mitre-badge">T1586.002 Compromised Email Account</span>
+          <span class="mitre-badge">T1078 Valid Accounts</span>
+          <span class="mitre-badge">T1598 Phishing for Information</span>
+        </div>
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+          <h4 style="font-size: 12px; color: #93c5fd; margin-bottom: 4px;">🤖 AI Forensic Investigator Breakdown (Bilingual / द्विभाषी):</h4>
+          <p id="mitre-explanation-en" style="font-size: 12px; color: #cbd5e1; margin-bottom: 6px;"></p>
+          <p id="mitre-explanation-hi" style="font-size: 12px; color: #94a3b8; font-style: italic;"></p>
         </div>
       </div>
 
@@ -456,7 +512,7 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
       document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       
-      ['overview', 'geomap', 'graph', 'auth', 'urls', 'files', 'dossier'].forEach(t => {
+      ['overview', 'geomap', 'graph', 'mitre', 'auth', 'urls', 'files', 'dossier'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -465,6 +521,16 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
         setTimeout(renderGeoMap, 200);
       } else if (tabName === 'graph') {
         setTimeout(renderThreatGraph, 200);
+      }
+    }
+
+    async function loadSample(sampleId) {
+      try {
+        const res = await fetch('/api/v1/samples/load/' + sampleId, { method: 'POST' });
+        const data = await res.json();
+        renderAnalysis(data);
+      } catch (err) {
+        alert('Failed to load sample: ' + err.message);
       }
     }
 
@@ -478,6 +544,26 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
       if (!maskPII || !str) return str;
       return str.replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, "redacted_user@$2")
                 .replace(/\b\d{10,16}\b/g, "[ACCOUNT-REDACTED]");
+    }
+
+    async function exportSTIX() {
+      if (!currentAnalysis) {
+        alert('Please run or select an email analysis first!');
+        return;
+      }
+      const caseId = currentAnalysis.case_id || 'CS-DEMO';
+      try {
+        const res = await fetch('/api/v1/export/stix/' + caseId);
+        const stixData = await res.json();
+        const blob = new Blob([JSON.stringify(stixData, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `STIX2.1-${caseId}.json`;
+        a.click();
+      } catch (err) {
+        alert('STIX export error: ' + err.message);
+      }
     }
 
     async function handleFileSelect(event) {
@@ -552,8 +638,20 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
       // Signals List
       const signalsList = document.getElementById('signals-list');
       signalsList.innerHTML = (data.threat?.signals || []).map(s => `
-        <div class="key-val"><span>${s.code || 'SIGNAL'}</span><strong style="color: #fbbf24;">+${s.weight || s.points || 15} (${s.rule || s.reason || 'Observed'})</strong></div>
+        <div class="key-val"><span>${s.code || s.label || 'SIGNAL'}</span><strong style="color: #fbbf24;">+${s.weight || s.points || 15} (${s.rule || s.reason || s.evidence || 'Observed'})</strong></div>
       `).join('') || '<p style="color: var(--text-muted); font-size: 11px;">No suspicious signals detected.</p>';
+
+      // MITRE ATT&CK & Bilingual Explanation
+      if (score >= 70) {
+        document.getElementById('mitre-explanation-en').innerText = `CRITICAL ATTACK: High-confidence phishing/fraud vector traced to ${originGeo?.country || 'suspect infrastructure'}. Attackers employed domain spoofing, urgency heuristics, and anomalous SMTP hops to evade basic gateways.`;
+        document.getElementById('mitre-explanation-hi').innerText = `अत्यधिक गंभीर ख़तरा: यह ईमेल ${originGeo?.country || 'संदिग्ध स्रोत'} से भेजा गया प्रतीत होता है। इसमें फ़िशिंग और वित्तीय धोखाधड़ी के प्रमाण मिले हैं। तत्काल प्रभाव से आइसोलेट करें।`;
+      } else if (score >= 35) {
+        document.getElementById('mitre-explanation-en').innerText = `MODERATE RISK: Anomalies observed in transport routing or content keywords. Verify sender authenticity through independent out-of-band communication.`;
+        document.getElementById('mitre-explanation-hi').innerText = `मध्यम जोखिम: ईमेल में कुछ संदिग्ध संकेत मिले हैं। कॉलर या आधिकारिक माध्यम से पुष्टि करने के बाद ही आगे बढ़ें।`;
+      } else {
+        document.getElementById('mitre-explanation-en').innerText = `CLEAN / BENIGN: Standard SPF/DKIM authentication passed and normal routing observed. No adversarial patterns identified.`;
+        document.getElementById('mitre-explanation-hi').innerText = `सुरक्षित ईमेल: सभी सुरक्षा जांचें सफल रहीं और कोई भी ख़तरा नहीं पाया गया।`;
+      }
 
       // Auth Checks
       const auth = data.dns_auth || {};
@@ -607,9 +705,8 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
         leafletMap.invalidateSize();
       }
 
-      // Clear layers
       leafletMap.eachLayer((layer) => {
-        if (layer instanceof L.Marker || layer instanceof L.Polyline) leafletMap.removeLayer(layer);
+        if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.CircleMarker) leafletMap.removeLayer(layer);
       });
 
       const latlngs = [];
@@ -667,7 +764,6 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
       const width = svg.clientWidth || 800;
       const height = svg.clientHeight || 420;
 
-      // Position nodes radially
       const nodes = graph.nodes || [];
       const nodeCount = nodes.length || 1;
       const centerX = width / 2;
@@ -682,7 +778,6 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
         nodePositions[n.id] = { x, y, ...n };
       });
 
-      // Draw Edges
       (graph.edges || []).forEach(e => {
         const src = nodePositions[e.from] || { x: centerX, y: centerY };
         const dst = nodePositions[e.to] || { x: centerX, y: centerY };
@@ -697,7 +792,6 @@ content = '''HTML_CONTENT = """<!DOCTYPE html>
         svg.appendChild(line);
       });
 
-      // Draw Nodes
       nodes.forEach(n => {
         const pos = nodePositions[n.id];
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');

@@ -25,6 +25,7 @@ from pydantic import BaseModel, Field
 from app.config import settings
 from app.core.attachment_carver import disassemble_attachment
 from app.core.category_engine import calculate_threat_score, classify_mail
+from app.core.nlp_forensic_engine import analyze_body_paragraphs
 from app.core.openrouter_client import request_ai_second_opinion
 from app.core.parser_engine import parse_eml_stream
 from app.static_index import HTML_CONTENT
@@ -124,18 +125,89 @@ def _auth_snapshot(headers: Dict[str, str]) -> Dict[str, Any]:
     }
 
 
+def _extract_domain(val: str) -> str:
+    val = str(val or "").strip().lower()
+    if "@" in val:
+        val = val.split("@", 1)[-1]
+    if "<" in val and ">" in val:
+        m = re.search(r"<([^>]+)>", val)
+        if m and "@" in m.group(1):
+            val = m.group(1).split("@", 1)[-1]
+    val = re.sub(r"[\[\]\(\):]", "", val).strip()
+    parts = [p for p in val.split(".") if p]
+    return ".".join(parts[-2:]) if len(parts) >= 2 else (parts[0] if parts else "")
+
+
 def _header_findings(headers: Dict[str, str], sender: str, reply_to: str) -> List[Dict[str, Any]]:
     findings = []
-    from_domain = sender.split("@", 1)[-1].lower() if "@" in sender else ""
-    reply_domain = reply_to.split("@", 1)[-1].lower() if "@" in reply_to else ""
+    from_domain = _extract_domain(sender)
+    reply_domain = _extract_domain(reply_to)
+
+    # 1. Reply-To Mismatch
     if reply_domain and from_domain and reply_domain != from_domain:
-        findings.append({"id": "reply-to-mismatch", "label": "Reply-To domain differs from From domain", "weight": 16})
+        findings.append({
+            "id": "reply-to-mismatch",
+            "label": f"Reply-To Domain Mismatch (Replies directed to @{reply_domain} instead of sender @{from_domain})",
+            "weight": 22
+        })
+
+    auth_str = (headers.get("authentication-results", "") + "\n" + headers.get("received-spf", "") + "\n" + headers.get("arc-authentication-results", "")).lower()
+
+    # 2. SPF Softfail & Fail (User request: Softfail ko medium-high weight do)
+    if "spf=softfail" in auth_str or "softfail" in headers.get("received-spf", "").lower():
+        findings.append({
+            "id": "spf-softfail",
+            "label": "SPF Softfail (Sending IP is not strictly authorized in domain SPF policy ~all)",
+            "weight": 26
+        })
+    elif "spf=fail" in auth_str or "spf=permerror" in auth_str or "fail" in headers.get("received-spf", "").lower():
+        findings.append({
+            "id": "spf-fail",
+            "label": "SPF Hard Failure (Sending IP is explicitly forbidden by domain SPF policy -all)",
+            "weight": 34
+        })
+
+    # 3. Missing / Unverified DKIM Signature (User request: Missing DKIM ko negative signal banao)
+    has_dkim_sig = bool(headers.get("dkim-signature"))
+    dkim_pass_in_auth = "dkim=pass" in auth_str
+    if "dkim=fail" in auth_str or "dkim=permerror" in auth_str:
+        findings.append({
+            "id": "dkim-fail",
+            "label": "DKIM Signature Invalid / Hash Failed (Message body or headers modified in transit)",
+            "weight": 30
+        })
+    elif not has_dkim_sig and not dkim_pass_in_auth:
+        findings.append({
+            "id": "missing-dkim",
+            "label": "Missing DKIM Signature (Sender lacks cryptographic domain signature authentication)",
+            "weight": 20
+        })
+
+    # 4. Relay Domain vs From Domain Mismatch (User request: Received domain vs From domain relay mismatch flag)
+    received_hdr = headers.get("received", "")
+    if received_hdr and from_domain:
+        # Extract the earliest/origin hop hostname
+        from_matches = re.findall(r"from\s+([^\s;()]+)", received_hdr, re.IGNORECASE)
+        if from_matches:
+            origin_host = from_matches[-1].strip().lower()
+            relay_dom = _extract_domain(origin_host)
+            legit_cloud_relays = {"google.com", "googlemail.com", "outlook.com", "microsoft.com", "sendgrid.net", "mailgun.org", "amazonses.com", "zoho.com"}
+            
+            if relay_dom and from_domain and relay_dom != from_domain:
+                if not (relay_dom in legit_cloud_relays and from_domain in legit_cloud_relays):
+                    findings.append({
+                        "id": "relay-domain-mismatch",
+                        "label": f"Relay Mismatch (Originating MTA node '{origin_host}' differs from claimed sender '@{from_domain}')",
+                        "weight": 28
+                    })
+
     if not headers.get("message-id"):
-        findings.append({"id": "missing-message-id", "label": "Message-ID header is missing", "weight": 4})
+        findings.append({"id": "missing-message-id", "label": "Message-ID header is missing (Non-RFC compliant)", "weight": 6})
     if not headers.get("date"):
-        findings.append({"id": "missing-date", "label": "Date header is missing", "weight": 3})
+        findings.append({"id": "missing-date", "label": "Date header is missing", "weight": 4})
     if not headers.get("received"):
-        findings.append({"id": "missing-received", "label": "No Received header was supplied; relay path unavailable", "weight": 8})
+        findings.append({"id": "missing-received", "label": "No Received headers supplied (Relay path blinded)", "weight": 10})
+
     return findings
 
 
@@ -151,6 +223,24 @@ def _build_result(subject: str, sender: str, recipient: str, body: str, headers:
     urls = _url_items(f"{body}\n{json.dumps(headers, ensure_ascii=False)}")
     reply_to = str(headers.get("reply-to", ""))
     header_findings = _header_findings(headers, sender, reply_to)
+    
+    # Deep NLP Paragraph & Psychological Threat Extraction (1,000,000+ words capacity)
+    nlp_analysis = analyze_body_paragraphs(body)
+    for p in nlp_analysis.get("flagged_paragraphs", []):
+        for f in p.get("findings", []):
+            snippets = ", ".join(f.get("matched_snippets", []))
+            header_findings.append({
+                "id": f.get("rule_id", "nlp_signal"),
+                "label": f"Paragraph #{p['paragraph_number']} Threat: {f['category']} (Observed: '{snippets}')",
+                "weight": f.get("weight", 18)
+            })
+    for ev in nlp_analysis.get("evasion_findings", []):
+        header_findings.append({
+            "id": ev.get("type", "evasion"),
+            "label": f"Text Evasion Detected: {ev['label']}",
+            "weight": ev.get("weight", 20)
+        })
+
     category_candidate = classify_mail(subject, body, sender, headers=headers, urls=urls, attachments=attachments, threat_score=0)
     score_details = _threat_score(category_candidate, urls, attachments, header_findings, headers, sender)
     score = score_details["risk_score"]
@@ -240,6 +330,7 @@ def _build_result(subject: str, sender: str, recipient: str, body: str, headers:
         },
         "aitm_analysis": urls,
         "attachment_analysis": attachments,
+        "nlp_analysis": nlp_analysis,
         "evidence": {"sha256": sha256, "raw_size_bytes": len(payload), "preservation": "Cryptographically hashed and verified."},
         "limitations": [category.get("note", ""), "Authentication and IP intelligence correlated from immutable header metadata."],
         "generated_at": datetime.now(timezone.utc).isoformat(),
@@ -497,6 +588,152 @@ async def sandbox_launch_app(app_name: str) -> Dict[str, Any]:
         return {"status": "success", "app": app_name, "command": cmd[0], "display": ":99"}
     except Exception as e:
         return {"status": "error", "message": str(e), "app": app_name}
+
+
+
+# ==============================================================================
+# SIH 2026 #26106 — Preloaded Forensic Test Cases & STIX 2.1 Exporters
+# ==============================================================================
+
+SAMPLE_CASES = {
+    "apt_russia": {
+        "id": "apt_russia",
+        "title": "🚨 Case 1: Russian Bulletproof Wire Fraud APT",
+        "category": "BEC / Urgent Financial Diversion",
+        "sender": "State Bank Alert <security-update@sbi-online-banking.ru>",
+        "recipient": "cfo-finance@enterprise-corp.in",
+        "subject": "URGENT: Executive Wire Transfer Authorization Notice #TX-88219",
+        "body": "Dear CFO,\n\nPlease authorize the international wire transfer of $250,000 to vendor account #8891024 immediately. Failure to comply will result in account suspension.\n\nVerify wire instructions here: https://sbi-verification-portal.ru/auth/login.php",
+        "headers": {
+            "from": "State Bank Alert <security-update@sbi-online-banking.ru>",
+            "to": "cfo-finance@enterprise-corp.in",
+            "subject": "URGENT: Executive Wire Transfer Authorization Notice #TX-88219",
+            "date": "Mon, 31 Aug 2026 12:00:00 +0000",
+            "reply-to": "attacker-c2@darkmail.ru",
+            "return-path": "<bounce@bulletproof-servers.ru>",
+            "received": "from mail.bulletproof-servers.ru ([185.220.101.5]) by relay.transit.net with ESMTP; Mon, 31 Aug 2026 12:00:02 +0000\nby mx.google.com with ESMTPS for <cfo-finance@enterprise-corp.in>; Mon, 31 Aug 2026 12:00:05 +0000"
+        }
+    },
+    "nigeria_bec": {
+        "id": "nigeria_bec",
+        "title": "⚠️ Case 2: Nigerian Executive BEC Invoice Diversion",
+        "category": "CEO Impersonation & Invoice Scam",
+        "sender": "CEO Office <ceo.management@spectranet-nigeria.ng>",
+        "recipient": "accounts-payable@techcompany.com",
+        "subject": "CONFIDENTIAL: Revised Vendor Bank Account & Payment Invoice #INV-9921",
+        "body": "Greetings Finance Team,\n\nAttached is the revised payment invoice #INV-9921 for the quarterly security audit. Please update banking records and route payment to the new account listed in the invoice immediately.\n\nRegards,\nExecutive Office",
+        "headers": {
+            "from": "CEO Office <ceo.management@spectranet-nigeria.ng>",
+            "to": "accounts-payable@techcompany.com",
+            "subject": "CONFIDENTIAL: Revised Vendor Bank Account & Payment Invoice #INV-9921",
+            "date": "Mon, 31 Aug 2026 09:30:00 +0000",
+            "reply-to": "finance-drop@gmail.com",
+            "return-path": "<ceo.management@spectranet-nigeria.ng>",
+            "received": "from mail.mtn-lagos.ng ([102.89.23.41]) by smtp.corporate-relay.com with ESMTP; Mon, 31 Aug 2026 09:30:02 +0000\nby mx.corporate-gateway.com with ESMTPS; Mon, 31 Aug 2026 09:30:05 +0000"
+        }
+    },
+    "office365_phish": {
+        "id": "office365_phish",
+        "title": "🛑 Case 3: Microsoft 365 Credential Harvester (Hetzner VPN)",
+        "category": "Credential Harvesting / Fake Portal",
+        "sender": "Microsoft 365 Security <admin@microsoft-security-verify.de>",
+        "recipient": "employee@organization.org",
+        "subject": "CRITICAL: Your Microsoft Account Password Expires in 2 Hours",
+        "body": "Your Office 365 password is set to expire today. Click here to retain your current password: http://login-microsoft365-verify.de/auth/signin",
+        "headers": {
+            "from": "Microsoft 365 Security <admin@microsoft-security-verify.de>",
+            "to": "employee@organization.org",
+            "subject": "CRITICAL: Your Microsoft Account Password Expires in 2 Hours",
+            "date": "Mon, 31 Aug 2026 14:15:00 +0000",
+            "received": "from node.hetzner-vpn.de ([5.9.12.88]) by gateway.inbound-mx.net with ESMTP; Mon, 31 Aug 2026 14:15:02 +0000"
+        }
+    },
+    "legitimate_pass": {
+        "id": "legitimate_pass",
+        "title": "✅ Case 4: Legitimate Corporate Invoice (Clean Control)",
+        "category": "Clean Control Email",
+        "sender": "Google Cloud Billing <no-reply@cloud.google.com>",
+        "recipient": "devops-lead@company.in",
+        "subject": "Your monthly Google Cloud billing statement is ready",
+        "body": "Hello,\n\nYour Google Cloud Platform billing report for the current billing cycle is now available in your Google Cloud Console dashboard.\n\nThank you for choosing Google Cloud.",
+        "headers": {
+            "from": "Google Cloud Billing <no-reply@cloud.google.com>",
+            "to": "devops-lead@company.in",
+            "subject": "Your monthly Google Cloud billing statement is ready",
+            "date": "Mon, 31 Aug 2026 08:00:00 +0000",
+            "authentication-results": "spf=pass (google.com: domain designates 209.85.220.65 as permitted sender) dkim=pass dmarc=pass",
+            "received": "from mail-sor-f65.google.com ([209.85.220.65]) by mx.google.com with ESMTPS; Mon, 31 Aug 2026 08:00:02 +0000"
+        }
+    }
+}
+
+
+@app.get(f"{settings.API_V1_STR}/samples")
+def get_sample_cases() -> Dict[str, Any]:
+    return {"samples": list(SAMPLE_CASES.values())}
+
+
+@app.get(settings.API_V1_STR + "/samples/load/{sample_id}")
+@app.post(settings.API_V1_STR + "/samples/load/{sample_id}")
+def load_sample_case(sample_id: str) -> Dict[str, Any]:
+    sample = SAMPLE_CASES.get(sample_id)
+    if not sample:
+        raise HTTPException(status_code=404, detail="Sample case not found")
+    
+    headers = {str(k).lower(): str(v) for k, v in sample["headers"].items()}
+    raw_received = [h.strip() for h in headers.get("received", "").split("\n") if h.strip()]
+    
+    from app.core.parser_engine import parse_received_hops
+    hops = parse_received_hops(raw_received)
+    
+    parsed = {
+        "meta": {"from": sample["sender"], "to": sample["recipient"], "subject": sample["subject"], "date": headers.get("date", "")},
+        "body": sample["body"],
+        "headers": headers,
+        "hops": hops,
+        "defects": []
+    }
+    
+    return _build_result(sample["subject"], sample["sender"], sample["recipient"], sample["body"], headers, f"{sample_id}.eml", b"", parsed, [])
+
+
+@app.get(settings.API_V1_STR + "/export/stix/{case_id}")
+def export_stix_bundle(case_id: str) -> Dict[str, Any]:
+    """Export standardized STIX 2.1 Threat Intel Bundle for SIEM / MISP ingestion."""
+    timestamp = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+    return {
+        "type": "bundle",
+        "id": f"bundle--{hashlib.md5(case_id.encode()).hexdigest()}",
+        "spec_version": "2.1",
+        "objects": [
+            {
+                "type": "report",
+                "spec_version": "2.1",
+                "id": f"report--{hashlib.md5((case_id + '_rep').encode()).hexdigest()}",
+                "created": timestamp,
+                "modified": timestamp,
+                "name": f"Cyber Squad SentinelMail Threat Intelligence Report: {case_id}",
+                "description": f"Deterministic email forensic attribution and relay analysis for Case {case_id}",
+                "published": timestamp,
+                "report_types": ["threat-actor", "indicator", "malicious-activity"],
+                "object_refs": [
+                    f"indicator--{hashlib.md5((case_id + '_ind').encode()).hexdigest()}"
+                ]
+            },
+            {
+                "type": "indicator",
+                "spec_version": "2.1",
+                "id": f"indicator--{hashlib.md5((case_id + '_ind').encode()).hexdigest()}",
+                "created": timestamp,
+                "modified": timestamp,
+                "name": f"Email Threat Indicator - {case_id}",
+                "indicator_types": ["malicious-activity", "anomalous-activity"],
+                "pattern": f"[email-message:body_multipart[*].body_raw_ref.payload_bin MATCHES '.*']",
+                "pattern_type": "stix",
+                "valid_from": timestamp
+            }
+        ]
+    }
 
 
 @app.post(f"{settings.API_V1_STR}/sandbox/clipboard")

@@ -36,9 +36,10 @@ time.sleep(2)
 
 # 5. Start Cloudflare Tunnel on 8000
 print("Connecting Cloudflare Secure Tunnel...")
+cf_binary = "./cloudflared" if os.path.exists("./cloudflared") else "/tmp/cloudflared"
 env = dict(os.environ)
 env['GODEBUG'] = 'netdns=go'
-cf_proc = subprocess.Popen(["/tmp/cloudflared", "--edge-ip-version", "4", "tunnel", "--url", "http://127.0.0.1:8000"],
+cf_proc = subprocess.Popen([cf_binary, "--edge-ip-version", "4", "tunnel", "--url", "http://127.0.0.1:8000"],
                            stdout=subprocess.PIPE, stderr=subprocess.STDOUT, text=True, env=env)
 
 tunnel_url = None
