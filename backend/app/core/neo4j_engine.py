@@ -7,8 +7,8 @@ import os
 from typing import Any, Dict, List, Optional
 
 
-NEO4J_URI = os.getenv("NEO4J_URI", "bolt://localhost:7687")
-NEO4J_USER = os.getenv("NEO4J_USER", "neo4j")
+NEO4J_URI = os.getenv("NEO4J_URI", "neo4j+s://afeb4bee.databases.neo4j.io")
+NEO4J_USER = os.getenv("NEO4J_USER", "afeb4bee")
 NEO4J_PASSWORD = os.getenv("NEO4J_PASSWORD", "***REMOVED_SECRET***")
 
 
@@ -72,9 +72,12 @@ def sync_to_neo4j_instance(case_data: Dict[str, Any]) -> Dict[str, Any]:
         from neo4j import GraphDatabase
         driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
         with driver.session() as session:
+            # Execute Cypher transaction in Neo4j Aura
             session.run(cypher_bundle["cypher_query"])
-        cypher_bundle["neo4j_status"] = "SYNCED_TO_LIVE_NEO4J_DATABASE"
+        driver.close()
+        cypher_bundle["neo4j_status"] = "LIVE_SYNCED_TO_NEO4J_AURA"
+        cypher_bundle["instance_id"] = NEO4J_USER
     except Exception as err:
-        cypher_bundle["neo4j_status"] = "CYPHER_READY (Neo4j driver offline / credentials pending)"
-        cypher_bundle["note"] = f"Generated Cypher graph statements ready for execution"
+        cypher_bundle["neo4j_status"] = "CYPHER_READY"
+        cypher_bundle["note"] = f"Generated Cypher graph statements ready: {str(err)}"
     return cypher_bundle
