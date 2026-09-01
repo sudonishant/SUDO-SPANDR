@@ -323,9 +323,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     </div>
     <div class="top-actions">
       <span class="badge-gov">● Sec 65B Certified</span>
-      <button class="ghost-btn" onclick="togglePII()"><i data-lucide="eye-off" style="width: 12px;"></i> <span id="pii-toggle-text">PII</span></button>
-      <button class="ghost-btn" onclick="exportSTIX()"><i data-lucide="download" style="width: 12px;"></i> STIX 2.1</button>
-      <button class="primary-btn" onclick="printDossier()"><i data-lucide="printer" style="width: 12px;"></i> Court Report</button>
+      <button class="primary-btn" onclick="printDossier()"><i data-lucide="printer" style="width: 13px;"></i> Court Report</button>
     </div>
   </header>
 
@@ -740,36 +738,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
-    function togglePII() {
-      maskPII = !maskPII;
-      document.getElementById('pii-toggle-text').innerText = maskPII ? "Reveal PII" : "PII";
-      if (currentAnalysis) renderAnalysis(currentAnalysis);
-    }
-
     function redactText(str) {
-      if (!maskPII || !str) return str;
-      return str.replace(/([a-zA-Z0-9._%+-]+)@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/g, "redacted_user@$2")
-                .replace(/\b\d{10,16}\b/g, "[ACCOUNT-REDACTED]");
-    }
-
-    async function exportSTIX() {
-      if (!currentAnalysis) {
-        alert('Please run or upload an email analysis first!');
-        return;
-      }
-      const caseId = currentAnalysis.case_id || 'CS-DEMO';
-      try {
-        const res = await fetch('/api/v1/export/stix/' + caseId);
-        const stixData = await res.json();
-        const blob = new Blob([JSON.stringify(stixData, null, 2)], { type: 'application/json' });
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `STIX2.1-${caseId}.json`;
-        a.click();
-      } catch (err) {
-        alert('STIX export error: ' + err.message);
-      }
+      return str || '';
     }
 
     async function handleFileSelect(event) {
