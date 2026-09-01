@@ -1,26 +1,26 @@
-HTML_CONTENT = """<!DOCTYPE html>
+HTML_CONTENT = r"""<!DOCTYPE html>
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>Cyber Squad — SentinelMail AI Threat Detection, GeoLocation & Forensic Intelligence</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --bg: #060911;
-      --card-bg: #0c121e;
-      --panel-bg: rgba(12, 18, 30, 0.95);
+      --bg: #040711;
+      --card-bg: rgba(11, 17, 30, 0.85);
+      --panel-bg: rgba(14, 23, 42, 0.95);
       --border: #1e293b;
       --border-focus: #3b82f6;
-      --text: #f1f5f9;
+      --text: #f8fafc;
       --text-muted: #94a3b8;
       --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.25);
+      --accent-glow: rgba(59, 130, 246, 0.3);
       --success: #10b981;
       --warning: #f59e0b;
       --danger: #ef4444;
@@ -28,137 +28,156 @@ HTML_CONTENT = """<!DOCTYPE html>
     }
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
-      font-family: 'Manrope', system-ui, sans-serif;
-      background: radial-gradient(circle at 80% -20%, rgba(37, 99, 235, 0.2), transparent 45%), var(--bg);
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.25), transparent 50%),
+                  radial-gradient(circle at 90% 20%, rgba(147, 51, 234, 0.15), transparent 40%),
+                  var(--bg);
       color: var(--text);
       min-height: 100vh;
       line-height: 1.5;
+      -webkit-font-smoothing: antialiased;
     }
     code, .mono { font-family: 'DM Mono', monospace; }
     button, input, textarea, select { font-family: inherit; }
-    button { cursor: pointer; border: none; outline: none; transition: all 0.15s ease; }
+    button { cursor: pointer; border: none; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     button:disabled { cursor: not-allowed; opacity: 0.5; }
 
+    /* Top Navigation Bar */
     .topbar {
-      height: 64px;
-      border-bottom: 1px solid var(--border);
-      background: rgba(6, 9, 17, 0.9);
-      backdrop-filter: blur(20px);
+      height: 68px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+      background: rgba(4, 7, 17, 0.85);
+      backdrop-filter: blur(24px);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 clamp(16px, 4vw, 48px);
+      padding: 0 clamp(16px, 4vw, 40px);
       position: sticky;
       top: 0;
       z-index: 1000;
     }
     .brand { display: flex; align-items: center; gap: 12px; }
     .brand-mark {
-      width: 36px; height: 36px;
+      width: 40px; height: 40px;
       display: grid; place-items: center;
-      border: 1px solid rgba(59, 130, 246, 0.4);
-      border-radius: 9px;
+      border: 1px solid rgba(59, 130, 246, 0.5);
+      border-radius: 10px;
       color: #60a5fa;
-      background: rgba(59, 130, 246, 0.15);
-      box-shadow: 0 0 15px rgba(59, 130, 246, 0.3);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
+      box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
     }
-    .brand-title { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
-    .brand-sub { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; }
+    .brand-title { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: #fff; display: flex; align-items: center; gap: 6px; }
+    .brand-sub { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
 
-    .top-actions { display: flex; align-items: center; gap: 10px; }
+    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
     .badge {
       display: inline-flex; align-items: center; gap: 6px;
-      padding: 4px 10px; border-radius: 9999px; font-size: 11px; font-weight: 700;
+      padding: 5px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700;
       background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);
     }
 
     .main-wrap {
-      max-width: 1360px;
+      max-width: 1400px;
       margin: 0 auto;
-      padding: 20px clamp(16px, 4vw, 48px) 60px;
+      padding: 20px clamp(16px, 3vw, 36px) 60px;
     }
 
-    /* Demo Quick Cases Ribbon */
+    /* 1-Click Demo Cases Ribbon */
     .demo-ribbon {
-      background: rgba(15, 23, 42, 0.8);
-      border: 1px solid var(--border);
-      border-radius: 12px;
-      padding: 12px 16px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      backdrop-filter: blur(12px);
+      border-radius: 14px;
+      padding: 12px 18px;
       margin-bottom: 20px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 10px;
+      gap: 12px;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
     .demo-cases-list { display: flex; gap: 8px; flex-wrap: wrap; }
     .case-btn {
-      padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
+      padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700;
       background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid var(--border);
       display: inline-flex; align-items: center; gap: 6px;
     }
-    .case-btn:hover { background: rgba(59, 130, 246, 0.15); border-color: rgba(59, 130, 246, 0.5); color: #93c5fd; }
+    .case-btn:hover {
+      background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.6);
+      color: #93c5fd; transform: translateY(-1px);
+    }
 
+    /* Primary Mode Tabs */
     .mode-bar {
       display: flex; gap: 8px; margin-bottom: 20px;
-      background: var(--card-bg); padding: 5px; border-radius: 12px; border: 1px solid var(--border);
+      background: rgba(15, 23, 42, 0.6); padding: 6px; border-radius: 14px; border: 1px solid var(--border);
       overflow-x: auto;
     }
     .mode-tab {
-      flex: 1; min-width: 150px; padding: 10px 16px; border-radius: 8px; background: transparent;
+      flex: 1; min-width: 150px; padding: 11px 16px; border-radius: 10px; background: transparent;
       color: var(--text-muted); font-size: 13px; font-weight: 700; display: flex; align-items: center;
       justify-content: center; gap: 8px; border: 1px solid transparent;
     }
     .mode-tab.active {
-      background: rgba(59, 130, 246, 0.15); color: #60a5fa; border-color: rgba(59, 130, 246, 0.4);
-      box-shadow: 0 0 12px rgba(59, 130, 246, 0.2);
+      background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
+      color: #93c5fd; border-color: rgba(59, 130, 246, 0.5);
+      box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
     }
 
+    /* Modern Dropzone */
     .dropzone-box {
-      border: 2px dashed var(--border); border-radius: 16px; padding: 44px 24px;
-      text-align: center; background: rgba(12, 18, 30, 0.6); transition: all 0.2s ease;
-      cursor: pointer; position: relative;
+      border: 2px dashed rgba(59, 130, 246, 0.4); border-radius: 20px; padding: 48px 24px;
+      text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08), rgba(11, 17, 30, 0.6));
+      cursor: pointer; position: relative; transition: all 0.25s ease;
     }
     .dropzone-box:hover, .dropzone-box.dragover {
-      border-color: var(--accent); background: rgba(59, 130, 246, 0.08);
-      box-shadow: 0 0 25px rgba(59, 130, 246, 0.2);
+      border-color: #60a5fa; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.18), rgba(11, 17, 30, 0.8));
+      box-shadow: 0 0 35px rgba(59, 130, 246, 0.3); transform: scale(1.005);
     }
 
+    /* Glass Cards */
     .card {
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: 14px;
-      padding: 20px; margin-bottom: 20px;
+      background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.07);
+      backdrop-filter: blur(16px); border-radius: 16px; padding: 22px; margin-bottom: 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     }
     .card-title {
       display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
-      border-bottom: 1px solid var(--border); padding-bottom: 12px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 12px;
     }
-    .card-title h3 { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
-    .card-title small { font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; }
+    .card-title h3 { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+    .card-title small { font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.05em; }
 
     .primary-btn {
-      background: #2563eb; color: #fff; font-weight: 700; padding: 10px 18px;
-      border-radius: 8px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;
+      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700;
+      padding: 10px 20px; border-radius: 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
     }
-    .primary-btn:hover { background: #1d4ed8; box-shadow: 0 0 15px rgba(37, 99, 235, 0.4); }
+    .primary-btn:hover {
+      background: linear-gradient(135deg, #3b82f6, #2563eb);
+      box-shadow: 0 6px 20px rgba(37, 99, 235, 0.5); transform: translateY(-1px);
+    }
 
     .ghost-btn {
-      background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid var(--border);
+      background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.1);
       padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
       display: inline-flex; align-items: center; gap: 6px;
     }
     .ghost-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
 
+    /* Forensic Result Tabs */
     .nav-tabs {
       display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
       overflow-x: auto; padding-bottom: 2px;
     }
     .nav-tab {
-      padding: 9px 15px; border-radius: 8px 8px 0 0; background: transparent; color: var(--text-muted);
+      padding: 10px 16px; border-radius: 10px 10px 0 0; background: transparent; color: var(--text-muted);
       font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
       border-bottom: 2px solid transparent;
     }
     .nav-tab.active {
-      color: #60a5fa; border-bottom-color: #3b82f6; background: rgba(59, 130, 246, 0.08);
+      color: #60a5fa; border-bottom-color: #3b82f6; background: rgba(59, 130, 246, 0.1);
     }
 
     .result-grid {
@@ -166,21 +185,21 @@ HTML_CONTENT = """<!DOCTYPE html>
     }
 
     .key-val {
-      display: flex; justify-content: space-between; align-items: center; padding: 8px 0;
+      display: flex; justify-content: space-between; align-items: center; padding: 9px 0;
       border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 12px;
     }
     .key-val span { color: var(--text-muted); }
     .key-val strong { font-weight: 700; color: #fff; }
 
-    /* Map & Graph Styles */
-    #map-container { height: 420px; width: 100%; border-radius: 12px; z-index: 10; }
+    /* Map & Graph Containers */
+    #map-container { height: 420px; width: 100%; border-radius: 14px; z-index: 10; border: 1px solid var(--border); }
     .hop-timeline { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
     .hop-item {
-      display: flex; gap: 12px; align-items: flex-start; padding: 12px; border-radius: 10px;
-      background: rgba(255, 255, 255, 0.02); border: 1px solid var(--border);
+      display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px;
+      background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
     }
     .hop-badge {
-      width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+      width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
       font-weight: 800; font-size: 12px; flex-shrink: 0;
     }
     .hop-badge.origin { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
@@ -188,42 +207,55 @@ HTML_CONTENT = """<!DOCTYPE html>
     .hop-badge.dest { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
 
     #graph-canvas-wrap {
-      height: 420px; width: 100%; background: #080c14; border-radius: 12px;
+      height: 420px; width: 100%; background: #060a14; border-radius: 14px;
       border: 1px solid var(--border); position: relative; overflow: hidden;
     }
 
-    /* noVNC Virtual Desktop Ribbon */
+    /* Virtual Sandbox Frame */
     .novnc-command-bar {
       display: flex; justify-content: space-between; align-items: center;
       background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-      padding: 8px 12px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+      padding: 8px 14px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
     }
     .novnc-ribbon { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
     .ribbon-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
     .url-detonation-box { display: flex; gap: 8px; margin-bottom: 12px; }
     .url-input-wrap {
       flex: 1; display: flex; align-items: center; gap: 10px; background: var(--card-bg);
-      border: 1px solid var(--border); border-radius: 8px; padding: 0 12px;
+      border: 1px solid var(--border); border-radius: 10px; padding: 0 14px;
     }
     .url-input-wrap input {
-      width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 12px; padding: 10px 0;
+      width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 12px; padding: 11px 0;
     }
     .sandbox-frame-box {
-      border: 1px solid var(--border); border-radius: 14px; overflow: hidden; background: #000;
-      position: relative; height: 640px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: #000;
+      position: relative; height: 640px; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
     }
     .sandbox-iframe { width: 100%; height: calc(100% - 32px); border: none; }
     .telemetry-bar {
-      height: 32px; background: #0a0e17; border-top: 1px solid var(--border);
+      height: 32px; background: #070c17; border-top: 1px solid var(--border);
       display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
       font-size: 11px; color: var(--text-muted);
     }
 
     .mitre-badge {
-      display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px;
+      display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 8px;
       background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);
       font-size: 11px; font-weight: 700; margin: 3px;
     }
+
+    /* Radar scan spinner */
+    .radar-scanning {
+      display: none; text-align: center; padding: 30px;
+    }
+    .radar-sweep {
+      width: 60px; height: 60px; border-radius: 50%;
+      border: 3px solid rgba(59, 130, 246, 0.2);
+      border-top-color: #3b82f6;
+      animation: spin 1s linear infinite;
+      margin: 0 auto 12px;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
 
     @media print {
       body * { visibility: hidden; }
@@ -237,17 +269,17 @@ HTML_CONTENT = """<!DOCTYPE html>
   <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
-      <div class="brand-mark"><i data-lucide="shield-alert" style="width: 20px; height: 20px;"></i></div>
+      <div class="brand-mark"><i data-lucide="shield-check" style="width: 22px; height: 22px;"></i></div>
       <div>
-        <div class="brand-title">CYBER SQUAD — SentinelMail</div>
-        <div class="brand-sub">SIH 2026 #26106 | AI Email Threat Detection, GeoLocation & Forensic Intelligence</div>
+        <div class="brand-title">CYBER SQUAD <span style="font-size: 12px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
+        <div class="brand-sub">SIH 2026 #26106 | AI Email Threat Detection, GeoLocation & Forensic Ecosystem</div>
       </div>
     </div>
     <div class="top-actions">
-      <span class="badge">● ISO 27037 & Sec 65B Compliant</span>
+      <span class="badge">● ISO 27037 & Sec 65B Certified</span>
       <button class="ghost-btn" onclick="togglePII()"><i data-lucide="eye-off" style="width: 13px;"></i> <span id="pii-toggle-text">Mask PII</span></button>
       <button class="ghost-btn" onclick="exportSTIX()"><i data-lucide="download" style="width: 13px;"></i> STIX 2.1</button>
-      <button class="primary-btn" style="padding: 6px 14px; font-size: 12px;" onclick="printDossier()"><i data-lucide="printer" style="width: 13px;"></i> Court Dossier</button>
+      <button class="primary-btn" style="padding: 7px 14px; font-size: 12px;" onclick="printDossier()"><i data-lucide="printer" style="width: 13px;"></i> Court Dossier</button>
     </div>
   </header>
 
@@ -269,19 +301,25 @@ HTML_CONTENT = """<!DOCTYPE html>
     
     <!-- Mode Selection -->
     <div class="mode-bar">
-      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML / MSG File Triage</button>
+      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML / MSG Forensic File</button>
       <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text & RFC Headers</button>
       <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachment Carver</button>
       <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="monitor"></i> 4. Live noVNC Sandbox</button>
+    </div>
+
+    <!-- Scanning Radar -->
+    <div id="radar-loader" class="radar-scanning">
+      <div class="radar-sweep"></div>
+      <p style="font-size: 13px; font-weight: 700; color: #60a5fa;">Running AI Forensic Threat Triage & Multi-Hop Hop Tracer...</p>
     </div>
 
     <!-- 1. EML INTAKE -->
     <div id="mode-eml-view">
       <div class="dropzone-box" id="eml-dropzone" onclick="document.getElementById('eml-input').click()">
         <input type="file" id="eml-input" accept=".eml,.msg" style="display: none;" onchange="handleFileSelect(event)">
-        <i data-lucide="upload-cloud" style="width: 44px; height: 44px; color: #60a5fa; margin-bottom: 12px;"></i>
-        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 6px;">Drop .EML or .MSG Email Forensic Evidence</h2>
-        <p style="color: var(--text-muted); font-size: 12px; max-width: 540px; margin: 0 auto 16px;">
+        <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: #60a5fa; margin-bottom: 12px;"></i>
+        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Drop .EML or .MSG Email Forensic Evidence</h2>
+        <p style="color: var(--text-muted); font-size: 12px; max-width: 560px; margin: 0 auto 16px;">
           Parses transport headers, extracts multi-hop SMTP routing, resolves originating GeoIP/ASN, and computes deterministic threat matrix.
         </p>
         <button class="primary-btn"><i data-lucide="file-search"></i> Select Email Evidence File</button>
@@ -308,8 +346,8 @@ HTML_CONTENT = """<!DOCTYPE html>
     <div id="mode-attach-view" style="display: none;">
       <div class="dropzone-box" onclick="document.getElementById('attach-input').click()">
         <input type="file" id="attach-input" style="display: none;" onchange="handleAttachSelect(event)">
-        <i data-lucide="binary" style="width: 44px; height: 44px; color: #f59e0b; margin-bottom: 12px;"></i>
-        <h2 style="font-size: 17px; font-weight: 800; margin-bottom: 6px;">Upload Suspicious File for Disassembly</h2>
+        <i data-lucide="binary" style="width: 48px; height: 48px; color: #f59e0b; margin-bottom: 12px;"></i>
+        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Upload Suspicious File for Disassembly</h2>
         <p style="color: var(--text-muted); font-size: 12px; max-width: 500px; margin: 0 auto 16px;">
           Calculates Shannon entropy, verifies true Magic-Byte signatures vs fake extensions, and checks SHA-256 threat hashes.
         </p>
@@ -356,15 +394,15 @@ HTML_CONTENT = """<!DOCTYPE html>
     <section id="results-view" style="display: none; margin-top: 24px;">
       
       <!-- Top Alert Banner -->
-      <div class="card" id="alert-banner-box" style="border-left: 4px solid var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.1), var(--card-bg));">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px;">
+      <div class="card" id="alert-banner-box" style="border-left: 4px solid var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.12), var(--card-bg));">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
           <div>
             <span style="font-size: 10px; font-weight: 800; color: #f87171; letter-spacing: 0.08em; text-transform: uppercase;">INVESTIGATIVE FORENSIC DOSSIER</span>
-            <h2 id="res-verdict-title" style="font-size: 20px; font-weight: 800; color: #fff; margin-top: 2px;">SUSPICIOUS PHISHING / BEC ATTACK</h2>
+            <h2 id="res-verdict-title" style="font-size: 21px; font-weight: 800; color: #fff; margin-top: 2px;">SUSPICIOUS PHISHING / BEC ATTACK</h2>
             <p id="res-verdict-sub" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"></p>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 32px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;" id="res-score-badge">85<span style="font-size: 16px; color: var(--text-muted);">/100</span></div>
+            <div style="font-size: 34px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;" id="res-score-badge">85<span style="font-size: 16px; color: var(--text-muted);">/100</span></div>
             <span style="font-size: 11px; font-weight: 700; color: #f87171;" id="res-status-tag">HIGH RISK</span>
           </div>
         </div>
@@ -395,8 +433,8 @@ HTML_CONTENT = """<!DOCTYPE html>
         </div>
 
         <div class="card">
-          <div class="card-title"><i data-lucide="list-checks" style="width: 16px; color: #34d399;"></i><div><small>SCORE BREAKDOWN</small><h3>Forensic Signals</h3></div></div>
-          <div id="signals-list" style="max-height: 180px; overflow-y: auto;"></div>
+          <div class="card-title"><i data-lucide="list-checks" style="width: 16px; color: #34d399;"></i><div><small>SCORE LEDGER (EXPLICIT WEIGHTS)</small><h3>Observed Threat Signals</h3></div></div>
+          <div id="signals-list" style="max-height: 200px; overflow-y: auto;"></div>
         </div>
       </div>
 
@@ -415,7 +453,6 @@ HTML_CONTENT = """<!DOCTYPE html>
         </div>
       </div>
 
-      
       <!-- Tab: Deep AI Paragraph & NLP Inspector -->
       <div id="tab-nlp" class="card" style="display: none;">
         <div class="card-title">
@@ -526,6 +563,13 @@ HTML_CONTENT = """<!DOCTYPE html>
     let leafletMap = null;
     let maskPII = false;
 
+    function showLoader(show) {
+      document.getElementById('radar-loader').style.display = show ? 'block' : 'none';
+      if (show) {
+        document.getElementById('radar-loader').scrollIntoView({ behavior: 'smooth' });
+      }
+    }
+
     function setMode(mode) {
       document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
       const activeTabId = mode === 'sandbox' ? 'tab-sandbox-intake' : ('tab-' + mode);
@@ -554,12 +598,15 @@ HTML_CONTENT = """<!DOCTYPE html>
     }
 
     async function loadSample(sampleId) {
+      showLoader(true);
       try {
         const res = await fetch('/api/v1/samples/load/' + sampleId, { method: 'POST' });
         const data = await res.json();
         renderAnalysis(data);
       } catch (err) {
         alert('Failed to load sample: ' + err.message);
+      } finally {
+        showLoader(false);
       }
     }
 
@@ -598,6 +645,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     async function handleFileSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
+      showLoader(true);
       const formData = new FormData();
       formData.append('file', file);
       try {
@@ -606,6 +654,8 @@ HTML_CONTENT = """<!DOCTYPE html>
         renderAnalysis(data);
       } catch (err) {
         alert('Analysis Error: ' + err.message);
+      } finally {
+        showLoader(false);
       }
     }
 
@@ -613,6 +663,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       const sender = document.getElementById('raw-sender').value;
       const subject = document.getElementById('raw-subject').value;
       const body = document.getElementById('raw-body').value;
+      showLoader(true);
       try {
         const res = await fetch('/api/v1/analyze-raw', {
           method: 'POST',
@@ -623,12 +674,15 @@ HTML_CONTENT = """<!DOCTYPE html>
         renderAnalysis(data);
       } catch (err) {
         alert('Analysis Error: ' + err.message);
+      } finally {
+        showLoader(false);
       }
     }
 
     async function handleAttachSelect(event) {
       const file = event.target.files[0];
       if (!file) return;
+      showLoader(true);
       const formData = new FormData();
       formData.append('file', file);
       try {
@@ -637,6 +691,8 @@ HTML_CONTENT = """<!DOCTYPE html>
         renderAnalysis(data);
       } catch (err) {
         alert('Attachment Inspection Error: ' + err.message);
+      } finally {
+        showLoader(false);
       }
     }
 
@@ -647,8 +703,13 @@ HTML_CONTENT = """<!DOCTYPE html>
 
       // Scores & Badges
       const score = data.threat?.risk_score || 0;
+      const scoreColor = score >= 70 ? 'var(--danger)' : (score >= 35 ? 'var(--warning)' : 'var(--success)');
+      
       document.getElementById('res-score-badge').innerHTML = `${score}<span style="font-size: 16px; color: var(--text-muted);">/100</span>`;
+      document.getElementById('res-score-badge').style.color = scoreColor;
       document.getElementById('res-status-tag').innerText = data.threat?.status || "ANALYZED";
+      document.getElementById('res-status-tag').style.color = scoreColor;
+      document.getElementById('alert-banner-box').style.borderLeftColor = scoreColor;
       document.getElementById('res-verdict-title').innerText = data.category_analysis?.category_label || "Email Threat Assessment";
       document.getElementById('res-verdict-sub').innerText = data.category_analysis?.description || "";
 
@@ -664,8 +725,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       const originStr = originGeo ? `${originGeo.country} (${originGeo.city}) · ${originGeo.isp}` : "Direct / Intranet";
       document.getElementById('geo-summary-tag').innerText = originStr;
 
-      
-      // NLP Deep Inspection Rendering
+      // Deep NLP Inspection Rendering
       const nlp = data.nlp_analysis || {};
       document.getElementById('nlp-total-paras').innerText = nlp.paragraphs_analyzed || 0;
       document.getElementById('nlp-flagged-paras').innerText = nlp.flagged_count || 0;
@@ -703,11 +763,14 @@ HTML_CONTENT = """<!DOCTYPE html>
         `).join('');
       }
 
-      // Signals List
+      // Score Ledger Signals List
       const signalsList = document.getElementById('signals-list');
       signalsList.innerHTML = (data.threat?.signals || []).map(s => `
-        <div class="key-val"><span>${s.code || s.label || 'SIGNAL'}</span><strong style="color: #fbbf24;">+${s.weight || s.points || 15} (${s.rule || s.reason || s.evidence || 'Observed'})</strong></div>
-      `).join('') || '<p style="color: var(--text-muted); font-size: 11px;">No suspicious signals detected.</p>';
+        <div class="key-val">
+          <span>${s.code || s.label || 'SIGNAL'}</span>
+          <strong style="color: #fbbf24;">+${s.weight || s.points || 15} pts</strong>
+        </div>
+      `).join('') || '<p style="color: var(--text-muted); font-size: 11px;">No suspicious signals detected in score ledger.</p>';
 
       // MITRE ATT&CK & Bilingual Explanation
       if (score >= 70) {
