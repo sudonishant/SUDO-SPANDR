@@ -13,7 +13,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <style>
     :root {
       --bg: #040711;
-      --card-bg: rgba(11, 17, 30, 0.85);
+      --card-bg: rgba(11, 17, 30, 0.88);
       --panel-bg: rgba(14, 23, 42, 0.95);
       --border: #1e293b;
       --border-focus: #3b82f6;
@@ -36,8 +36,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       min-height: 100vh;
       line-height: 1.5;
       -webkit-font-smoothing: antialiased;
+      overflow-x: hidden;
     }
-    code, .mono { font-family: 'DM Mono', monospace; }
+    code, .mono { font-family: 'DM Mono', monospace; word-break: break-all; }
     button, input, textarea, select { font-family: inherit; }
     button { cursor: pointer; border: none; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
     button:disabled { cursor: not-allowed; opacity: 0.5; }
@@ -51,35 +52,37 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 clamp(16px, 4vw, 40px);
+      padding: 0 clamp(12px, 3vw, 40px);
       position: sticky;
       top: 0;
       z-index: 1000;
     }
-    .brand { display: flex; align-items: center; gap: 12px; }
+    .brand { display: flex; align-items: center; gap: 10px; }
     .brand-mark {
-      width: 40px; height: 40px;
+      width: 38px; height: 38px;
       display: grid; place-items: center;
       border: 1px solid rgba(59, 130, 246, 0.5);
       border-radius: 10px;
       color: #60a5fa;
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
       box-shadow: 0 0 20px rgba(59, 130, 246, 0.35);
+      flex-shrink: 0;
     }
-    .brand-title { font-size: 16px; font-weight: 800; letter-spacing: -0.02em; color: #fff; display: flex; align-items: center; gap: 6px; }
-    .brand-sub { font-size: 10px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; }
+    .brand-title { font-size: 15px; font-weight: 800; letter-spacing: -0.02em; color: #fff; }
+    .brand-sub { font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.06em; font-weight: 600; display: block; }
 
-    .top-actions { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+    .top-actions { display: flex; align-items: center; gap: 6px; }
     .badge {
-      display: inline-flex; align-items: center; gap: 6px;
-      padding: 5px 12px; border-radius: 9999px; font-size: 11px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 9999px; font-size: 10px; font-weight: 700;
       background: rgba(16, 185, 129, 0.12); color: #34d399; border: 1px solid rgba(16, 185, 129, 0.3);
+      white-space: nowrap;
     }
 
     .main-wrap {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 20px clamp(16px, 3vw, 36px) 60px;
+      padding: 16px clamp(12px, 2.5vw, 36px) 60px;
     }
 
     /* 1-Click Demo Cases Ribbon */
@@ -88,36 +91,36 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       border: 1px solid rgba(255, 255, 255, 0.08);
       backdrop-filter: blur(12px);
       border-radius: 14px;
-      padding: 12px 18px;
-      margin-bottom: 20px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
       display: flex;
       align-items: center;
       justify-content: space-between;
       flex-wrap: wrap;
-      gap: 12px;
+      gap: 10px;
       box-shadow: 0 4px 20px rgba(0, 0, 0, 0.4);
     }
-    .demo-cases-list { display: flex; gap: 8px; flex-wrap: wrap; }
+    .demo-cases-list { display: flex; gap: 6px; flex-wrap: wrap; width: 100%; }
     .case-btn {
-      padding: 8px 14px; border-radius: 8px; font-size: 11px; font-weight: 700;
+      padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
       background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid var(--border);
-      display: inline-flex; align-items: center; gap: 6px;
+      display: inline-flex; align-items: center; gap: 5px; flex: 1 1 auto; justify-content: center;
     }
     .case-btn:hover {
       background: rgba(59, 130, 246, 0.2); border-color: rgba(59, 130, 246, 0.6);
       color: #93c5fd; transform: translateY(-1px);
     }
 
-    /* Primary Mode Tabs */
+    /* Mode Tabs */
     .mode-bar {
-      display: flex; gap: 8px; margin-bottom: 20px;
-      background: rgba(15, 23, 42, 0.6); padding: 6px; border-radius: 14px; border: 1px solid var(--border);
-      overflow-x: auto;
+      display: flex; gap: 6px; margin-bottom: 16px;
+      background: rgba(15, 23, 42, 0.6); padding: 5px; border-radius: 12px; border: 1px solid var(--border);
+      overflow-x: auto; -webkit-overflow-scrolling: touch;
     }
     .mode-tab {
-      flex: 1; min-width: 150px; padding: 11px 16px; border-radius: 10px; background: transparent;
-      color: var(--text-muted); font-size: 13px; font-weight: 700; display: flex; align-items: center;
-      justify-content: center; gap: 8px; border: 1px solid transparent;
+      flex: 1; min-width: 130px; padding: 10px 14px; border-radius: 9px; background: transparent;
+      color: var(--text-muted); font-size: 12px; font-weight: 700; display: flex; align-items: center;
+      justify-content: center; gap: 6px; border: 1px solid transparent; white-space: nowrap;
     }
     .mode-tab.active {
       background: linear-gradient(135deg, rgba(59, 130, 246, 0.25), rgba(37, 99, 235, 0.15));
@@ -125,34 +128,34 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       box-shadow: 0 0 15px rgba(59, 130, 246, 0.25);
     }
 
-    /* Modern Dropzone */
+    /* Dropzone */
     .dropzone-box {
-      border: 2px dashed rgba(59, 130, 246, 0.4); border-radius: 20px; padding: 48px 24px;
+      border: 2px dashed rgba(59, 130, 246, 0.4); border-radius: 18px; padding: 36px 18px;
       text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.08), rgba(11, 17, 30, 0.6));
       cursor: pointer; position: relative; transition: all 0.25s ease;
     }
     .dropzone-box:hover, .dropzone-box.dragover {
       border-color: #60a5fa; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.18), rgba(11, 17, 30, 0.8));
-      box-shadow: 0 0 35px rgba(59, 130, 246, 0.3); transform: scale(1.005);
+      box-shadow: 0 0 35px rgba(59, 130, 246, 0.3);
     }
 
-    /* Glass Cards */
+    /* Cards */
     .card {
       background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.07);
-      backdrop-filter: blur(16px); border-radius: 16px; padding: 22px; margin-bottom: 20px;
+      backdrop-filter: blur(16px); border-radius: 14px; padding: 18px; margin-bottom: 16px;
       box-shadow: 0 8px 30px rgba(0, 0, 0, 0.4);
     }
     .card-title {
-      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 12px;
+      display: flex; align-items: center; gap: 10px; margin-bottom: 14px;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 10px;
     }
-    .card-title h3 { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
-    .card-title small { font-size: 10px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.05em; }
+    .card-title h3 { font-size: 14px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
+    .card-title small { font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.05em; }
 
     .primary-btn {
       background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700;
-      padding: 10px 20px; border-radius: 10px; font-size: 13px; display: inline-flex; align-items: center; gap: 8px;
-      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35);
+      padding: 9px 16px; border-radius: 8px; font-size: 12px; display: inline-flex; align-items: center; gap: 6px;
+      box-shadow: 0 4px 15px rgba(37, 99, 235, 0.35); justify-content: center;
     }
     .primary-btn:hover {
       background: linear-gradient(135deg, #3b82f6, #2563eb);
@@ -161,106 +164,175 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     .ghost-btn {
       background: rgba(255, 255, 255, 0.04); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.1);
-      padding: 8px 14px; border-radius: 8px; font-size: 12px; font-weight: 600;
-      display: inline-flex; align-items: center; gap: 6px;
+      padding: 7px 12px; border-radius: 8px; font-size: 11px; font-weight: 600;
+      display: inline-flex; align-items: center; gap: 5px;
     }
     .ghost-btn:hover { background: rgba(255, 255, 255, 0.1); border-color: rgba(255, 255, 255, 0.2); }
 
-    /* Forensic Result Tabs */
+    /* Results Tabs */
     .nav-tabs {
-      display: flex; gap: 6px; border-bottom: 1px solid var(--border); margin-bottom: 20px;
-      overflow-x: auto; padding-bottom: 2px;
+      display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 16px;
+      overflow-x: auto; -webkit-overflow-scrolling: touch; padding-bottom: 2px;
     }
     .nav-tab {
-      padding: 10px 16px; border-radius: 10px 10px 0 0; background: transparent; color: var(--text-muted);
-      font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; gap: 6px;
-      border-bottom: 2px solid transparent;
+      padding: 9px 14px; border-radius: 8px 8px 0 0; background: transparent; color: var(--text-muted);
+      font-size: 11px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;
+      border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0;
     }
     .nav-tab.active {
       color: #60a5fa; border-bottom-color: #3b82f6; background: rgba(59, 130, 246, 0.1);
     }
 
     .result-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 16px; margin-bottom: 20px;
+      display: grid; grid-template-columns: repeat(auto-fit, minmax(290px, 1fr)); gap: 14px; margin-bottom: 16px;
     }
 
     .key-val {
-      display: flex; justify-content: space-between; align-items: center; padding: 9px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 12px;
+      display: flex; justify-content: space-between; align-items: flex-start; padding: 8px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 11.5px; gap: 8px;
     }
-    .key-val span { color: var(--text-muted); }
-    .key-val strong { font-weight: 700; color: #fff; }
+    .key-val span { color: var(--text-muted); flex-shrink: 0; }
+    .key-val strong { font-weight: 700; color: #fff; text-align: right; word-break: break-word; }
 
-    /* Map & Graph Containers */
-    #map-container { height: 420px; width: 100%; border-radius: 14px; z-index: 10; border: 1px solid var(--border); }
-    .hop-timeline { display: flex; flex-direction: column; gap: 12px; margin-top: 16px; }
+    /* Map & Graph */
+    #map-container { height: 380px; width: 100%; border-radius: 12px; z-index: 10; border: 1px solid var(--border); }
+    .hop-timeline { display: flex; flex-direction: column; gap: 10px; margin-top: 14px; }
     .hop-item {
-      display: flex; gap: 12px; align-items: flex-start; padding: 14px; border-radius: 12px;
+      display: flex; gap: 10px; align-items: flex-start; padding: 12px; border-radius: 10px;
       background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
     }
     .hop-badge {
-      width: 30px; height: 30px; border-radius: 50%; display: grid; place-items: center;
-      font-weight: 800; font-size: 12px; flex-shrink: 0;
+      width: 28px; height: 28px; border-radius: 50%; display: grid; place-items: center;
+      font-weight: 800; font-size: 11px; flex-shrink: 0;
     }
     .hop-badge.origin { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
     .hop-badge.relay { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
     .hop-badge.dest { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
 
     #graph-canvas-wrap {
-      height: 420px; width: 100%; background: #060a14; border-radius: 14px;
+      height: 380px; width: 100%; background: #060a14; border-radius: 12px;
       border: 1px solid var(--border); position: relative; overflow: hidden;
     }
 
-    /* Virtual Sandbox Frame */
+    /* Sandbox Frame */
     .novnc-command-bar {
       display: flex; justify-content: space-between; align-items: center;
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: 12px;
-      padding: 8px 14px; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;
+      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
+      padding: 8px 12px; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;
     }
-    .novnc-ribbon { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
-    .ribbon-divider { width: 1px; height: 20px; background: var(--border); margin: 0 4px; }
-    .url-detonation-box { display: flex; gap: 8px; margin-bottom: 12px; }
+    .novnc-ribbon { display: flex; align-items: center; gap: 5px; flex-wrap: wrap; }
+    .ribbon-divider { width: 1px; height: 18px; background: var(--border); margin: 0 2px; }
+    .url-detonation-box { display: flex; gap: 6px; margin-bottom: 10px; }
     .url-input-wrap {
-      flex: 1; display: flex; align-items: center; gap: 10px; background: var(--card-bg);
-      border: 1px solid var(--border); border-radius: 10px; padding: 0 14px;
+      flex: 1; display: flex; align-items: center; gap: 8px; background: var(--card-bg);
+      border: 1px solid var(--border); border-radius: 8px; padding: 0 10px;
     }
     .url-input-wrap input {
-      width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 12px; padding: 11px 0;
+      width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 12px; padding: 9px 0;
     }
     .sandbox-frame-box {
-      border: 1px solid var(--border); border-radius: 16px; overflow: hidden; background: #000;
-      position: relative; height: 640px; box-shadow: 0 12px 35px rgba(0, 0, 0, 0.7);
+      border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000;
+      position: relative; height: 560px; box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
     }
-    .sandbox-iframe { width: 100%; height: calc(100% - 32px); border: none; }
+    .sandbox-iframe { width: 100%; height: calc(100% - 30px); border: none; }
     .telemetry-bar {
-      height: 32px; background: #070c17; border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between; padding: 0 16px;
-      font-size: 11px; color: var(--text-muted);
+      height: 30px; background: #070c17; border-top: 1px solid var(--border);
+      display: flex; align-items: center; justify-content: space-between; padding: 0 12px;
+      font-size: 10px; color: var(--text-muted);
     }
 
     .mitre-badge {
-      display: inline-flex; align-items: center; gap: 4px; padding: 5px 10px; border-radius: 8px;
+      display: inline-flex; align-items: center; gap: 4px; padding: 4px 8px; border-radius: 6px;
       background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);
-      font-size: 11px; font-weight: 700; margin: 3px;
+      font-size: 10.5px; font-weight: 700; margin: 2px;
     }
 
     /* Radar scan spinner */
-    .radar-scanning {
-      display: none; text-align: center; padding: 30px;
-    }
+    .radar-scanning { display: none; text-align: center; padding: 24px; }
     .radar-sweep {
-      width: 60px; height: 60px; border-radius: 50%;
+      width: 50px; height: 50px; border-radius: 50%;
       border: 3px solid rgba(59, 130, 246, 0.2);
       border-top-color: #3b82f6;
       animation: spin 1s linear infinite;
-      margin: 0 auto 12px;
+      margin: 0 auto 10px;
     }
     @keyframes spin { to { transform: rotate(360deg); } }
 
+    /* ========================================================================== */
+    /* MASTER FORENSIC DOSSIER & COURT CERTIFICATE PRINT STYLING                   */
+    /* ========================================================================== */
+    .dossier-wrap {
+      background: #ffffff;
+      color: #0f172a;
+      border-radius: 12px;
+      padding: 28px;
+      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
+      border: 2px solid #3b82f6;
+      font-size: 12px;
+      line-height: 1.6;
+    }
+    .dossier-header {
+      display: flex; justify-content: space-between; align-items: flex-start;
+      border-bottom: 2px solid #0f172a; padding-bottom: 16px; margin-bottom: 20px;
+    }
+    .dossier-gov-seal {
+      font-size: 10px; font-weight: 800; color: #1e3a8a; letter-spacing: 0.08em; text-transform: uppercase;
+    }
+    .dossier-main-title {
+      font-size: 18px; font-weight: 900; color: #0f172a; margin-top: 2px;
+    }
+    .dossier-badge-court {
+      background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
+      font-size: 10px; font-weight: 800; padding: 4px 10px; border-radius: 6px;
+      text-transform: uppercase; letter-spacing: 0.05em; display: inline-block;
+    }
+    .dossier-section-title {
+      font-size: 13px; font-weight: 800; color: #1e3a8a; text-transform: uppercase;
+      letter-spacing: 0.04em; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px;
+      margin-top: 18px; margin-bottom: 10px; display: flex; align-items: center; gap: 6px;
+    }
+    .dossier-table {
+      width: 100%; border-collapse: collapse; margin-bottom: 12px; font-size: 11.5px;
+    }
+    .dossier-table th {
+      background: #f1f5f9; color: #334155; text-align: left; padding: 8px 10px;
+      border: 1px solid #cbd5e1; font-weight: 800;
+    }
+    .dossier-table td {
+      padding: 7px 10px; border: 1px solid #e2e8f0; vertical-align: top;
+    }
+    .dossier-table tr:nth-child(even) td { background: #f8fafc; }
+    
+    .dossier-legal-box {
+      background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #3b82f6;
+      border-radius: 6px; padding: 12px; margin-top: 14px; font-size: 10.5px; color: #334155; line-height: 1.5;
+    }
+    .dossier-sign-row {
+      display: flex; justify-content: space-between; margin-top: 28px; padding-top: 16px;
+      border-top: 1px dashed #94a3b8; font-size: 11px;
+    }
+
     @media print {
-      body * { visibility: hidden; }
-      #tab-dossier, #tab-dossier * { visibility: visible; }
-      #tab-dossier { position: absolute; left: 0; top: 0; width: 100%; color: #000; background: #fff !important; }
+      body { background: #fff !important; color: #000 !important; }
+      .topbar, .demo-ribbon, .mode-bar, .nav-tabs, #alert-banner-box, .dropzone-box,
+      #mode-text-view, #mode-attach-view, #mode-sandbox-view, .primary-btn, .ghost-btn {
+        display: none !important;
+      }
+      #results-view, #tab-dossier, .dossier-wrap {
+        display: block !important;
+        position: static !important;
+        width: 100% !important;
+        box-shadow: none !important;
+        border: none !important;
+        padding: 0 !important;
+        background: #fff !important;
+        color: #000 !important;
+      }
+      .dossier-wrap * { visibility: visible !important; color: #000 !important; }
+      .dossier-table th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .dossier-badge-court { background: #fee2e2 !important; border-color: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      .dossier-legal-box { border-left-color: #2563eb !important; background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+      @page { margin: 12mm; size: A4; }
     }
   </style>
 </head>
@@ -271,15 +343,14 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div class="brand">
       <div class="brand-mark"><i data-lucide="shield-check" style="width: 22px; height: 22px;"></i></div>
       <div>
-        <div class="brand-title">CYBER SQUAD <span style="font-size: 12px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
-        <div class="brand-sub">SIH 2026 #26106 | AI Email Threat Detection, GeoLocation & Forensic Ecosystem</div>
+        <div class="brand-title">CYBER SQUAD <span style="font-size: 11px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
+        <div class="brand-sub">SIH 2026 #26106 · Forensic Ecosystem</div>
       </div>
     </div>
     <div class="top-actions">
-      <span class="badge">● ISO 27037 & Sec 65B Certified</span>
-      <button class="ghost-btn" onclick="togglePII()"><i data-lucide="eye-off" style="width: 13px;"></i> <span id="pii-toggle-text">Mask PII</span></button>
-      <button class="ghost-btn" onclick="exportSTIX()"><i data-lucide="download" style="width: 13px;"></i> STIX 2.1</button>
-      <button class="primary-btn" style="padding: 7px 14px; font-size: 12px;" onclick="printDossier()"><i data-lucide="printer" style="width: 13px;"></i> Court Dossier</button>
+      <button class="ghost-btn" onclick="togglePII()"><i data-lucide="eye-off" style="width: 12px;"></i> <span id="pii-toggle-text">PII</span></button>
+      <button class="ghost-btn" onclick="exportSTIX()"><i data-lucide="download" style="width: 12px;"></i> STIX</button>
+      <button class="primary-btn" onclick="printDossier()"><i data-lucide="printer" style="width: 12px;"></i> Dossier</button>
     </div>
   </header>
 
@@ -287,9 +358,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     <!-- 1-Click Demo Preloaded Cases Ribbon -->
     <div class="demo-ribbon">
-      <div style="display: flex; align-items: center; gap: 8px;">
-        <i data-lucide="flask-conical" style="width: 16px; color: #f59e0b;"></i>
-        <span style="font-size: 12px; font-weight: 800; color: #fff;">1-Click Demo Triage Cases:</span>
+      <div style="display: flex; align-items: center; gap: 6px; width: 100%;">
+        <i data-lucide="flask-conical" style="width: 14px; color: #f59e0b;"></i>
+        <span style="font-size: 11px; font-weight: 800; color: #fff;">1-Click Triage Test Cases:</span>
       </div>
       <div class="demo-cases-list">
         <button class="case-btn" onclick="loadSample('apt_russia')">🇷🇺 1. Russian APT Wire Fraud</button>
@@ -301,25 +372,25 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     
     <!-- Mode Selection -->
     <div class="mode-bar">
-      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML / MSG Forensic File</button>
-      <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text & RFC Headers</button>
-      <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachment Carver</button>
-      <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="monitor"></i> 4. Live noVNC Sandbox</button>
+      <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML File Triage</button>
+      <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text & Headers</button>
+      <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachments</button>
+      <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="monitor"></i> 4. Live Sandbox</button>
     </div>
 
     <!-- Scanning Radar -->
     <div id="radar-loader" class="radar-scanning">
       <div class="radar-sweep"></div>
-      <p style="font-size: 13px; font-weight: 700; color: #60a5fa;">Running AI Forensic Threat Triage & Multi-Hop Hop Tracer...</p>
+      <p style="font-size: 12px; font-weight: 700; color: #60a5fa;">Running AI Forensic Threat Triage & Multi-Hop Hop Tracer...</p>
     </div>
 
     <!-- 1. EML INTAKE -->
     <div id="mode-eml-view">
       <div class="dropzone-box" id="eml-dropzone" onclick="document.getElementById('eml-input').click()">
         <input type="file" id="eml-input" accept=".eml,.msg" style="display: none;" onchange="handleFileSelect(event)">
-        <i data-lucide="upload-cloud" style="width: 48px; height: 48px; color: #60a5fa; margin-bottom: 12px;"></i>
-        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Drop .EML or .MSG Email Forensic Evidence</h2>
-        <p style="color: var(--text-muted); font-size: 12px; max-width: 560px; margin: 0 auto 16px;">
+        <i data-lucide="upload-cloud" style="width: 42px; height: 42px; color: #60a5fa; margin-bottom: 10px;"></i>
+        <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">Drop .EML or .MSG Email Forensic Evidence</h2>
+        <p style="color: var(--text-muted); font-size: 11.5px; max-width: 520px; margin: 0 auto 14px;">
           Parses transport headers, extracts multi-hop SMTP routing, resolves originating GeoIP/ASN, and computes deterministic threat matrix.
         </p>
         <button class="primary-btn"><i data-lucide="file-search"></i> Select Email Evidence File</button>
@@ -333,11 +404,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <i data-lucide="file-code" style="width: 16px; color: #60a5fa;"></i>
           <div><small>RAW INTAKE</small><h3>Paste RFC 5322 Headers & Message Body</h3></div>
         </div>
-        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 12px;">
-          <input type="text" id="raw-sender" placeholder="From: Executive / Attacker (e.g. CEO <ceo@lookalike.com>)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px;">
-          <input type="text" id="raw-subject" placeholder="Subject: URGENT: Wire Transfer / Password Reset..." style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px;">
+        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px;">
+          <input type="text" id="raw-sender" placeholder="From: (e.g. CEO <ceo@lookalike.com>)" style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 9px; color: #fff; font-size: 12px;">
+          <input type="text" id="raw-subject" placeholder="Subject: URGENT: Wire Transfer..." style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 9px; color: #fff; font-size: 12px;">
         </div>
-        <textarea id="raw-body" rows="8" placeholder="Paste full email body or raw header dump here..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px; color: #fff; font-size: 12px; font-family: 'DM Mono', monospace; margin-bottom: 16px;"></textarea>
+        <textarea id="raw-body" rows="6" placeholder="Paste full email body or raw header dump here..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 12px; font-family: 'DM Mono', monospace; margin-bottom: 14px;"></textarea>
         <button class="primary-btn" onclick="analyzeRawText()"><i data-lucide="scan-line"></i> Run Deep Forensic Analysis</button>
       </div>
     </div>
@@ -346,9 +417,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-attach-view" style="display: none;">
       <div class="dropzone-box" onclick="document.getElementById('attach-input').click()">
         <input type="file" id="attach-input" style="display: none;" onchange="handleAttachSelect(event)">
-        <i data-lucide="binary" style="width: 48px; height: 48px; color: #f59e0b; margin-bottom: 12px;"></i>
-        <h2 style="font-size: 18px; font-weight: 800; margin-bottom: 6px;">Upload Suspicious File for Disassembly</h2>
-        <p style="color: var(--text-muted); font-size: 12px; max-width: 500px; margin: 0 auto 16px;">
+        <i data-lucide="binary" style="width: 42px; height: 42px; color: #f59e0b; margin-bottom: 10px;"></i>
+        <h2 style="font-size: 16px; font-weight: 800; margin-bottom: 4px;">Upload Suspicious File for Disassembly</h2>
+        <p style="color: var(--text-muted); font-size: 11.5px; max-width: 480px; margin: 0 auto 14px;">
           Calculates Shannon entropy, verifies true Magic-Byte signatures vs fake extensions, and checks SHA-256 threat hashes.
         </p>
         <button class="primary-btn" style="background: #d97706;"><i data-lucide="shield-alert"></i> Inspect Attachment</button>
@@ -359,95 +430,95 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="mode-sandbox-view" style="display: none;">
       <div class="novnc-command-bar">
         <div class="novnc-ribbon">
-          <span style="font-size: 11px; font-weight: 800; color: #64748b; text-transform: uppercase;">1-Click Apps:</span>
-          <button class="ghost-btn" style="color: #f87171;" onclick="openQuickApp('https://mail.google.com')"><i data-lucide="mail" style="width: 12px;"></i> Gmail</button>
-          <button class="ghost-btn" style="color: #60a5fa;" onclick="openQuickApp('https://www.google.com')"><i data-lucide="search" style="width: 12px;"></i> Google</button>
-          <button class="ghost-btn" style="color: #38bdf8;" onclick="openQuickApp('https://outlook.live.com')"><i data-lucide="inbox" style="width: 12px;"></i> Outlook</button>
+          <span style="font-size: 10px; font-weight: 800; color: #64748b; text-transform: uppercase;">1-Click Apps:</span>
+          <button class="ghost-btn" style="color: #f87171;" onclick="openQuickApp('https://mail.google.com')"><i data-lucide="mail" style="width: 11px;"></i> Gmail</button>
+          <button class="ghost-btn" style="color: #60a5fa;" onclick="openQuickApp('https://www.google.com')"><i data-lucide="search" style="width: 11px;"></i> Google</button>
+          <button class="ghost-btn" style="color: #38bdf8;" onclick="openQuickApp('https://outlook.live.com')"><i data-lucide="inbox" style="width: 11px;"></i> Outlook</button>
           <div class="ribbon-divider"></div>
-          <button class="ghost-btn" style="color: #2dd4bf;" onclick="openQuickApp('https://www.virustotal.com')"><i data-lucide="shield-check" style="width: 12px;"></i> VirusTotal</button>
+          <button class="ghost-btn" style="color: #2dd4bf;" onclick="openQuickApp('https://www.virustotal.com')"><i data-lucide="shield-check" style="width: 11px;"></i> VirusTotal</button>
         </div>
         <div class="novnc-ribbon">
-          <button class="ghost-btn" onclick="sendClipboardPrompt()"><i data-lucide="clipboard-copy" style="width: 12px;"></i> Paste to PC</button>
-          <button class="ghost-btn" onclick="restartDesktopSession()"><i data-lucide="rotate-ccw" style="width: 12px;"></i> Reset Session</button>
-          <button class="ghost-btn" onclick="toggleFullscreen('direct-sandbox-box')"><i data-lucide="maximize" style="width: 12px;"></i> Fullscreen</button>
+          <button class="ghost-btn" onclick="sendClipboardPrompt()"><i data-lucide="clipboard-copy" style="width: 11px;"></i> Paste</button>
+          <button class="ghost-btn" onclick="restartDesktopSession()"><i data-lucide="rotate-ccw" style="width: 11px;"></i> Reset</button>
+          <button class="ghost-btn" onclick="toggleFullscreen('direct-sandbox-box')"><i data-lucide="maximize" style="width: 11px;"></i> Max</button>
         </div>
       </div>
 
       <div class="url-detonation-box">
         <div class="url-input-wrap">
-          <i data-lucide="link" style="width: 14px; color: #64748b;"></i>
-          <input type="text" id="direct-sandbox-url" value="http://127.0.0.1:8000" placeholder="Enter link to detonate inside air-gapped sandbox..." onkeydown="if(event.key==='Enter') launchDirectSandbox()">
+          <i data-lucide="link" style="width: 13px; color: #64748b;"></i>
+          <input type="text" id="direct-sandbox-url" value="http://127.0.0.1:8000" placeholder="Enter link to detonate in virtual sandbox..." onkeydown="if(event.key==='Enter') launchDirectSandbox()">
         </div>
-        <button class="primary-btn" onclick="launchDirectSandbox()"><i data-lucide="play" style="width: 13px;"></i> Detonate in Virtual PC</button>
+        <button class="primary-btn" onclick="launchDirectSandbox()"><i data-lucide="play" style="width: 12px;"></i> Detonate</button>
       </div>
 
       <div class="sandbox-frame-box" id="direct-sandbox-box">
         <iframe id="direct-sandbox-iframe" class="sandbox-iframe" src="/novnc/vnc.html?path=websockify&autoconnect=true&password=cybersqu&resize=remote&quality=8&compression=0&reconnect=true" allow="clipboard-read; clipboard-write; fullscreen;"></iframe>
         <div class="telemetry-bar">
-          <span>🟢 Display :99 (XFCE + Chromium + Kali Forensic Tools) · Single Port Unified</span>
+          <span>🟢 Display :99 (XFCE + Chromium + Kali Tools) · Single Port Unified</span>
           <span class="mono">Air-Gapped Isolation · Zero Host Malware Risk</span>
         </div>
       </div>
     </div>
 
     <!-- FORENSIC RESULTS VIEWPORT -->
-    <section id="results-view" style="display: none; margin-top: 24px;">
+    <section id="results-view" style="display: none; margin-top: 20px;">
       
       <!-- Top Alert Banner -->
       <div class="card" id="alert-banner-box" style="border-left: 4px solid var(--danger); background: linear-gradient(90deg, rgba(239,68,68,0.12), var(--card-bg));">
-        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 10px;">
           <div>
-            <span style="font-size: 10px; font-weight: 800; color: #f87171; letter-spacing: 0.08em; text-transform: uppercase;">INVESTIGATIVE FORENSIC DOSSIER</span>
-            <h2 id="res-verdict-title" style="font-size: 21px; font-weight: 800; color: #fff; margin-top: 2px;">SUSPICIOUS PHISHING / BEC ATTACK</h2>
-            <p id="res-verdict-sub" style="font-size: 12px; color: var(--text-muted); margin-top: 4px;"></p>
+            <span style="font-size: 9.5px; font-weight: 800; color: #f87171; letter-spacing: 0.08em; text-transform: uppercase;">INVESTIGATIVE FORENSIC DOSSIER</span>
+            <h2 id="res-verdict-title" style="font-size: 19px; font-weight: 800; color: #fff; margin-top: 2px;">SUSPICIOUS PHISHING / BEC ATTACK</h2>
+            <p id="res-verdict-sub" style="font-size: 11.5px; color: var(--text-muted); margin-top: 3px;"></p>
           </div>
           <div style="text-align: right;">
-            <div style="font-size: 34px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;" id="res-score-badge">85<span style="font-size: 16px; color: var(--text-muted);">/100</span></div>
-            <span style="font-size: 11px; font-weight: 700; color: #f87171;" id="res-status-tag">HIGH RISK</span>
+            <div style="font-size: 32px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;" id="res-score-badge">85<span style="font-size: 15px; color: var(--text-muted);">/100</span></div>
+            <span style="font-size: 10.5px; font-weight: 700; color: #f87171;" id="res-status-tag">HIGH RISK</span>
           </div>
         </div>
       </div>
 
       <!-- Navigation Tabs -->
       <div class="nav-tabs">
-        <button class="nav-tab active" onclick="switchTab('overview', this)"><i data-lucide="layout-dashboard" style="width: 13px;"></i> Overview</button>
-        <button class="nav-tab" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 13px;"></i> 🗺️ SMTP Trace & GeoIP Map</button>
-        <button class="nav-tab" onclick="switchTab('graph', this)"><i data-lucide="network" style="width: 13px;"></i> 🕸️ Threat Attribution Graph</button>
-        <button class="nav-tab" onclick="switchTab('nlp', this)"><i data-lucide="brain" style="width: 13px;"></i> 🧠 Deep AI Paragraph Inspector</button>
-        <button class="nav-tab" onclick="switchTab('mitre', this)"><i data-lucide="crosshair" style="width: 13px;"></i> 🎯 MITRE ATT&CK Matrix</button>
-        <button class="nav-tab" onclick="switchTab('auth', this)"><i data-lucide="shield-check" style="width: 13px;"></i> SPF / DKIM / DMARC</button>
-        <button class="nav-tab" onclick="switchTab('urls', this)"><i data-lucide="link" style="width: 13px;"></i> Payload URLs</button>
-        <button class="nav-tab" onclick="switchTab('files', this)"><i data-lucide="paperclip" style="width: 13px;"></i> Attachments</button>
-        <button class="nav-tab" onclick="switchTab('dossier', this)"><i data-lucide="file-check" style="width: 13px;"></i> 📜 Legal Court Dossier (Sec 65B)</button>
+        <button class="nav-tab active" onclick="switchTab('overview', this)"><i data-lucide="layout-dashboard" style="width: 12px;"></i> Overview</button>
+        <button class="nav-tab" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 12px;"></i> 🗺️ GeoIP Map</button>
+        <button class="nav-tab" onclick="switchTab('graph', this)"><i data-lucide="network" style="width: 12px;"></i> 🕸️ Graph</button>
+        <button class="nav-tab" onclick="switchTab('nlp', this)"><i data-lucide="brain" style="width: 12px;"></i> 🧠 Deep AI NLP</button>
+        <button class="nav-tab" onclick="switchTab('mitre', this)"><i data-lucide="crosshair" style="width: 12px;"></i> 🎯 MITRE</button>
+        <button class="nav-tab" onclick="switchTab('auth', this)"><i data-lucide="shield-check" style="width: 12px;"></i> SPF / DKIM</button>
+        <button class="nav-tab" onclick="switchTab('urls', this)"><i data-lucide="link" style="width: 12px;"></i> URLs</button>
+        <button class="nav-tab" onclick="switchTab('files', this)"><i data-lucide="paperclip" style="width: 12px;"></i> Files</button>
+        <button class="nav-tab" onclick="switchTab('dossier', this)"><i data-lucide="file-check" style="width: 12px;"></i> 📜 Court Dossier</button>
       </div>
 
       <!-- Tab: Overview -->
       <div id="tab-overview" class="result-grid">
         <div class="card">
-          <div class="card-title"><i data-lucide="tag" style="width: 16px; color: #60a5fa;"></i><div><small>CATEGORY</small><h3 id="cat-label">Phishing / BEC</h3></div></div>
-          <p id="cat-desc" style="color: var(--text-muted); font-size: 12px; margin-bottom: 12px;"></p>
+          <div class="card-title"><i data-lucide="tag" style="width: 15px; color: #60a5fa;"></i><div><small>CATEGORY</small><h3 id="cat-label">Phishing / BEC</h3></div></div>
+          <p id="cat-desc" style="color: var(--text-muted); font-size: 11.5px; margin-bottom: 10px;"></p>
           <div class="key-val"><span>Sender Identity</span><strong id="meta-from" class="mono"></strong></div>
           <div class="key-val"><span>Target Mailbox</span><strong id="meta-to" class="mono"></strong></div>
           <div class="key-val"><span>Origin Location</span><strong id="geo-summary-tag" style="color: #f87171;"></strong></div>
-          <div class="key-val"><span>Preservation SHA-256</span><strong id="meta-sha256" class="mono" style="font-size: 10px; color: #93c5fd;"></strong></div>
+          <div class="key-val"><span>Preservation SHA-256</span><strong id="meta-sha256" class="mono" style="font-size: 9.5px; color: #93c5fd;"></strong></div>
         </div>
 
         <div class="card">
-          <div class="card-title"><i data-lucide="list-checks" style="width: 16px; color: #34d399;"></i><div><small>SCORE LEDGER (EXPLICIT WEIGHTS)</small><h3>Observed Threat Signals</h3></div></div>
+          <div class="card-title"><i data-lucide="list-checks" style="width: 15px; color: #34d399;"></i><div><small>SCORE LEDGER (EXPLICIT WEIGHTS)</small><h3>Observed Threat Signals</h3></div></div>
           <div id="signals-list" style="max-height: 200px; overflow-y: auto;"></div>
         </div>
       </div>
 
       <!-- Tab: SMTP Trace & GeoIP Map (Component 2 & 3) -->
       <div id="tab-geomap" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="map" style="width: 16px; color: #38bdf8;"></i><div><small>COMPONENT 2 & 3</small><h3>SMTP Relay Path & GeoIP Flight Trajectory</h3></div></div>
+        <div class="card-title"><i data-lucide="map" style="width: 15px; color: #38bdf8;"></i><div><small>COMPONENT 2 & 3</small><h3>SMTP Relay Path & GeoIP Flight Trajectory</h3></div></div>
         <div id="map-container"></div>
         <div class="hop-timeline" id="hop-timeline-list"></div>
       </div>
 
       <!-- Tab: Threat Attribution Graph Topology (Component 4) -->
       <div id="tab-graph" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="share-2" style="width: 16px; color: #a855f7;"></i><div><small>COMPONENT 4</small><h3>Identity Correlation & Campaign Attribution Graph</h3></div></div>
+        <div class="card-title"><i data-lucide="share-2" style="width: 15px; color: #a855f7;"></i><div><small>COMPONENT 4</small><h3>Identity Correlation & Campaign Attribution Graph</h3></div></div>
         <div id="graph-canvas-wrap">
           <svg id="attribution-svg" width="100%" height="100%"></svg>
         </div>
@@ -456,52 +527,52 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <!-- Tab: Deep AI Paragraph & NLP Inspector -->
       <div id="tab-nlp" class="card" style="display: none;">
         <div class="card-title">
-          <i data-lucide="brain" style="width: 16px; color: #f43f5e;"></i>
+          <i data-lucide="brain" style="width: 15px; color: #f43f5e;"></i>
           <div>
             <small>DEEP NLP & PSYCHOLOGICAL THREAT EXTRACTION (1,000,000+ WORD CAPACITY)</small>
             <h3>Paragraph-by-Paragraph Semantic Threat Dissection</h3>
           </div>
         </div>
 
-        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-bottom: 16px;">
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
-            <span style="font-size: 11px; color: var(--text-muted);">Total Paragraphs Scanned</span>
-            <div id="nlp-total-paras" style="font-size: 20px; font-weight: 800; color: #60a5fa; font-family: 'DM Mono', monospace;">0</div>
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 10px; margin-bottom: 14px;">
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
+            <span style="font-size: 10px; color: var(--text-muted);">Total Paragraphs Scanned</span>
+            <div id="nlp-total-paras" style="font-size: 18px; font-weight: 800; color: #60a5fa; font-family: 'DM Mono', monospace;">0</div>
           </div>
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
-            <span style="font-size: 11px; color: var(--text-muted);">Malicious Paragraphs</span>
-            <div id="nlp-flagged-paras" style="font-size: 20px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;">0</div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
+            <span style="font-size: 10px; color: var(--text-muted);">Malicious Paragraphs</span>
+            <div id="nlp-flagged-paras" style="font-size: 18px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace;">0</div>
           </div>
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
-            <span style="font-size: 11px; color: var(--text-muted);">NLP Threat Score</span>
-            <div id="nlp-score-val" style="font-size: 20px; font-weight: 800; color: #fbbf24; font-family: 'DM Mono', monospace;">0/100</div>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 8px;">
+            <span style="font-size: 10px; color: var(--text-muted);">NLP Threat Score</span>
+            <div id="nlp-score-val" style="font-size: 18px; font-weight: 800; color: #fbbf24; font-family: 'DM Mono', monospace;">0/100</div>
           </div>
         </div>
 
-        <div id="nlp-triggers-container" style="margin-bottom: 16px;"></div>
-        <div id="nlp-paragraphs-list" style="display: flex; flex-direction: column; gap: 12px;"></div>
+        <div id="nlp-triggers-container" style="margin-bottom: 12px;"></div>
+        <div id="nlp-paragraphs-list" style="display: flex; flex-direction: column; gap: 10px;"></div>
       </div>
 
       <!-- Tab: MITRE ATT&CK Matrix -->
       <div id="tab-mitre" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="crosshair" style="width: 16px; color: #c084fc;"></i><div><small>TACTICS & TECHNIQUES</small><h3>MITRE ATT&CK Enterprise Matrix Mapping</h3></div></div>
-        <div style="margin-bottom: 16px;">
+        <div class="card-title"><i data-lucide="crosshair" style="width: 15px; color: #c084fc;"></i><div><small>TACTICS & TECHNIQUES</small><h3>MITRE ATT&CK Enterprise Matrix Mapping</h3></div></div>
+        <div style="margin-bottom: 12px;">
           <span class="mitre-badge">T1566.001 Spearphishing Attachment</span>
           <span class="mitre-badge">T1566.002 Spearphishing Link</span>
           <span class="mitre-badge">T1586.002 Compromised Email Account</span>
           <span class="mitre-badge">T1078 Valid Accounts</span>
           <span class="mitre-badge">T1598 Phishing for Information</span>
         </div>
-        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
-          <h4 style="font-size: 12px; color: #93c5fd; margin-bottom: 4px;">🤖 AI Forensic Investigator Breakdown (Bilingual / द्विभाषी):</h4>
-          <p id="mitre-explanation-en" style="font-size: 12px; color: #cbd5e1; margin-bottom: 6px;"></p>
-          <p id="mitre-explanation-hi" style="font-size: 12px; color: #94a3b8; font-style: italic;"></p>
+        <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px;">
+          <h4 style="font-size: 11.5px; color: #93c5fd; margin-bottom: 4px;">🤖 AI Forensic Investigator Breakdown (Bilingual / द्विभाषी):</h4>
+          <p id="mitre-explanation-en" style="font-size: 11.5px; color: #cbd5e1; margin-bottom: 4px;"></p>
+          <p id="mitre-explanation-hi" style="font-size: 11.5px; color: #94a3b8; font-style: italic;"></p>
         </div>
       </div>
 
       <!-- Tab: Auth Checks -->
       <div id="tab-auth" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="shield" style="width: 16px; color: #34d399;"></i><div><small>COMPONENT 2</small><h3>RFC Header Protocol Authentication Matrix</h3></div></div>
+        <div class="card-title"><i data-lucide="shield" style="width: 15px; color: #34d399;"></i><div><small>COMPONENT 2</small><h3>RFC Header Protocol Authentication Matrix</h3></div></div>
         <div class="key-val"><span>SPF (Sender Policy Framework)</span><strong id="auth-spf"></strong></div>
         <div class="key-val"><span>DKIM (DomainKeys Identified Mail)</span><strong id="auth-dkim"></strong></div>
         <div class="key-val"><span>DMARC (Domain-based Message Authentication)</span><strong id="auth-dmarc"></strong></div>
@@ -511,44 +582,128 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       <!-- Tab: URLs -->
       <div id="tab-urls" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="link" style="width: 16px; color: #fbbf24;"></i><div><small>URL EXTRACTION</small><h3>Payload & Redirection Links</h3></div></div>
+        <div class="card-title"><i data-lucide="link" style="width: 15px; color: #fbbf24;"></i><div><small>URL EXTRACTION</small><h3>Payload & Redirection Links</h3></div></div>
         <div id="urls-list"></div>
       </div>
 
       <!-- Tab: Attachments -->
       <div id="tab-files" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="paperclip" style="width: 16px; color: #f43f5e;"></i><div><small>ATTACHMENTS</small><h3>Disassembled Attachment Forensics</h3></div></div>
+        <div class="card-title"><i data-lucide="paperclip" style="width: 15px; color: #f43f5e;"></i><div><small>ATTACHMENTS</small><h3>Disassembled Attachment Forensics</h3></div></div>
         <div id="files-list"></div>
       </div>
 
-      <!-- Tab: Court-Admissible Law Enforcement Dossier (Component 5 & 6) -->
-      <div id="tab-dossier" class="card" style="display: none; background: #0f172a; border-color: #334155;">
-        <div style="border-bottom: 2px solid #3b82f6; padding-bottom: 12px; margin-bottom: 16px; display: flex; justify-content: space-between; align-items: flex-start;">
-          <div>
-            <h2 style="font-size: 18px; font-weight: 800; color: #fff;">CERTIFICATE OF ELECTRONIC EVIDENCE</h2>
-            <small style="color: #94a3b8;">Issued under Section 65B of Indian Evidence Act / ISO 27037 Digital Forensics Standards</small>
-          </div>
-          <button class="primary-btn" onclick="window.print()"><i data-lucide="printer"></i> Print / Save PDF</button>
+      <!-- Tab: MASTER FORENSIC DOSSIER & COURT CERTIFICATE (Section 65B Compliant) -->
+      <div id="tab-dossier" style="display: none;">
+        <div style="margin-bottom: 12px; display: flex; justify-content: flex-end; gap: 8px;">
+          <button class="primary-btn" onclick="window.print()"><i data-lucide="printer"></i> Print / Save Court PDF</button>
         </div>
 
-        <div style="font-size: 12px; line-height: 1.8; color: #cbd5e1;">
-          <div class="key-val"><span>Evidence Custody ID</span><strong id="dossier-evid-id" class="mono" style="color: #60a5fa;"></strong></div>
-          <div class="key-val"><span>Cryptographic SHA-256 Digest</span><strong id="dossier-sha256" class="mono" style="color: #34d399;"></strong></div>
-          <div class="key-val"><span>Acquisition Timestamp (UTC)</span><strong id="dossier-timestamp" class="mono"></strong></div>
-          <div class="key-val"><span>Identified Threat Origin</span><strong id="dossier-origin" style="color: #f87171;"></strong></div>
-          <div class="key-val"><span>Associated Threat Campaign</span><strong id="dossier-campaign" style="color: #c084fc;"></strong></div>
-          
-          <h4 style="margin-top: 16px; margin-bottom: 6px; color: #fff;">Investigator Technical Findings:</h4>
-          <p id="dossier-findings" style="background: rgba(0,0,0,0.3); padding: 12px; border-radius: 8px; font-family: 'DM Mono', monospace; font-size: 11px;"></p>
-
-          <div style="margin-top: 24px; padding-top: 16px; border-top: 1px dashed #475569; display: flex; justify-content: space-between;">
+        <div class="dossier-wrap">
+          <!-- Official Gov / Forensic Lab Header -->
+          <div class="dossier-header">
             <div>
-              <p>Preserved by: <strong>Cyber Squad Forensic Engine (SIH #26106)</strong></p>
-              <p>Evidentiary Status: <strong>Sealed & Immutable</strong></p>
+              <div class="dossier-gov-seal">GOVERNMENT OF INDIA · DIGITAL EVIDENCE INVESTIGATION CELL</div>
+              <div class="dossier-main-title">FORENSIC CERTIFICATE OF ELECTRONIC EVIDENCE</div>
+              <div style="font-size: 11px; color: #64748b; font-weight: 600;">Issued under Section 65B of Indian Evidence Act, 1872 & ISO/IEC 27037 Forensic Standards</div>
             </div>
             <div style="text-align: right;">
-              <p>Investigator Signature: _______________________</p>
-              <p>Date & Station: ___________________________</p>
+              <span class="dossier-badge-court">LEGAL EVIDENCE · CONFIDENTIAL</span>
+              <div class="mono" style="font-size: 10px; color: #475569; margin-top: 4px;">REF: SIH2026-CCIB-26106</div>
+            </div>
+          </div>
+
+          <!-- Section 1: Chain of Custody & Evidence Metadata -->
+          <div class="dossier-section-title">1. Chain of Custody & Cryptographic Identification</div>
+          <table class="dossier-table">
+            <tr>
+              <th style="width: 25%;">Evidence ID</th>
+              <td style="width: 25%;" id="dossier-evid-id" class="mono font-bold"></td>
+              <th style="width: 25%;">Acquisition Timestamp (UTC)</th>
+              <td style="width: 25%;" id="dossier-timestamp" class="mono"></td>
+            </tr>
+            <tr>
+              <th>SHA-256 Digest</th>
+              <td colspan="3" id="dossier-sha256" class="mono" style="font-weight: 700; color: #1e3a8a;"></td>
+            </tr>
+            <tr>
+              <th>Subject Line</th>
+              <td id="dossier-subject" style="font-weight: 700;"></td>
+              <th>Sealed Status</th>
+              <td><strong style="color: #16a34a;">Cryptographically Verified & Tamper-Proof</strong></td>
+            </tr>
+          </table>
+
+          <!-- Section 2: Identity & Attribution Triage -->
+          <div class="dossier-section-title">2. Sender Identity & Geolocation Attribution Analysis</div>
+          <table class="dossier-table">
+            <tr>
+              <th style="width: 25%;">Claimed Sender (From)</th>
+              <td style="width: 25%;" id="dossier-from" class="mono"></td>
+              <th style="width: 25%;">Target Mailbox (To)</th>
+              <td style="width: 25%;" id="dossier-to" class="mono"></td>
+            </tr>
+            <tr>
+              <th>Originating MTA Node</th>
+              <td id="dossier-origin-node" class="mono"></td>
+              <th>Origin IP & ASN</th>
+              <td id="dossier-origin-ip" class="mono"></td>
+            </tr>
+            <tr>
+              <th>Physical Geolocation</th>
+              <td id="dossier-origin" style="font-weight: 700; color: #b91c1c;"></td>
+              <th>Identified Campaign Cluster</th>
+              <td id="dossier-campaign" class="mono" style="font-weight: 700; color: #6b21a8;"></td>
+            </tr>
+          </table>
+
+          <!-- Section 3: Protocol Authentication & Routing Matrix -->
+          <div class="dossier-section-title">3. RFC Transport Protocol Authentication Results</div>
+          <table class="dossier-table">
+            <tr>
+              <th style="width: 20%;">SPF Status</th>
+              <td style="width: 30%;" id="dossier-spf"></td>
+              <th style="width: 20%;">DKIM Signature</th>
+              <td style="width: 30%;" id="dossier-dkim"></td>
+            </tr>
+            <tr>
+              <th>DMARC Policy</th>
+              <td id="dossier-dmarc"></td>
+              <th>Relay Alignment</th>
+              <td id="dossier-align"></td>
+            </tr>
+          </table>
+
+          <!-- Section 4: Forensic Findings & Threat Signals -->
+          <div class="dossier-section-title">4. Technical Evidence Findings & Mathematical Score Breakdown</div>
+          <div style="background: #f8fafc; border: 1px solid #cbd5e1; border-radius: 6px; padding: 10px; margin-bottom: 12px;">
+            <div style="display: flex; justify-content: space-between; font-weight: 800; font-size: 13px; margin-bottom: 6px;">
+              <span>PRIMARY CLASSIFICATION: <span id="dossier-verdict" style="color: #b91c1c;"></span></span>
+              <span>CALCULATED RISK SCORE: <span id="dossier-score" class="mono" style="color: #b91c1c;"></span>/100</span>
+            </div>
+            <div id="dossier-signals-table"></div>
+          </div>
+
+          <!-- Section 5: Mandatory Legal Declaration Under Section 65B -->
+          <div class="dossier-section-title">5. Certificate Declaration Under Section 65B Indian Evidence Act</div>
+          <div class="dossier-legal-box">
+            I, the undersigned Certified Forensic Investigator, hereby declare under Section 65B(4) of the Indian Evidence Act, 1872, that:
+            <ol style="margin-left: 16px; margin-top: 4px;">
+              <li>The electronic mail evidence described in this dossier was produced by automated deterministic forensic software during the ordinary course of lawful cyber security operations.</li>
+              <li>The cryptographic hash (SHA-256) recorded above verifies that the digital evidence has remained intact, authentic, and un-tampered since acquisition.</li>
+              <li>The technical findings, relay reconstructions, and threat classifications accurately represent the immutable transport headers and RFC parameters of the ingested record.</li>
+            </ol>
+          </div>
+
+          <!-- Investigator Signatures & Stamp -->
+          <div class="dossier-sign-row">
+            <div>
+              <p>Preservation Authority: <strong>Cyber Squad Forensic Ecosystem (SIH #26106)</strong></p>
+              <p>System State: <strong>Deterministic Audit Trail Verified</strong></p>
+            </div>
+            <div style="text-align: right;">
+              <p><strong>Forensic Examiner / Cyber Crime Officer</strong></p>
+              <p style="margin-top: 18px;">Signature: ___________________________</p>
+              <p>Date & Seal: ____________________________</p>
             </div>
           </div>
         </div>
@@ -562,6 +717,31 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     let currentAnalysis = null;
     let leafletMap = null;
     let maskPII = false;
+
+    // Dropzone Drag-and-Drop Event Listeners
+    const dropzone = document.getElementById('eml-dropzone');
+    if (dropzone) {
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropzone.classList.add('dragover');
+        }, false);
+      });
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropzone.addEventListener(eventName, (e) => {
+          e.preventDefault(); e.stopPropagation();
+          dropzone.classList.remove('dragover');
+        }, false);
+      });
+      dropzone.addEventListener('drop', (e) => {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        if (files.length > 0) {
+          document.getElementById('eml-input').files = files;
+          handleFileSelect({ target: { files: files } });
+        }
+      }, false);
+    }
 
     function showLoader(show) {
       document.getElementById('radar-loader').style.display = show ? 'block' : 'none';
@@ -612,7 +792,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     function togglePII() {
       maskPII = !maskPII;
-      document.getElementById('pii-toggle-text').innerText = maskPII ? "Reveal PII" : "Mask PII";
+      document.getElementById('pii-toggle-text').innerText = maskPII ? "Reveal PII" : "PII";
       if (currentAnalysis) renderAnalysis(currentAnalysis);
     }
 
@@ -705,7 +885,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const score = data.threat?.risk_score || 0;
       const scoreColor = score >= 70 ? 'var(--danger)' : (score >= 35 ? 'var(--warning)' : 'var(--success)');
       
-      document.getElementById('res-score-badge').innerHTML = `${score}<span style="font-size: 16px; color: var(--text-muted);">/100</span>`;
+      document.getElementById('res-score-badge').innerHTML = `${score}<span style="font-size: 15px; color: var(--text-muted);">/100</span>`;
       document.getElementById('res-score-badge').style.color = scoreColor;
       document.getElementById('res-status-tag').innerText = data.threat?.status || "ANALYZED";
       document.getElementById('res-status-tag').style.color = scoreColor;
@@ -741,19 +921,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const parasList = document.getElementById('nlp-paragraphs-list');
       const flagged = nlp.flagged_paragraphs || [];
       if (flagged.length === 0) {
-        parasList.innerHTML = '<p style="color: var(--text-muted); font-size: 12px;">No malicious paragraph cues found in the message body.</p>';
+        parasList.innerHTML = '<p style="color: var(--text-muted); font-size: 11.5px;">No malicious paragraph cues found in the message body.</p>';
       } else {
         parasList.innerHTML = flagged.map(p => `
-          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-left: 3px solid #ef4444; border-radius: 8px; padding: 12px;">
-            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
-              <span style="font-weight: 800; font-size: 12px; color: #f87171;">PARAGRAPH #${p.paragraph_number} — THREAT DETECTED</span>
-              <span class="mono" style="font-size: 11px; color: #fbbf24;">Risk +${p.threat_score}</span>
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-left: 3px solid #ef4444; border-radius: 8px; padding: 10px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px;">
+              <span style="font-weight: 800; font-size: 11.5px; color: #f87171;">PARAGRAPH #${p.paragraph_number} — THREAT DETECTED</span>
+              <span class="mono" style="font-size: 10.5px; color: #fbbf24;">Risk +${p.threat_score}</span>
             </div>
-            <p class="mono" style="font-size: 11px; color: #e2e8f0; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; margin-bottom: 8px;">
+            <p class="mono" style="font-size: 11px; color: #e2e8f0; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px; margin-bottom: 6px;">
               "${p.text_snippet}"
             </p>
             ${(p.findings || []).map(f => `
-              <div style="margin-top: 6px; font-size: 11px; line-height: 1.5;">
+              <div style="margin-top: 4px; font-size: 11px; line-height: 1.5;">
                 <strong style="color: #60a5fa;">${f.category}:</strong>
                 <span style="color: #cbd5e1;"> ${f.expl_en}</span><br>
                 <span style="color: #94a3b8; font-style: italic;">👉 ${f.expl_hi}</span>
@@ -786,9 +966,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       // Auth Checks
       const auth = data.dns_auth || {};
-      document.getElementById('auth-spf').innerHTML = auth.spf === 'PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--danger)">' + (auth.spf || 'FAIL / NONE') + '</span>';
-      document.getElementById('auth-dkim').innerHTML = auth.dkim === 'PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--danger)">' + (auth.dkim || 'FAIL / NONE') + '</span>';
-      document.getElementById('auth-dmarc').innerHTML = auth.dmarc === 'PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--warning)">' + (auth.dmarc || 'NONE / QUARANTINE') + '</span>';
+      document.getElementById('auth-spf').innerHTML = auth.spf === 'PASS' || auth.spf === 'REPORTED PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--danger)">' + (auth.spf || 'FAIL / NONE') + '</span>';
+      document.getElementById('auth-dkim').innerHTML = auth.dkim === 'PASS' || auth.dkim === 'REPORTED PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--danger)">' + (auth.dkim || 'FAIL / NONE') + '</span>';
+      document.getElementById('auth-dmarc').innerHTML = auth.dmarc === 'PASS' || auth.dmarc === 'REPORTED PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--warning)">' + (auth.dmarc || 'NONE / QUARANTINE') + '</span>';
       document.getElementById('auth-align').innerHTML = '<span style="color: var(--success)">Verified RFC Alignment</span>';
       document.getElementById('auth-msgid').innerHTML = '<span style="color: var(--success)">RFC 5322 Compliant</span>';
 
@@ -797,7 +977,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       urlsList.innerHTML = (data.aitm_analysis || []).map(u => `
         <div class="key-val">
           <span class="mono">${u.display_domain || u.url}</span>
-          <button class="ghost-btn" style="color: #ef4444;" onclick="openQuickApp('${u.url}')"><i data-lucide="play" style="width: 10px;"></i> Detonate in Sandbox</button>
+          <button class="ghost-btn" style="color: #ef4444;" onclick="openQuickApp('${u.url}')"><i data-lucide="play" style="width: 10px;"></i> Detonate</button>
         </div>
       `).join('') || '<p style="color: var(--text-muted); font-size: 11px;">No embedded URLs extracted.</p>';
 
@@ -810,14 +990,34 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       `).join('') || '<p style="color: var(--text-muted); font-size: 11px;">No file attachments attached.</p>';
 
-      // Dossier Tab
+      // Populate Master Section 65B Dossier
       const custody = data.legal_chain_of_custody || {};
       document.getElementById('dossier-evid-id').innerText = custody.evidence_id || ("EVID-" + (data.evidence?.sha256 || "").slice(0,12));
       document.getElementById('dossier-sha256').innerText = data.evidence?.sha256 || "N/A";
       document.getElementById('dossier-timestamp').innerText = custody.ingestion_timestamp_utc || new Date().toISOString();
+      document.getElementById('dossier-subject').innerText = data.parsed?.meta?.subject || "N/A";
+      document.getElementById('dossier-from').innerText = redactText(data.parsed?.meta?.from || "Not specified");
+      document.getElementById('dossier-to').innerText = redactText(data.parsed?.meta?.to || "Not specified");
+      document.getElementById('dossier-origin-node').innerText = originNode?.from_host || "Direct Transmission";
+      document.getElementById('dossier-origin-ip').innerText = `${originNode?.ip || 'N/A'} (ASN: ${originGeo?.asn || 'N/A'})`;
       document.getElementById('dossier-origin').innerText = originStr;
       document.getElementById('dossier-campaign').innerText = data.graph_topology?.campaign_id || "CAMP-SUSPECT-ALPHA";
-      document.getElementById('dossier-findings').innerText = `Primary Verdict: ${data.category_analysis?.category_label}\nRisk Score: ${score}/100\nAttribution: ${originStr}\nOrigin IP: ${originNode?.ip || 'N/A'} (ASN: ${originGeo?.asn || 'N/A'})\nThreat Level: ${originGeo?.threat_flag || 'EVALUATED'}\nPreservation Standard: RFC 5322 MIME Immutable Stream with Section 65B Hash Verification.`;
+      
+      document.getElementById('dossier-spf').innerText = auth.spf || "NOT AVAILABLE";
+      document.getElementById('dossier-dkim').innerText = auth.dkim || "NOT AVAILABLE";
+      document.getElementById('dossier-dmarc').innerText = auth.dmarc || "NOT AVAILABLE";
+      document.getElementById('dossier-align').innerText = "Envelope vs Header Mismatch Evaluated";
+      
+      document.getElementById('dossier-verdict').innerText = data.category_analysis?.category_label || "Analyzed";
+      document.getElementById('dossier-score').innerText = score;
+
+      const dossierSignals = (data.threat?.signals || []).map(s => `
+        <div style="display: flex; justify-content: space-between; border-bottom: 1px solid #e2e8f0; padding: 4px 0; font-size: 11px;">
+          <span>• ${s.label || s.code}</span>
+          <strong style="color: #b91c1c;">+${s.weight || s.points || 15} pts</strong>
+        </div>
+      `).join('') || '<div>No high-risk signals detected.</div>';
+      document.getElementById('dossier-signals-table').innerHTML = dossierSignals;
 
       lucide.createIcons();
     }
@@ -882,7 +1082,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
       if (latlngs.length > 1) {
         L.polyline(latlngs, { color: '#38bdf8', weight: 3, dashArray: '6, 8', opacity: 0.8 }).addTo(leafletMap);
-        leafletMap.fitBounds(L.latLngBounds(latlngs), { padding: [40, 40] });
+        leafletMap.fitBounds(L.latLngBounds(latlngs), { padding: [30, 30] });
       }
     }
 
@@ -893,7 +1093,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       svg.innerHTML = '';
 
       const width = svg.clientWidth || 800;
-      const height = svg.clientHeight || 420;
+      const height = svg.clientHeight || 380;
 
       const nodes = graph.nodes || [];
       const nodeCount = nodes.length || 1;
@@ -930,7 +1130,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', pos.x);
         circle.setAttribute('cy', pos.y);
-        circle.setAttribute('r', '22');
+        circle.setAttribute('r', '20');
         circle.setAttribute('fill', pos.color || '#3b82f6');
         circle.setAttribute('stroke', '#fff');
         circle.setAttribute('stroke-width', '2');
@@ -939,10 +1139,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', pos.x);
-        text.setAttribute('y', pos.y + 36);
+        text.setAttribute('y', pos.y + 32);
         text.setAttribute('text-anchor', 'middle');
         text.setAttribute('fill', '#edf2f7');
-        text.setAttribute('font-size', '11px');
+        text.setAttribute('font-size', '10.5px');
         text.setAttribute('font-weight', '700');
         text.textContent = (pos.label || pos.id).split('\n')[0];
         g.appendChild(text);
@@ -953,7 +1153,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     function printDossier() {
       switchTab('dossier', document.querySelector('.nav-tabs button:last-child'));
-      setTimeout(() => window.print(), 300);
+      setTimeout(() => window.print(), 350);
     }
 
     function openQuickApp(url) {
