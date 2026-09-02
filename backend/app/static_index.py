@@ -310,6 +310,33 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       .dossier-legal-box { border-left-color: #1e3a8a !important; background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
       @page { margin: 12mm; size: A4; }
     }
+  
+    /* Mobile-First Master Responsive Rules */
+    @media (max-width: 680px) {
+      .header-wrap { padding: 10px 12px !important; }
+      .header-meta { display: none !important; }
+      .main-wrap { padding: 10px 10px 30px !important; }
+      
+      .mode-bar { gap: 4px !important; padding: 4px !important; margin-bottom: 12px !important; }
+      .mode-tab { min-width: 95px !important; padding: 8px 8px !important; font-size: 11px !important; }
+      
+      .card { padding: 12px 10px !important; border-radius: 12px !important; margin-bottom: 10px !important; }
+      .dropzone-box { padding: 24px 12px !important; border-radius: 14px !important; }
+      .dropzone-box i { width: 36px !important; height: 36px !important; }
+      
+      .sandbox-ctrl-row { flex-direction: column !important; }
+      .sandbox-ctrl-row button { width: 100% !important; }
+      
+      .nav-tabs { gap: 3px !important; padding-bottom: 4px !important; }
+      .nav-tab { padding: 7px 9px !important; font-size: 11px !important; }
+      
+      .result-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
+      #map-container { height: 260px !important; }
+      
+      .dossier-sign-row { flex-direction: column !important; gap: 14px !important; }
+      .dossier-sign-row > div:last-child { text-align: left !important; }
+    }
+
   </style>
 </head>
 <body>
@@ -408,7 +435,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
 
         <!-- Interactive Browser Address & Search Bar -->
-        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+        <div class="sandbox-ctrl-row" style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
           <div style="flex: 1; min-width: 260px; position: relative;">
             <i data-lucide="search" style="position: absolute; left: 12px; top: 12px; width: 15px; color: var(--text-muted);"></i>
             <input type="text" id="web-sandbox-url" value="https://example.com" placeholder="Enter full URL or search keywords (e.g. sbi netbanking or https://bad-site.com)..." style="width: 100%; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px 10px 38px; color: #fff; font-size: 14px;" onkeydown="if(event.key==='Enter') detonateWebLink()">
