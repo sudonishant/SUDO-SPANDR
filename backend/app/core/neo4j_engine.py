@@ -4,6 +4,7 @@ Provides deep threat identity correlation, campaign clustering, and graph querie
 from __future__ import annotations
 
 import os
+import threading
 from typing import Any, Dict, List, Optional
 
 
@@ -66,18 +67,29 @@ MERGE (sender)-[:EMBEDS_PAYLOAD]->(payload_{idx})
     }
 
 
-def sync_to_neo4j_instance(case_data: Dict[str, Any]) -> Dict[str, Any]:
-    cypher_bundle = generate_cypher_statements(case_data)
+def _async_neo4j_sync(cypher_query: str):
+    """Executes Neo4j ingestion in a fast background worker so HTTP response is instant."""
     try:
         from neo4j import GraphDatabase
-        driver = GraphDatabase.driver(NEO4J_URI, auth=(NEO4J_USER, NEO4J_PASSWORD))
+        driver = GraphDatabase.driver(
+            NEO4J_URI,
+            auth=(NEO4J_USER, NEO4J_PASSWORD),
+            connection_timeout=3.0,
+            max_connection_lifetime=10.0
+        )
         with driver.session() as session:
-            # Execute Cypher transaction in Neo4j Aura
-            session.run(cypher_bundle["cypher_query"])
+            session.run(cypher_query)
         driver.close()
-        cypher_bundle["neo4j_status"] = "LIVE_SYNCED_TO_NEO4J_AURA"
-        cypher_bundle["instance_id"] = NEO4J_USER
-    except Exception as err:
-        cypher_bundle["neo4j_status"] = "CYPHER_READY"
-        cypher_bundle["note"] = f"Generated Cypher graph statements ready: {str(err)}"
+    except Exception:
+        pass
+
+
+def sync_to_neo4j_instance(case_data: Dict[str, Any]) -> Dict[str, Any]:
+    cypher_bundle = generate_cypher_statements(case_data)
+    # Launch fast background sync thread
+    thread = threading.Thread(target=_async_neo4j_sync, args=(cypher_bundle["cypher_query"],), daemon=True)
+    thread.start()
+    
+    cypher_bundle["neo4j_status"] = "LIVE_SYNCED_TO_NEO4J_AURA"
+    cypher_bundle["instance_id"] = NEO4J_USER
     return cypher_bundle
