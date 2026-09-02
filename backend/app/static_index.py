@@ -1243,7 +1243,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         showLoader(false);
       }
     }
-    }
 
     function renderAnalysis(data) {
       currentAnalysis = data;
