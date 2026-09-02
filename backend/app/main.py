@@ -225,7 +225,19 @@ def _canonical_bytes(subject: str, sender: str, recipient: str, body: str, heade
     return json.dumps({"subject": subject, "sender": sender, "recipient": recipient, "body": body, "headers": headers}, sort_keys=True, ensure_ascii=False).encode("utf-8")
 
 
-def _build_result(subject: str, sender: str, recipient: str, body: str, headers: Dict[str, str], filename: str, raw_bytes: bytes, parsed: Dict[str, Any], attachments: List[Dict[str, Any]]) -> Dict[str, Any]:
+def _build_result(
+    subject: str,
+    sender: str,
+    recipient: str,
+    body: str,
+    headers: Dict[str, str],
+    filename: str,
+    raw_bytes: bytes,
+    parsed: Optional[Dict[str, Any]] = None,
+    attachments: Optional[List[Dict[str, Any]]] = None
+) -> Dict[str, Any]:
+    parsed = parsed or {}
+    attachments = attachments or []
     urls = _url_items(f"{body}\n{json.dumps(headers, ensure_ascii=False)}")
     reply_to = str(headers.get("reply-to", ""))
     header_findings = _header_findings(headers, sender, reply_to)
@@ -399,7 +411,7 @@ async def analyze_raw_text(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
     headers = {str(key).lower(): str(value) for key, value in (req.headers or {}).items()}
     if not req.body.strip() and not req.subject.strip() and not req.sender.strip():
         raise HTTPException(status_code=422, detail="Provide message text, subject, sender, or headers before analysis.")
-    return _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "pasted-text.txt", b"", {})
+    return _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "pasted-text.txt", b"", {}, [])
 
 
 @app.post("/api/gateway-milter-check")
@@ -407,7 +419,7 @@ async def analyze_raw_text(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
 async def gateway_milter_check(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
     """Endpoint specifically designed for Cyber Squad Milter Daemon and Mail Flow Gateways."""
     headers = {str(key).lower(): str(value) for key, value in (req.headers or {}).items()}
-    result = _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "gateway-stream.eml", b"", {})
+    result = _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "gateway-stream.eml", b"", {}, [])
     score = result.get("threat", {}).get("risk_score", 0)
     category = result.get("category_analysis", {})
     
@@ -448,63 +460,25 @@ async def analyze_attachment_endpoint(file: UploadFile = File(...)) -> Dict[str,
     
     report = disassemble_attachment(filename, content)
     sha256 = report.get("sha256") or hashlib.sha256(content).hexdigest()
-    risk_score = report.get("risk_score", 0)
-    
-    status = "HIGH RISK" if risk_score >= 70 else "REVIEW" if risk_score >= 35 else "NO HIGH-RISK SIGNALS OBSERVED"
-    
-    signals = [{"label": f, "points": 25, "evidence": "Observed by static byte inspector"} for f in report.get("findings", [])]
-    
-    return {
-        "case_id": f"CS-ATT-{sha256[:10].upper()}",
-        "format_type": "Standalone Attachment",
-        "filename": filename,
-        "mode": "attachment",
-        "parsed": {
-            "meta": {"from": "N/A (Standalone File)", "to": "N/A", "subject": f"Attachment: {filename}", "date": "N/A"},
-            "headers": {},
-            "body": f"Standalone static analysis for {filename}",
-            "sha256_hash": sha256,
-        },
-        "threat": {
-            "risk_score": risk_score,
-            "baseline_score": risk_score,
-            "adjustments": [],
-            "status": status,
-            "signals": signals,
-            "score_breakdown": {
-                "positive_contributors": signals,
-                "deductions": [],
-                "positive_total": risk_score,
-                "adjustment_total": 0,
-                "final_score": risk_score,
-                "formula": f"{risk_score} observed points = {risk_score} final triage score"
-            },
-            "note": "Static browser/backend attachment inspection; file was not executed or detonated."
-        },
-        "category_analysis": {
-            "category_id": "dangerous_attachments" if risk_score >= 50 else "unknown",
-            "category_label": "Dangerous Attachment / Anomaly" if risk_score >= 50 else "Standalone File",
-            "description": "Static byte inspection of file container, magic headers, and format boundaries.",
-            "alert_level": "high" if risk_score >= 70 else "medium" if risk_score >= 35 else "low",
-            "points": risk_score,
-            "confidence": 85,
-            "confidence_label": "Static inspection only",
-            "spam_assessment": "Not Applicable",
-            "recommended_action": "Detonate in cloud sandbox or inspect in isolated VM before opening." if risk_score >= 35 else "Static checks found no obvious high-risk markers; continue standard precautions."
-        },
-        "dns_auth": {
-            "spf": "NOT APPLICABLE", "dkim": "NOT APPLICABLE", "dmarc": "NOT APPLICABLE", "arc": "NOT APPLICABLE",
-            "note": "Standalone attachments have no email transport envelope."
-        },
-        "aitm_analysis": [],
-        "attachment_analysis": [report],
-        "evidence": {"sha256": sha256, "raw_size_bytes": len(content), "preservation": "Standalone static file inspection report."},
-        "limitations": [
-            "File was not executed, detonated, sandboxed, or scanned with antivirus / YARA.",
-            "A low score is not a guarantee that the file is malware-free."
-        ],
-        "generated_at": datetime.now(timezone.utc).isoformat()
+    parsed_data = {
+        "meta": {"from": "Standalone File Intake", "to": "Forensic Analyzer", "subject": f"Attachment Disassembly: {filename}", "date": datetime.now(timezone.utc).isoformat()},
+        "body": f"File: {filename}\nEntropy: {report.get('entropy', 0)}\nFindings: {report.get('findings', [])}",
+        "headers": {},
+        "sha256_hash": sha256,
+        "hops": [],
+        "defects": []
     }
+    return _build_result(
+        f"Attachment: {filename}",
+        "Standalone Attachment File",
+        "Forensic Intake",
+        f"Attachment Analysis: {filename}",
+        {},
+        filename,
+        content,
+        parsed_data,
+        [report]
+    )
 
 
 @app.post(f"{settings.API_V1_STR}/upload")
