@@ -207,6 +207,25 @@ def _header_findings(headers: Dict[str, str], sender: str, reply_to: str) -> Lis
                         "weight": 28
                     })
 
+    # 5. Known Online Fake Mailer Detection (Emkei.cz, AnonyMailer, etc.)
+    all_headers_str = json.dumps(headers).lower()
+    msg_id = headers.get("message-id", "").lower()
+    msg_id_dom = _extract_domain(msg_id)
+    if "emkei.cz" in all_headers_str or "anonymailer" in all_headers_str or "deadfake" in all_headers_str or "spoofbox" in all_headers_str:
+        findings.append({
+            "id": "known-fake-mailer",
+            "label": "Known Online Spoofing Fake Mailer Detected (Emkei.cz Fake Mailer Node)",
+            "weight": 40
+        })
+
+    # 6. Message-ID Cryptographic Domain Forgery
+    if msg_id_dom and from_domain and msg_id_dom != from_domain and msg_id_dom not in {"gmail.com", "google.com", "outlook.com", "microsoft.com"}:
+        findings.append({
+            "id": "msgid-domain-forgery",
+            "label": f"Message-ID Domain Forgery (Cryptographic envelope '@{msg_id_dom}' differs from claimed '@{from_domain}')",
+            "weight": 30
+        })
+
     if not headers.get("message-id"):
         findings.append({"id": "missing-message-id", "label": "Message-ID header is missing (Non-RFC compliant)", "weight": 6})
     if not headers.get("date"):
