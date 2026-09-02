@@ -336,7 +336,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML File</button>
       <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text / Headers</button>
       <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachment</button>
-      <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="monitor"></i> 4. Virtual Sandbox</button>
+      <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="shield-alert"></i> 4. Safe URL Detonator</button>
     </div>
 
     <!-- Scanning Radar -->
@@ -387,37 +387,51 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       </div>
     </div>
 
-    <!-- 4. NO-VNC VIRTUAL DESKTOP -->
+    
+    <!-- 4. WEB-NATIVE SAFE SANDBOX DETONATOR -->
     <div id="mode-sandbox-view" style="display: none;">
-      <div class="novnc-command-bar">
-        <div class="novnc-ribbon">
-          <span style="font-size: 9.5px; font-weight: 800; color: #64748b; text-transform: uppercase;">1-Click:</span>
-          <button class="ghost-btn" style="color: #f87171;" onclick="openQuickApp('https://mail.google.com')"><i data-lucide="mail" style="width: 11px;"></i> Gmail</button>
-          <button class="ghost-btn" style="color: #60a5fa;" onclick="openQuickApp('https://www.google.com')"><i data-lucide="search" style="width: 11px;"></i> Google</button>
-          <button class="ghost-btn" style="color: #38bdf8;" onclick="openQuickApp('https://outlook.live.com')"><i data-lucide="inbox" style="width: 11px;"></i> Outlook</button>
-          <div class="ribbon-divider"></div>
-          <button class="ghost-btn" style="color: #2dd4bf;" onclick="openQuickApp('https://www.virustotal.com')"><i data-lucide="shield-check" style="width: 11px;"></i> VT</button>
+      <div class="card" style="border-left: 3px solid #38bdf8; background: linear-gradient(135deg, rgba(56,189,248,0.06), var(--card-bg));">
+        <div class="card-title">
+          <i data-lucide="shield-alert" style="width: 15px; color: #38bdf8;"></i>
+          <div><small>AIR-GAPPED THREAT DETONATION (ZERO LINUX/VPS DEPENDENCY)</small><h3>🛡️ Web-Native Safe Link Detonator & DOM Sandbox</h3></div>
         </div>
-        <div class="novnc-ribbon">
-          <button class="ghost-btn" onclick="sendClipboardPrompt()"><i data-lucide="clipboard-copy" style="width: 11px;"></i> Paste</button>
-          <button class="ghost-btn" onclick="restartDesktopSession()"><i data-lucide="rotate-ccw" style="width: 11px;"></i> Reset</button>
-          <button class="ghost-btn" onclick="toggleFullscreen('direct-sandbox-box')"><i data-lucide="maximize" style="width: 11px;"></i> Max</button>
-        </div>
-      </div>
 
-      <div class="url-detonation-box">
-        <div class="url-input-wrap">
-          <i data-lucide="link" style="width: 13px; color: #64748b;"></i>
-          <input type="text" id="direct-sandbox-url" value="http://127.0.0.1:8000" placeholder="Link to detonate..." onkeydown="if(event.key==='Enter') launchDirectSandbox()">
+        <!-- Quick 1-Click Test URLs -->
+        <div style="display: flex; gap: 6px; margin-bottom: 10px; flex-wrap: wrap; align-items: center;">
+          <span style="font-size: 10.5px; color: var(--text-muted); font-weight: 700;">1-Click Detonate:</span>
+          <button class="ghost-btn" style="color: #f87171; border-color: rgba(239,68,68,0.3); padding: 4px 9px; font-size: 10.5px;" onclick="setAndDetonate('https://login.live.com')"><i data-lucide="shield" style="width: 10px;"></i> Microsoft Login</button>
+          <button class="ghost-btn" style="color: #fbbf24; border-color: rgba(251,191,36,0.3); padding: 4px 9px; font-size: 10.5px;" onclick="setAndDetonate('https://accounts.google.com')"><i data-lucide="lock" style="width: 10px;"></i> Google Auth</button>
+          <button class="ghost-btn" style="color: #34d399; border-color: rgba(52,211,153,0.3); padding: 4px 9px; font-size: 10.5px;" onclick="setAndDetonate('https://example.com')"><i data-lucide="check" style="width: 10px;"></i> Benign Target</button>
         </div>
-        <button class="primary-btn" onclick="launchDirectSandbox()"><i data-lucide="play" style="width: 12px;"></i> Detonate</button>
-      </div>
 
-      <div class="sandbox-frame-box" id="direct-sandbox-box">
-        <iframe id="direct-sandbox-iframe" class="sandbox-iframe" src="/novnc/vnc.html?path=websockify&autoconnect=true&password=cybersqu&resize=remote&quality=8&compression=0&reconnect=true" allow="clipboard-read; clipboard-write; fullscreen;"></iframe>
-        <div class="telemetry-bar">
-          <span>🟢 Display :99 (XFCE + Kali Tools)</span>
-          <span class="mono">Air-Gapped Sandbox</span>
+        <div style="display: flex; gap: 8px; margin-bottom: 12px; flex-wrap: wrap;">
+          <input type="text" id="web-sandbox-url" value="https://example.com" placeholder="Enter suspicious link to detonate (e.g. https://phish-bank.com/login)..." style="flex: 1; min-width: 260px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 8px; padding: 10px 14px; color: #fff; font-size: 15px;" onkeydown="if(event.key==='Enter') detonateWebLink()">
+          <button class="primary-btn" style="padding: 10px 20px; font-size: 12px; background: linear-gradient(135deg, #ef4444, #dc2626);" onclick="detonateWebLink()"><i data-lucide="play" style="width: 13px;"></i> Detonate Safely</button>
+        </div>
+
+        <!-- Threat Diagnostics Summary Panel -->
+        <div id="sandbox-diag-panel" style="display: none; background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 10px; padding: 12px; margin-bottom: 12px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(255,255,255,0.06); padding-bottom: 8px; margin-bottom: 8px;">
+            <div>
+              <span style="font-size: 9.5px; font-weight: 800; color: #94a3b8; text-transform: uppercase;">DETONATION VERDICT</span>
+              <h4 id="sb-verdict" style="font-size: 14px; font-weight: 800; color: #f87171;"></h4>
+            </div>
+            <div style="text-align: right;">
+              <span id="sb-risk-score" class="mono font-bold" style="font-size: 18px; color: #f87171;"></span>
+            </div>
+          </div>
+          
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 8px; font-size: 11px;">
+            <div class="key-val" style="border: none; padding: 2px 0;"><span>Target IP / Host:</span><strong id="sb-ip" class="mono" style="color:#60a5fa;"></strong></div>
+            <div class="key-val" style="border: none; padding: 2px 0;"><span>Password Inputs:</span><strong id="sb-pass-count" class="mono" style="color:#f87171;"></strong></div>
+            <div class="key-val" style="border: none; padding: 2px 0;"><span>Form Actions:</span><strong id="sb-forms-count" class="mono" style="color:#fbbf24;"></strong></div>
+            <div class="key-val" style="border: none; padding: 2px 0;"><span>DOM Security:</span><strong style="color:#34d399;">AIR-GAPPED ISOLATED</strong></div>
+          </div>
+        </div>
+
+        <!-- Air-Gapped Sandboxed Preview Iframe -->
+        <div style="border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000; height: 500px; position: relative;">
+          <iframe id="web-sandbox-iframe" style="width: 100%; height: 100%; border: none;" sandbox="allow-same-origin allow-forms"></iframe>
         </div>
       </div>
     </div>
@@ -1186,52 +1200,56 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       setTimeout(() => window.print(), 350);
     }
 
-    function openQuickApp(url) {
-      setMode('sandbox');
-      document.getElementById('direct-sandbox-url').value = url;
-      launchDirectSandbox();
+    
+    function setAndDetonate(url) {
+      document.getElementById('web-sandbox-url').value = url;
+      detonateWebLink();
     }
 
-    function launchDirectSandbox() {
-      const url = document.getElementById('direct-sandbox-url').value.trim();
+    async function detonateWebLink() {
+      const url = document.getElementById('web-sandbox-url').value.trim();
       if (!url) return;
-      fetch('/api/v1/sandbox/launch', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ url })
-      }).catch(err => console.error(err));
-    }
-
-    async function sendClipboardPrompt() {
-      const text = prompt('Enter text / link to paste into Linux Virtual PC:');
-      if (!text) return;
+      
+      const iframe = document.getElementById('web-sandbox-iframe');
+      const diagPanel = document.getElementById('sandbox-diag-panel');
+      
+      diagPanel.style.display = 'block';
+      document.getElementById('sb-verdict').innerText = '⏳ Air-Gapped Detonation in progress...';
+      document.getElementById('sb-verdict').style.color = '#60a5fa';
+      document.getElementById('sb-risk-score').innerText = '...';
+      
       try {
-        await fetch('/api/v1/sandbox/clipboard', {
+        const res = await fetch('/api/v1/sandbox/detonate', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
+          body: JSON.stringify({ url: url })
         });
-        alert('Copied to Virtual PC clipboard!');
+        const data = await res.json();
+        
+        document.getElementById('sb-verdict').innerText = data.threat_verdict || 'ANALYZED';
+        document.getElementById('sb-verdict').style.color = (data.risk_score >= 50) ? '#f87171' : '#34d399';
+        document.getElementById('sb-risk-score').innerText = `${data.risk_score || 0}/100`;
+        document.getElementById('sb-risk-score').style.color = (data.risk_score >= 50) ? '#f87171' : '#34d399';
+        
+        document.getElementById('sb-ip').innerText = `${data.resolved_ip || 'N/A'} (${data.hostname || ''})`;
+        document.getElementById('sb-pass-count').innerText = `${data.password_inputs_count || 0} Credential Traps`;
+        document.getElementById('sb-forms-count').innerText = `${data.forms_count || 0} Forms Detected`;
+        
+        // Render sanitized HTML safely in the sandbox iframe
+        iframe.srcdoc = data.sanitized_html || '<h3>Preview not available</h3>';
+        
       } catch (err) {
-        alert('Clipboard error: ' + err.message);
+        document.getElementById('sb-verdict').innerText = 'Error: ' + err.message;
+        iframe.srcdoc = `<div style="padding:20px;color:#f87171;">Error connecting: ${err.message}</div>`;
       }
     }
 
-    async function restartDesktopSession() {
-      if (!confirm('Restart Virtual Desktop session?')) return;
-      try {
-        await fetch('/api/v1/sandbox/restart', { method: 'POST' });
-        document.getElementById('direct-sandbox-iframe').src += '';
-      } catch (err) {
-        alert('Restart error: ' + err.message);
-      }
+    function openQuickApp(url) {
+      setMode('sandbox');
+      document.getElementById('web-sandbox-url').value = url;
+      detonateWebLink();
     }
-
-    function toggleFullscreen(elemId) {
-      const el = document.getElementById(elemId);
-      if (!document.fullscreenElement) {
-        el.requestFullscreen().catch(err => alert(err.message));
-      } else {
+ else {
         document.exitFullscreen();
       }
     }

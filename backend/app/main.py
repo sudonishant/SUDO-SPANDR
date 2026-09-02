@@ -31,6 +31,7 @@ from app.core.nlp_forensic_engine import analyze_body_paragraphs
 from app.core.openrouter_client import request_ai_second_opinion
 from app.core.parser_engine import parse_eml_stream
 from app.core.supabase_engine import sync_to_supabase, SUPABASE_SCHEMA_SQL, get_supabase_config
+from app.core.web_sandbox_engine import inspect_url_dom_and_headers
 from app.static_index import HTML_CONTENT
 
 app = FastAPI(
@@ -366,6 +367,21 @@ def export_neo4j_cypher(case_id: str) -> Dict[str, Any]:
 @app.get(f"{settings.API_V1_STR}/supabase/schema")
 def get_supabase_sql_schema() -> Dict[str, Any]:
     return {"schema_sql": SUPABASE_SCHEMA_SQL, "config": get_supabase_config()}
+
+
+class DetonateUrlRequest(BaseModel):
+    url: str
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/detonate")
+def sandbox_detonate(req: DetonateUrlRequest) -> Dict[str, Any]:
+    return inspect_url_dom_and_headers(req.url)
+
+
+@app.get(f"{settings.API_V1_STR}/sandbox/preview-frame", response_class=HTMLResponse)
+def sandbox_preview_frame(url: str) -> HTMLResponse:
+    res = inspect_url_dom_and_headers(url)
+    return HTMLResponse(content=res.get("sanitized_html", ""), status_code=200)
 
 
 @app.get("/", response_class=HTMLResponse)
