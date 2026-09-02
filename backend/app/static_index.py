@@ -908,6 +908,59 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     // Evaluates real SPF/DKIM, Domain Mismatch, Phishing NLP, GeoIP, and Shannon Entropy
     // ==========================================
 
+    async function computeSHA256(textOrBuffer) {
+      try {
+        const buffer = typeof textOrBuffer === 'string' ? new TextEncoder().encode(textOrBuffer) : textOrBuffer;
+        const hashBuffer = await crypto.subtle.digest('SHA-256', buffer);
+        return Array.from(new Uint8Array(hashBuffer)).map(b => b.toString(16).padStart(2, '0')).join('');
+      } catch (e) {
+        return 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855';
+      }
+    }
+
+    function calculateShannonEntropy(str) {
+      if (!str) return 0;
+      const len = str.length;
+      const freq = {};
+      for (let i = 0; i < len; i++) {
+        freq[str[i]] = (freq[str[i]] || 0) + 1;
+      }
+      let entropy = 0;
+      for (const char in freq) {
+        const p = freq[char] / len;
+        entropy -= p * Math.log2(p);
+      }
+      return parseFloat(entropy.toFixed(3));
+    }
+
+    function parseRawEmailHeaders(rawText) {
+      if (!rawText) return { headers: {}, body: '' };
+      const lines = rawText.replace(/\r\n/g, '\n').split('\n');
+      const headers = {};
+      let bodyStart = -1;
+      let currentHeader = '';
+
+      for (let i = 0; i < lines.length; i++) {
+        const line = lines[i];
+        if (line.trim() === '' && bodyStart === -1) {
+          bodyStart = i + 1;
+          break;
+        }
+        if (/^\s+/.test(line) && currentHeader) {
+          headers[currentHeader] += ' ' + line.trim();
+        } else {
+          const colonIdx = line.indexOf(':');
+          if (colonIdx > 0) {
+            currentHeader = line.substring(0, colonIdx).trim().toLowerCase();
+            headers[currentHeader] = line.substring(colonIdx + 1).trim();
+          }
+        }
+      }
+
+      const body = bodyStart !== -1 ? lines.slice(bodyStart).join('\n') : rawText;
+      return { headers, body };
+    }
+
     function extractDomain(emailOrStr) {
       if (!emailOrStr) return '';
       const match = emailOrStr.match(/@([a-zA-Z0-9.-]+\.[a-zA-Z]{2,})/);
