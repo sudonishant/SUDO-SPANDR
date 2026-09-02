@@ -311,14 +311,55 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       @page { margin: 12mm; size: A4; }
     }
   
-    /* Mobile-First Master Responsive Rules */
+    /* Mobile-First Master Column & Grid Rules */
     @media (max-width: 680px) {
       .header-wrap { padding: 10px 12px !important; }
       .header-meta { display: none !important; }
       .main-wrap { padding: 10px 10px 30px !important; }
       
-      .mode-bar { gap: 4px !important; padding: 4px !important; margin-bottom: 12px !important; }
-      .mode-tab { min-width: 95px !important; padding: 8px 8px !important; font-size: 11px !important; }
+      /* Mode Bar: 2-Column Responsive Card Grid on Mobile */
+      .mode-bar {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        padding: 6px !important;
+        margin-bottom: 14px !important;
+        background: rgba(15, 23, 42, 0.9) !important;
+      }
+      .mode-tab {
+        width: 100% !important;
+        min-width: 0 !important;
+        padding: 12px 6px !important;
+        font-size: 11.5px !important;
+        justify-content: center !important;
+        border-radius: 8px !important;
+      }
+      
+      /* Feature Navigation Tabs: 2-Column Clean Vertical Column Grid on Mobile */
+      .nav-tabs {
+        display: grid !important;
+        grid-template-columns: 1fr 1fr !important;
+        gap: 6px !important;
+        border-bottom: none !important;
+        margin-bottom: 14px !important;
+        padding-bottom: 0 !important;
+      }
+      .nav-tab {
+        width: 100% !important;
+        justify-content: center !important;
+        padding: 10px 6px !important;
+        font-size: 11px !important;
+        border-radius: 8px !important;
+        border: 1px solid rgba(255, 255, 255, 0.1) !important;
+        background: rgba(15, 23, 42, 0.7) !important;
+        text-align: center !important;
+      }
+      .nav-tab.active {
+        background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(37, 99, 235, 0.3)) !important;
+        border-color: rgba(59, 130, 246, 0.8) !important;
+        color: #93c5fd !important;
+        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
+      }
       
       .card { padding: 12px 10px !important; border-radius: 12px !important; margin-bottom: 10px !important; }
       .dropzone-box { padding: 24px 12px !important; border-radius: 14px !important; }
@@ -326,9 +367,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       
       .sandbox-ctrl-row { flex-direction: column !important; }
       .sandbox-ctrl-row button { width: 100% !important; }
-      
-      .nav-tabs { gap: 3px !important; padding-bottom: 4px !important; }
-      .nav-tab { padding: 7px 9px !important; font-size: 11px !important; }
       
       .result-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
       #map-container { height: 260px !important; }
