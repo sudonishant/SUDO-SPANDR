@@ -1249,10 +1249,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('web-sandbox-url').value = url;
       detonateWebLink();
     }
- else {
-        document.exitFullscreen();
-      }
-    }
   </script>
 </body>
 </html>
