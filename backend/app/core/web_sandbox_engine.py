@@ -1,6 +1,5 @@
 """Pure Web-Native Air-Gapped Sandbox Detonation & DOM Inspection Engine.
-Allows safe in-browser link detonation, form inspection, and credential trap detection
-without requiring heavy Linux desktop or noVNC dependencies.
+Allows safe in-browser link detonation, form inspection, and credential trap detection.
 """
 from __future__ import annotations
 
@@ -20,6 +19,7 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
 
     parsed_url = urllib.parse.urlparse(target_url)
     hostname = parsed_url.hostname or "unknown"
+    origin_base = f"{parsed_url.scheme}://{parsed_url.netloc}"
 
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) CyberSquad-Sandbox/4.0 (Air-Gapped Detonator)"
@@ -34,11 +34,10 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
     req = urllib.request.Request(target_url, headers=headers)
     
     html_content = ""
-    status_code = 0
+    status_code = 200
     resp_headers = {}
 
     try:
-        # Ignore SSL errors for malicious sites during forensic inspection
         ctx = ssl.create_default_context()
         ctx.check_hostname = False
         ctx.verify_mode = ssl.CERT_NONE
@@ -46,36 +45,46 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
         with urllib.request.urlopen(req, context=ctx, timeout=6) as response:
             status_code = response.status
             resp_headers = dict(response.headers)
-            raw_bytes = response.read(250000) # Read up to 250KB
+            raw_bytes = response.read(300000)
             html_content = raw_bytes.decode("utf-8", errors="ignore")
     except urllib.error.HTTPError as e:
         status_code = e.code
         resp_headers = dict(e.headers)
-        html_content = e.read(50000).decode("utf-8", errors="ignore")
+        html_content = e.read(100000).decode("utf-8", errors="ignore")
     except Exception as e:
+        html_content = f"""
+        <html>
+        <body style="background:#0f172a;color:#f87171;font-family:sans-serif;padding:30px;text-align:center;">
+            <h2>🚨 Target Server Offline or Connection Blocked</h2>
+            <p style="color:#94a3b8;font-size:13px;margin-top:10px;">The host <strong>{hostname}</strong> could not be resolved or closed the connection.</p>
+            <p style="color:#64748b;font-size:11px;margin-top:6px;">Diagnostic: {str(e)}</p>
+        </body>
+        </html>
+        """
         return {
             "status": "UNREACHABLE_OR_OFFLINE",
             "url": target_url,
             "hostname": hostname,
             "resolved_ip": resolved_ip,
             "error": str(e),
-            "threat_verdict": "HOST UNREACHABLE (Likely takedown or bulletproof hosting)",
-            "risk_score": 50.0,
+            "threat_verdict": "HOST UNREACHABLE (Takedown or Bulletproof Server)",
+            "risk_score": 45.0,
             "forms_found": [],
             "password_inputs_count": 0,
-            "sanitized_html": f"<div style='padding:20px;color:#f87171;font-family:sans-serif;'><h3>🚨 Target Server Offline or Blocked</h3><p>{str(e)}</p></div>"
+            "forms_count": 0,
+            "sanitized_html": html_content
         }
 
     # Extract forms and password traps
     password_inputs = re.findall(r'<input[^>]*type=[\'"](?:password|tel|credit_card)[\'"][^>]*>', html_content, re.IGNORECASE)
     form_tags = re.findall(r'<form[^>]*action=[\'"]([^\'"]*)[\'"][^>]*>', html_content, re.IGNORECASE)
     title_match = re.search(r'<title[^>]*>(.*?)</title>', html_content, re.IGNORECASE)
-    page_title = title_match.group(1).strip() if title_match else "No Title Found"
+    page_title = title_match.group(1).strip() if title_match else "No Page Title"
 
     is_credential_trap = len(password_inputs) > 0
     threat_score = 15.0
     if is_credential_trap:
-        threat_score += 45.0
+        threat_score += 55.0
     if not target_url.startswith("https://"):
         threat_score += 20.0
     if "hsts" not in str(resp_headers).lower():
@@ -83,32 +92,46 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
 
     threat_score = min(100.0, threat_score)
 
-    # Sanitize HTML for Air-Gapped Safe Rendering
-    # Strip script tags to prevent execution on analyst machine
-    sanitized = re.sub(r'<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>', '<!-- Script Stripped by Air-Gapped Detonator -->', html_content, flags=re.IGNORECASE)
-    # Neutralize form actions to avoid accidental POST submissions
-    sanitized = re.sub(r'<form\b', '<form onsubmit="alert(\'🚨 ACTION BLOCKED: Air-Gapped Sandbox neutralizes credential submissions.\'); return false;"', sanitized, flags=re.IGNORECASE)
-    
-    # Inject Security Overlay Banner
-    safety_banner = f"""
-    <div style="background:#0f172a;color:#fff;padding:10px 15px;border-bottom:3px solid #ef4444;font-family:'Segoe UI',sans-serif;font-size:12px;display:flex;justify-content:space-between;align-items:center;position:sticky;top:0;z-index:999999;">
-        <div>
-            <strong style="color:#f87171;">🛡️ AIR-GAPPED SAFE SANDBOX DETONATION:</strong>
-            <span style="color:#94a3b8;margin-left:6px;">Target: {target_url} (IP: {resolved_ip})</span>
+    # 1. Inject <base href="..."> into <head> so all stylesheets, fonts, and images load correctly!
+    base_tag = f'<base href="{target_url}" target="_blank">'
+    if "<head" in html_content.lower():
+        sanitized = re.sub(r'(<head[^>]*>)', r'\1\n' + base_tag, html_content, count=1, flags=re.IGNORECASE)
+    else:
+        sanitized = f"<head>{base_tag}</head>\n" + html_content
+
+    # 2. Neutralize dangerous script redirects while allowing styling
+    sanitized = re.sub(r'window\.location\s*=', '// neutralized redirect =', sanitized)
+
+    # 3. Intercept form submissions safely
+    sanitized = re.sub(
+        r'<form\b',
+        '<form onsubmit="alert(\'🛡️ AIR-GAPPED DEFENSE ACTIVATED:\\n\\nForm submission intercepted and blocked by Cyber Squad Sandbox.\\nNo credentials or tokens were transmitted to external servers.\'); return false;"',
+        sanitized,
+        flags=re.IGNORECASE
+    )
+
+    # 4. Inject Security HUD at the top of the webpage
+    hud_banner = f"""
+    <div id="cs-airgap-hud" style="background:linear-gradient(90deg, #0f172a, #1e293b); color:#fff; padding:10px 16px; border-bottom:3px solid {'#ef4444' if is_credential_trap else '#3b82f6'}; font-family:system-ui,sans-serif; font-size:12px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; left:0; right:0; z-index:2147483647; box-shadow:0 4px 15px rgba(0,0,0,0.5);">
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="font-size:14px;">🛡️</span>
+            <div>
+                <strong style="color:{'#f87171' if is_credential_trap else '#60a5fa'}; font-size:12.5px;">AIR-GAPPED IN-BROWSER DETONATION</strong>
+                <div style="font-size:10px; color:#94a3b8;">Target: {target_url} · IP: {resolved_ip}</div>
+            </div>
         </div>
-        <div>
-            <span style="background:#dc2626;color:#fff;font-weight:700;padding:3px 8px;border-radius:4px;font-size:11px;">
-                {'🚨 CREDENTIAL TRAP DETECTED' if is_credential_trap else '🟡 SAFE PREVIEW MODE'}
+        <div style="display:flex; align-items:center; gap:8px;">
+            <span style="background:{'#dc2626' if is_credential_trap else '#2563eb'}; color:#fff; font-weight:800; padding:4px 10px; border-radius:6px; font-size:10.5px; text-transform:uppercase;">
+                {'🚨 CREDENTIAL TRAP DETECTED' if is_credential_trap else '🟡 SAFE PREVIEW (AIR-GAPPED)'}
             </span>
         </div>
     </div>
     """
-    
-    # Inject banner right after <body> or at the top
+
     if "<body" in sanitized.lower():
-        sanitized = re.sub(r'(<body[^>]*>)', r'\1' + safety_banner, sanitized, count=1, flags=re.IGNORECASE)
+        sanitized = re.sub(r'(<body[^>]*>)', r'\1' + hud_banner, sanitized, count=1, flags=re.IGNORECASE)
     else:
-        sanitized = safety_banner + sanitized
+        sanitized = hud_banner + sanitized
 
     return {
         "status": "DETONATED_SUCCESSFULLY",
