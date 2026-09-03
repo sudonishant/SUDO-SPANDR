@@ -8,8 +8,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
-  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script>
-  <script src="https://unpkg.com/lucide@latest"><\/script>
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
       --bg: #030712;
@@ -1977,7 +1977,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <h2 class="title">${portalTitle}</h2>
     <p class="sub">Sign in to test authentication and honeypot credential capture</p>
 
-    <form id="sandbox-login-form">
+    <form id="sandbox-login-form" onsubmit="event.preventDefault(); const u = document.getElementById('user-input').value; window.parent.postMessage({type:'SANDBOX_LOGIN_CAPTURED', username: u, hasPassword: true, action: '${targetUrl}'}, '*'); alert('🛡️ SANDBOX LOGIN INTERCEPTED!\n\nAccount: ' + u + '\nPassword: [••••••••]\n\nCredentials trapped safely in CyberSquad Air-Gap Honeypot Vault.');">
       <div class="input-group">
         <label>Email, Phone, or Username</label>
         <input type="text" id="user-input" placeholder="e.g. analyst@cybersquad.gov.in" required value="test.user@company.com">
@@ -1993,25 +1993,6 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       🔒 <strong>Air-Gap Security:</strong> Credentials entered here are trapped safely in the in-memory honeypot vault and will NEVER be transmitted to external servers.
     </p>
   </div>
-
-  <script>
-    document.getElementById('sandbox-login-form').addEventListener('submit', function(e) {
-      e.preventDefault();
-      const userVal = document.getElementById('user-input').value;
-      const passVal = document.getElementById('pass-input').value;
-      
-      try {
-        window.parent.postMessage({
-          type: 'SANDBOX_LOGIN_CAPTURED',
-          username: userVal,
-          hasPassword: true,
-          action: '${targetUrl}'
-        }, '*');
-      } catch(err) {}
-
-      alert('🛡️ SANDBOX LOGIN INTERCEPTED!\n\nAccount: ' + userVal + '\nPassword: [••••••••]\n\nCredentials trapped safely in CyberSquad Air-Gap Honeypot Vault without leaking to external servers.');
-    });
-  <\/script>
 </body>
 </html>`;
     }

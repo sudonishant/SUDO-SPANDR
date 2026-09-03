@@ -364,6 +364,9 @@ def _inject_safety_hud(sanitized: str, target_url: str, resolved_ip: str, is_cre
         }, true);
     });
     </script>
+    """
+
+    hud_banner = f"""
     <div id="cs-airgap-hud" style="background:linear-gradient(90deg, #090d16, #1e293b); color:#fff; padding:8px 14px; border-bottom:2.5px solid {'#ef4444' if is_credential_trap else '#3b82f6'}; font-family:system-ui,sans-serif; font-size:11.5px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; left:0; right:0; z-index:2147483647; box-shadow:0 3px 12px rgba(0,0,0,0.5);">
         <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-size:13px;">🛡️</span>
