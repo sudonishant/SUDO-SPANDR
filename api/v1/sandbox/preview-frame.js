@@ -52,8 +52,26 @@ export default async function handler(req, res) {
           e.preventDefault();
           window.location.href = '/api/v1/sandbox/preview-frame?url=' + encodeURIComponent(act.split('?')[0] + '?' + sp.toString());
         } else {
+          // Allow login / POST submissions safely in simulated air-gap vault!
           e.preventDefault();
-          alert('🛡️ AIR-GAPPED DEFENSE ACTIVATED:\\n\\nForm submission intercepted by Cyber Squad Sandbox.');
+          const enteredUser = form.querySelector('input[type="email"], input[type="text"], input[name*="user"], input[name*="login"], input[name*="email"]')?.value || 'test.user@cybersquad.gov.in';
+          const passField = form.querySelector('input[type="password"]')?.value || '••••••••';
+          
+          try {
+            window.parent.postMessage({
+              type: 'SANDBOX_LOGIN_CAPTURED',
+              username: enteredUser,
+              hasPassword: Boolean(passField),
+              action: form.action || window.location.href
+            }, '*');
+          } catch(err) {}
+          
+          // Show realistic phishing simulation feedback
+          const banner = document.createElement('div');
+          banner.style.cssText = 'position:fixed;top:12px;left:50%;transform:translateX(-50%);background:#0f172a;color:#38bdf8;border:2px solid #38bdf8;padding:12px 18px;border-radius:10px;z-index:999999;box-shadow:0 10px 30px rgba(0,0,0,0.8);font-family:sans-serif;font-size:12px;text-align:center;max-width:90%;';
+          banner.innerHTML = '🛡️ <strong>Air-Gap Login Authenticated:</strong><br><span style="color:#34d399;">Simulated session active. Credentials safely contained in Sandbox Vault.</span><br><small style="color:#94a3b8;">User: ' + enteredUser + '</small>';
+          document.body.appendChild(banner);
+          setTimeout(() => { banner.remove(); }, 3500);
         }
       }, true);
     });
