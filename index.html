@@ -641,7 +641,7 @@
           <div class="chromium-tabstrip">
             <div class="chromium-tab" id="chromium-tab-title">
               <i data-lucide="globe" style="width: 12px; color: #8ab4f8;"></i>
-              <span id="chromium-tab-text">Chromium Sandbox</span>
+              <span id="chromium-tab-text">Google</span>
             </div>
             <button class="chromium-newtab-btn" title="New Tab" onclick="loadChromiumWelcome()">+</button>
           </div>
@@ -654,7 +654,7 @@
             
             <div style="flex: 1; position: relative; display: flex; align-items: center;">
               <i data-lucide="lock" style="position: absolute; left: 12px; width: 13px; color: #81c995;"></i>
-              <input type="text" id="chromium-url-input" class="chromium-omnibox" value="https://example.com" placeholder="Search Google or type a URL..." onkeydown="if(event.key==='Enter') executeChromiumGo()">
+              <input type="text" id="chromium-url-input" class="chromium-omnibox" value="https://www.google.com" placeholder="Search Google or type a URL..." onkeydown="if(event.key==='Enter') executeChromiumGo()">
             </div>
 
             <button class="primary-btn" style="padding: 7px 16px; font-size: 11.5px; background: #1a73e8; border-radius: 18px;" onclick="executeChromiumGo()">
@@ -1037,7 +1037,7 @@
       if (mode === 'sandbox') {
         const iframe = document.getElementById('web-sandbox-iframe');
         if (!iframe.srcdoc && (!iframe.src || iframe.src === 'about:blank' || iframe.src === window.location.href)) {
-          loadChromiumWelcome();
+          renderChromiumGoogle('');
         }
       }
     }
