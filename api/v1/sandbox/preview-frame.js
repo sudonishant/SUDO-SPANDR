@@ -1,6 +1,8 @@
 export default async function handler(req, res) {
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Content-Type', 'text/html; charset=utf-8');
+  res.setHeader('X-Frame-Options', 'ALLOWALL');
+  res.setHeader('Content-Security-Policy', 'frame-ancestors *');
 
   let targetUrl = req.query?.url || 'https://example.com';
   targetUrl = targetUrl.trim();
@@ -78,7 +80,8 @@ export default async function handler(req, res) {
     </script>
   `;
 
-  let finalHtml = htmlContent;
+    let finalHtml = htmlContent;
+  finalHtml = finalHtml.replace(/<meta[^>]*http-equiv=['"](?:content-security-policy|x-frame-options)['"][^>]*>/gi, '');
   if (finalHtml.includes('<head>')) {
     finalHtml = finalHtml.replace('<head>', '<head>' + baseTag);
   } else {

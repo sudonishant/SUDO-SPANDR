@@ -412,7 +412,13 @@ def sandbox_detonate(req: DetonateUrlRequest) -> Dict[str, Any]:
 @app.get(f"{settings.API_V1_STR}/sandbox/preview-frame", response_class=HTMLResponse)
 def sandbox_preview_frame(url: str) -> HTMLResponse:
     res = inspect_url_dom_and_headers(url)
-    return HTMLResponse(content=res.get("sanitized_html", ""), status_code=200)
+    headers = {
+        "X-Frame-Options": "ALLOWALL",
+        "Content-Security-Policy": "frame-ancestors *",
+        "Access-Control-Allow-Origin": "*",
+        "Cache-Control": "no-cache"
+    }
+    return HTMLResponse(content=res.get("sanitized_html", ""), status_code=200, headers=headers)
 
 
 @app.get("/", response_class=HTMLResponse)

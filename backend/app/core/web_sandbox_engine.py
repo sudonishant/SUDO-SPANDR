@@ -173,6 +173,11 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
         is_search_query = True
         search_term = target_url
 
+    norm_target = target_url.lower().replace("https://", "").replace("http://", "").rstrip("/")
+    if norm_target in ["google.com", "www.google.com", "google", "search"]:
+        is_search_query = True
+        search_term = "Cyber Squad Threat Intelligence"
+
     if is_search_query:
         search_results = _fetch_search_results(search_term)
         page_html = _build_search_results_page(search_term, search_results)
@@ -301,7 +306,9 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
 
 
 def _inject_safety_hud(sanitized: str, target_url: str, resolved_ip: str, is_credential_trap: bool) -> str:
-    """Injects the Safety HUD and In-App Interceptor."""
+    """Injects the Safety HUD and In-App Interceptor and removes frame-blocking meta tags."""
+    # Strip frame-busting meta headers so browser never throws xframe-neterror-page
+    sanitized = re.sub(r"""<meta[^>]*http-equiv=['"](?:content-security-policy|x-frame-options)['"][^>]*>""", "", sanitized, flags=re.IGNORECASE)
     navigation_interceptor_js = """
     <script>
     document.addEventListener('DOMContentLoaded', function() {
