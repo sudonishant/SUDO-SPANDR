@@ -319,16 +319,33 @@ def _inject_safety_hud(sanitized: str, target_url: str, resolved_ip: str, is_cre
             }
         }, true);
 
-        // Smart Form Interceptor: Allow GET search forms, block malicious POST password submissions
+        // Smart Form Interceptor: Allow logins and forms safely, capturing input in Honeypot Sandbox
         document.addEventListener('submit', function(e) {
             const form = e.target;
-            const hasPassword = form.querySelector('input[type="password"]');
+            const hasPassword = Boolean(form.querySelector('input[type="password"]'));
             const method = (form.method || 'GET').toUpperCase();
             
             if (hasPassword || method === 'POST') {
                 e.preventDefault();
                 e.stopPropagation();
-                alert('🛡️ AIR-GAPPED DEFENSE ACTIVATED:\\n\\nForm submission with sensitive data was intercepted and blocked by Cyber Squad Sandbox.\\nNo real credentials or data were transmitted to external servers.');
+                
+                const enteredUser = form.querySelector('input[type="email"], input[type="text"], input[name*="user"], input[name*="login"], input[name*="email"]')?.value || 'test.analyst@cybersquad.gov.in';
+                const passField = form.querySelector('input[type="password"]')?.value || '••••••••';
+                
+                try {
+                    window.parent.postMessage({
+                        type: 'SANDBOX_LOGIN_CAPTURED',
+                        username: enteredUser,
+                        hasPassword: Boolean(passField),
+                        action: form.action || window.location.href
+                    }, '*');
+                } catch(err) {}
+                
+                const toast = document.createElement('div');
+                toast.style.cssText = 'position:fixed;top:45px;left:50%;transform:translateX(-50%);background:rgba(15,23,42,0.96);color:#38bdf8;border:2px solid #38bdf8;padding:12px 18px;border-radius:10px;z-index:2147483647;box-shadow:0 12px 30px rgba(0,0,0,0.8);font-family:sans-serif;font-size:12px;text-align:center;max-width:92%;backdrop-filter:blur(10px);';
+                toast.innerHTML = '🛡️ <strong>Air-Gap Login Authenticated:</strong><br><span style="color:#34d399;">Simulated session active. Credentials safely contained in Sandbox Vault.</span><br><small style="color:#94a3b8;">User: ' + enteredUser + '</small>';
+                document.body.appendChild(toast);
+                setTimeout(() => { toast.remove(); }, 3500);
                 return false;
             }
             
@@ -347,9 +364,6 @@ def _inject_safety_hud(sanitized: str, target_url: str, resolved_ip: str, is_cre
         }, true);
     });
     </script>
-    """
-
-    hud_banner = f"""
     <div id="cs-airgap-hud" style="background:linear-gradient(90deg, #090d16, #1e293b); color:#fff; padding:8px 14px; border-bottom:2.5px solid {'#ef4444' if is_credential_trap else '#3b82f6'}; font-family:system-ui,sans-serif; font-size:11.5px; display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; left:0; right:0; z-index:2147483647; box-shadow:0 3px 12px rgba(0,0,0,0.5);">
         <div style="display:flex; align-items:center; gap:8px;">
             <span style="font-size:13px;">🛡️</span>
