@@ -325,6 +325,31 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     
     /* Authentic Chromium Browser Sandbox */
+    .chromium-browser-frame.is-fullscreen {
+      position: fixed !important;
+      top: 0 !important;
+      left: 0 !important;
+      right: 0 !important;
+      bottom: 0 !important;
+      width: 100vw !important;
+      height: 100vh !important;
+      max-width: 100vw !important;
+      max-height: 100vh !important;
+      z-index: 9999999 !important;
+      margin: 0 !important;
+      border-radius: 0 !important;
+      border: none !important;
+      box-shadow: none !important;
+      display: flex !important;
+      flex-direction: column !important;
+      background: #202124 !important;
+    }
+    .chromium-browser-frame.is-fullscreen .chromium-viewport {
+      flex: 1 !important;
+      height: 100% !important;
+      min-height: 0 !important;
+    }
+
     .chromium-browser-frame {
       background: #202124;
       border: 1px solid #3c4043;
@@ -598,7 +623,10 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </div>
           </div>
           
-          <div style="display: flex; gap: 6px; align-items: center;">
+          <div style="display: flex; gap: 6px; align-items: center; flex-wrap: wrap;">
+            <button class="primary-btn" id="btn-card-fullscreen" style="padding: 5px 12px; font-size: 11px; background: linear-gradient(135deg, #0284c7, #0369a1); font-weight: 700;" onclick="toggleSandboxFullscreen()">
+              <i data-lucide="maximize-2" style="width: 11px;"></i> <span id="txt-card-fullscreen">⛶ Full Screen Sandbox</span>
+            </button>
             <input type="file" id="sandbox-file-picker" style="display: none;" onchange="sandboxOpenFile(event)">
             <button class="ghost-btn" style="padding: 5px 12px; font-size: 11px; border-color: rgba(139,92,246,0.4); color: #c084fc;" onclick="document.getElementById('sandbox-file-picker').click()">
               <i data-lucide="folder-open" style="width: 11px;"></i> 📂 Open File in Browser
@@ -652,6 +680,11 @@ HTML_CONTENT = r"""<!DOCTYPE html>
               <span id="chromium-tab-text">Google</span>
             </div>
             <button class="chromium-newtab-btn" title="New Tab" onclick="loadChromiumWelcome()">+</button>
+            <div style="margin-left: auto; display: flex; align-items: center; gap: 6px;">
+              <button class="ghost-btn" id="btn-toggle-fullscreen" style="padding: 3px 10px; font-size: 11px; border-color: rgba(56,189,248,0.4); color: #38bdf8; display: flex; align-items: center; gap: 5px;" onclick="toggleSandboxFullscreen()" title="Toggle Full Screen Sandbox (Esc to exit)">
+                <i data-lucide="maximize" style="width: 12px;"></i> <span id="txt-toggle-fullscreen">Full Screen</span>
+              </button>
+            </div>
           </div>
 
           <!-- Chromium Toolbar / Address Bar -->
@@ -668,6 +701,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             <button class="primary-btn" style="padding: 7px 16px; font-size: 11.5px; background: #1a73e8; border-radius: 18px;" onclick="executeChromiumGo()">
               Go
             </button>
+            <button class="chromium-nav-btn" title="Toggle Full Screen (Esc to exit)" onclick="toggleSandboxFullscreen()"><i data-lucide="maximize-2" style="width: 14px;"></i></button>
           </div>
 
           <!-- The Live Chromium Web Viewport -->
@@ -1898,6 +1932,53 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     // ==========================================
     // 🌐 DEFAULT CHROMIUM SANDBOX BROWSER ENGINE
     // ==========================================
+
+    function toggleSandboxFullscreen() {
+      const frame = document.querySelector('.chromium-browser-frame');
+      if (!frame) return;
+
+      const isFull = frame.classList.toggle('is-fullscreen');
+
+      const txt1 = document.getElementById('txt-toggle-fullscreen');
+      const txt2 = document.getElementById('txt-card-fullscreen');
+      if (txt1) txt1.innerText = isFull ? 'Exit Full Screen' : 'Full Screen';
+      if (txt2) txt2.innerText = isFull ? '🗗 Exit Full Screen' : '⛶ Full Screen Sandbox';
+
+      if (isFull) {
+        if (frame.requestFullscreen) {
+          frame.requestFullscreen().catch(() => {});
+        } else if (frame.webkitRequestFullscreen) {
+          frame.webkitRequestFullscreen();
+        }
+      } else {
+        if (document.fullscreenElement) {
+          document.exitFullscreen().catch(() => {});
+        }
+      }
+
+      if (window.lucide) lucide.createIcons();
+    }
+
+    document.addEventListener('keydown', function(e) {
+      if (e.key === 'Escape') {
+        const frame = document.querySelector('.chromium-browser-frame');
+        if (frame && frame.classList.contains('is-fullscreen')) {
+          toggleSandboxFullscreen();
+        }
+      }
+    });
+
+    document.addEventListener('fullscreenchange', function() {
+      const frame = document.querySelector('.chromium-browser-frame');
+      if (!document.fullscreenElement && frame && frame.classList.contains('is-fullscreen')) {
+        frame.classList.remove('is-fullscreen');
+        const txt1 = document.getElementById('txt-toggle-fullscreen');
+        const txt2 = document.getElementById('txt-card-fullscreen');
+        if (txt1) txt1.innerText = 'Full Screen';
+        if (txt2) txt2.innerText = '⛶ Full Screen Sandbox';
+        if (window.lucide) lucide.createIcons();
+      }
+    });
 
     function loadChromiumWelcome() {
       const iframe = document.getElementById('web-sandbox-iframe');
