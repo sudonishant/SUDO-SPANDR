@@ -3,7 +3,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Cyber Squad SentinelMail — AI Threat Detection & Forensic Platform</title>
+  <title>SUDO SPANDR SentinelMail — AI Threat Detection & Forensic Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
@@ -539,7 +539,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div class="brand">
       <div class="brand-mark"><i data-lucide="shield-check" style="width: 20px; height: 20px;"></i></div>
       <div>
-        <div class="brand-title">CYBER SQUAD <span style="font-size: 10.5px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
+        <div class="brand-title">SUDO SPANDR <span style="font-size: 10.5px; color: #60a5fa; font-weight: 700;">SentinelMail</span></div>
         <div class="brand-sub">SIH 2026 #26106 · Forensic System</div>
       </div>
     </div>
@@ -1014,7 +1014,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           <!-- Investigator Signatures & Stamp -->
           <div class="dossier-sign-row">
             <div>
-              <p>Preservation Engine: <strong>Cyber Squad SentinelMail (SIH #26106)</strong></p>
+              <p>Preservation Engine: <strong>SUDO SPANDR SentinelMail (SIH #26106)</strong></p>
               <p>Evidentiary Status: <strong>Cryptographically Sealed & Immutable</strong></p>
             </div>
             <div style="text-align: right;">
@@ -1457,7 +1457,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         },
         legal_chain_of_custody: {
           court_admissibility: 'Section 65B Indian Evidence Act Certified',
-          preservation_engine: 'Cyber Squad SentinelMail Triage System (SIH #26106)',
+          preservation_engine: 'SUDO SPANDR SentinelMail Triage System (SIH #26106)',
           evidence_hash: sha256
         }
       };
@@ -2094,7 +2094,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         renderChromiumGoogleSearch(q);
         // Render in-app search directly to prevent Google anti-embedding block
         try {
-          const res = await fetch('/api/v1/sandbox/preview-frame?url=' + encodeURIComponent('search:Cyber Squad Threat Intelligence'));
+          const res = await fetch('/api/v1/sandbox/preview-frame?url=' + encodeURIComponent('search:SUDO SPANDR Threat Intelligence'));
           const html = await res.text();
           iframe.removeAttribute('src');
           iframe.srcdoc = html;
@@ -2184,7 +2184,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <input type="text" id="search-inp" class="search-box" placeholder="Search Google or type a URL..." autofocus>
       <div class="btn-row" style="margin-top:16px;">
         <button type="submit" class="g-btn">Google Search</button>
-        <button type="button" class="g-btn" onclick="window.parent.postMessage({type:'CHROMIUM_SEARCH', query:'CyberSquad IOC Phishing Feeds'}, '*')">I'm Feeling Lucky</button>
+        <button type="button" class="g-btn" onclick="window.parent.postMessage({type:'CHROMIUM_SEARCH', query:'SUDO SPANDR IOC Phishing Feeds'}, '*')">I'm Feeling Lucky</button>
       </div>
     </form>
   </div>
@@ -2308,7 +2308,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     <div id="email-list" class="email-container">
       <div class="toolbar-row">
         <span>Primary Inbox (${email})</span>
-        <span style="color:#8ab4f8;">Protected by CyberSquad Section 65B Sentinel</span>
+        <span style="color:#8ab4f8;">Protected by SUDO SPANDR Section 65B Sentinel</span>
       </div>
 
       <div class="email-row unread" onclick="document.getElementById('email-list').style.display='none'; document.getElementById('email-detail').style.display='block'; document.getElementById('det-title').innerText='Urgent: Immediate KYC Update Required to Avoid Account Freezing'; document.getElementById('det-from').innerText='State Bank KYC Alert <alert@onlinesbi-security-update.net>'; document.getElementById('det-date').innerText='10:45 AM (15 minutes ago)'; document.getElementById('det-body').innerText='Dear Valued Customer,\n\nYour NetBanking access will be suspended within 24 hours due to non-compliance with the latest RBI mandatory KYC guidelines.\n\nPlease click the secure link below to verify your Pan Card and NetBanking credentials immediately:\n\n👉 http://103.145.22.8/sbi/verify-kyc.php\n\nSincerely,\nState Bank of India Online Security Operations';">
@@ -2325,9 +2325,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         <span class="email-date">Yesterday</span>
       </div>
 
-      <div class="email-row" onclick="document.getElementById('email-list').style.display='none'; document.getElementById('email-detail').style.display='block'; document.getElementById('det-title').innerText='Section 65B Forensic Integrity Certificate #SEC-65B-2026-9418 Verified'; document.getElementById('det-from').innerText='CyberSquad SOC <audit@cybersquad.gov.in>'; document.getElementById('det-date').innerText='Aug 31, 2026, 09:15 AM'; document.getElementById('det-body').innerText='Honorable Investigator,\n\nThis electronic message certifies that forensic evidentiary extraction has been notarized under Section 65B of the Indian Evidence Act.\n\nSHA-256 Hash Drift: 0.00% (Bit-by-Bit Immutable Match).\nConsortium Blockchain Ledger Consensus: Confirmed on Proof-of-Authority Notary Network.';">
+      <div class="email-row" onclick="document.getElementById('email-list').style.display='none'; document.getElementById('email-detail').style.display='block'; document.getElementById('det-title').innerText='Section 65B Forensic Integrity Certificate #SEC-65B-2026-9418 Verified'; document.getElementById('det-from').innerText='SUDO SPANDR SOC <audit@sudospandr.gov.in>'; document.getElementById('det-date').innerText='Aug 31, 2026, 09:15 AM'; document.getElementById('det-body').innerText='Honorable Investigator,\n\nThis electronic message certifies that forensic evidentiary extraction has been notarized under Section 65B of the Indian Evidence Act.\n\nSHA-256 Hash Drift: 0.00% (Bit-by-Bit Immutable Match).\nConsortium Blockchain Ledger Consensus: Confirmed on Proof-of-Authority Notary Network.';">
         <span style="color:#fbbc04;">★</span>
-        <span class="email-sender" style="color:#81c995;">CyberSquad SOC</span>
+        <span class="email-sender" style="color:#81c995;">SUDO SPANDR SOC</span>
         <span class="email-subj"><span class="tag-safe">CERTIFIED SAFE</span> Section 65B Forensic Integrity Certificate #SEC-65B-2026-9418 Verified</span>
         <span class="email-date">Aug 31</span>
       </div>
@@ -2346,7 +2346,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <div id="det-body" style="background:#292a2d;border:1px solid #3c4043;border-radius:10px;padding:20px;font-size:13.5px;line-height:1.7;color:#e8eaed;white-space:pre-wrap;"></div>
       <div style="margin-top:20px;">
         <button onclick="window.parent.postMessage({type:'TRANSFER_TO_ANALYZER', sender:document.getElementById('det-from').innerText, subject:document.getElementById('det-title').innerText, body:document.getElementById('det-body').innerText}, '*')" style="background:linear-gradient(135deg, #ef4444, #dc2626);color:#fff;border:none;padding:10px 18px;border-radius:6px;font-weight:700;font-size:12.5px;cursor:pointer;">
-          ⚡ Send Email to CyberSquad Forensic Engine
+          ⚡ Send Email to SUDO SPANDR Forensic Engine
         </button>
       </div>
     </div>

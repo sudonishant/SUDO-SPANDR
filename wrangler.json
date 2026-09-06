@@ -1,5 +1,5 @@
 {
-  "name": "cybersquad-web",
+  "name": "sudo-spandr-web",
   "main": "worker.js",
   "compatibility_date": "2024-09-01",
   "compatibility_flags": ["nodejs_compat"],

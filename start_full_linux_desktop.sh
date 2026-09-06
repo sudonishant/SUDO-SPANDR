@@ -7,7 +7,7 @@ mkdir -p /tmp/vnc_sandbox_home/Desktop
 mkdir -p /tmp/vnc_sandbox_home/.config/xfce4
 mkdir -p /tmp/cyber_sandbox/browser_data
 
-# Create Cyber Squad Wallpaper if not exists
+# Create SUDO SPANDR Wallpaper if not exists
 python3 -c "
 from PIL import Image, ImageDraw, ImageFont
 img = Image.new('RGB', (1280, 720), color=(10, 15, 29))
@@ -20,7 +20,7 @@ for y in range(0, 720, 40):
     draw.line([(0, y), (1280, y)], fill=(18, 28, 52), width=1)
 
 draw.rectangle([400, 240, 880, 440], fill=(13, 22, 42), outline=(56, 189, 248), width=2)
-draw.text((440, 280), 'CYBER SQUAD SENTINELMAIL', fill=(56, 189, 248))
+draw.text((440, 280), 'SUDO SPANDR SENTINELMAIL', fill=(56, 189, 248))
 draw.text((440, 320), 'AIR-GAPPED VIRTUAL DETONATION SANDBOX', fill=(148, 163, 184))
 draw.text((440, 360), 'STATUS: ISOLATED GUEST LINUX DESKTOP', fill=(34, 197, 94))
 img.save('/tmp/sandbox_wallpaper.png')
