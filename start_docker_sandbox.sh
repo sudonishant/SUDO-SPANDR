@@ -20,7 +20,7 @@ sudo docker run -d \
   --restart unless-stopped \
   -p 7860:3000 \
   --shm-size=1gb \
-  -e TITLE="CyberSquad Isolated Sandbox" \
+  -e TITLE="SUDO SPANDR Isolated Sandbox" \
   lscr.io/linuxserver/webtop:ubuntu-xfce
 
 echo ""

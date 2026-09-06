@@ -1,7 +1,7 @@
 #!/bin/bash
 
 echo "================================================================="
-echo "🛡️  STARTING CYBER SQUAD SENTINELMAIL & VIRTUAL DESKTOP SANDBOX"
+echo "🛡️  STARTING SUDO SPANDR SENTINELMAIL & VIRTUAL DESKTOP SANDBOX"
 echo "================================================================="
 
 # 1. Clean old locks

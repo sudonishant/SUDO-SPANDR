@@ -1,4 +1,4 @@
-"""Cyber Squad web analysis API.
+"""SUDO SPANDR web analysis API.
 
 The API deliberately returns triage evidence and uncertainty. It does not claim
 sender attribution, geolocation certainty, cryptographic mail-auth verification,
@@ -442,7 +442,7 @@ async def analyze_raw_text(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
 @app.post("/api/gateway-milter-check")
 @app.post(f"{settings.API_V1_STR}/gateway-milter-check")
 async def gateway_milter_check(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
-    """Endpoint specifically designed for Cyber Squad Milter Daemon and Mail Flow Gateways."""
+    """Endpoint specifically designed for SUDO SPANDR Milter Daemon and Mail Flow Gateways."""
     headers = {str(key).lower(): str(value) for key, value in (req.headers or {}).items()}
     result = _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "gateway-stream.eml", b"", {}, [])
     score = result.get("threat", {}).get("risk_score", 0)
@@ -451,7 +451,7 @@ async def gateway_milter_check(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
     if score >= 75:
         postfix_code = "Milter.REJECT"
         policy_action = "REJECT"
-        smtp_reply = "550 5.7.1 Message rejected by Cyber Squad ESG: Malicious threat detected"
+        smtp_reply = "550 5.7.1 Message rejected by SUDO SPANDR ESG: Malicious threat detected"
     elif score >= 40:
         postfix_code = "Milter.QUARANTINE"
         policy_action = "TAG_SUBJECT"
@@ -759,7 +759,7 @@ def export_stix_bundle(case_id: str) -> Dict[str, Any]:
                 "id": f"report--{hashlib.md5((case_id + '_rep').encode()).hexdigest()}",
                 "created": timestamp,
                 "modified": timestamp,
-                "name": f"Cyber Squad SentinelMail Threat Intelligence Report: {case_id}",
+                "name": f"SUDO SPANDR SentinelMail Threat Intelligence Report: {case_id}",
                 "description": f"Deterministic email forensic attribution and relay analysis for Case {case_id}",
                 "published": timestamp,
                 "report_types": ["threat-actor", "indicator", "malicious-activity"],

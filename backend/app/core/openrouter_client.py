@@ -95,7 +95,7 @@ def _request_model(base_url: str, api_key: str, model: str, payload: Dict[str, A
     request = urllib.request.Request(
         f"{base_url}/chat/completions",
         data=json.dumps({**payload, "model": model}).encode("utf-8"),
-        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "http://localhost:5173"), "X-Title": "Cyber Squad SentinelMail"},
+        headers={"Authorization": f"Bearer {api_key}", "Content-Type": "application/json", "HTTP-Referer": os.getenv("OPENROUTER_SITE_URL", "http://localhost:5173"), "X-Title": "SUDO SPANDR SentinelMail"},
         method="POST",
     )
     try:

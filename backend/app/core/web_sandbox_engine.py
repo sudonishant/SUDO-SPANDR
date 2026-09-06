@@ -5,6 +5,7 @@ and strictly isolates phishing credentials while keeping 100% of browsing inside
 from __future__ import annotations
 
 import html
+import ipaddress
 import json
 import re
 import socket
@@ -12,7 +13,87 @@ import ssl
 import urllib.error
 import urllib.parse
 import urllib.request
-from typing import Any, Dict, List
+from typing import Any, Dict, List, Optional, Tuple
+
+FORBIDDEN_HOSTS = {
+    "localhost",
+    "metadata.google.internal",
+    "instance-data",
+    "169.254.169.254",
+    "metadata.local",
+}
+
+CGNAT_NETWORK = ipaddress.ip_network("100.64.0.0/10")
+
+
+def is_safe_public_destination(target_url: str) -> Tuple[bool, str, Optional[str]]:
+    """Validates whether a URL resolves strictly to a public, routable IP address.
+    Blocks loopback, private networks (RFC 1918), link-local (APIPA & cloud metadata),
+    multicast, and invalid schemes to prevent Server-Side Request Forgery (SSRF).
+    """
+    try:
+        parsed = urllib.parse.urlparse(target_url)
+    except Exception as e:
+        return False, f"Malformed URL: {e}", None
+
+    scheme = (parsed.scheme or "").lower()
+    if scheme not in ("http", "https"):
+        return False, f"Prohibited scheme '{scheme}' (HTTP/HTTPS only)", None
+
+    hostname = (parsed.hostname or "").strip().lower()
+    if not hostname:
+        return False, "Empty or missing hostname", None
+
+    if hostname in FORBIDDEN_HOSTS:
+        return False, f"Access to internal/cloud metadata host '{hostname}' is prohibited", None
+
+    port = parsed.port or (443 if scheme == "https" else 80)
+    try:
+        addr_info = socket.getaddrinfo(hostname, port, proto=socket.IPPROTO_TCP, type=socket.SOCK_STREAM)
+    except socket.gaierror as err:
+        return False, f"DNS resolution failed: {err}", None
+    except Exception as err:
+        return False, f"Hostname resolution error: {err}", None
+
+    if not addr_info:
+        return False, "No IP addresses resolved for hostname", None
+
+    primary_ip = None
+    for item in addr_info:
+        raw_ip = item[4][0]
+        if not primary_ip:
+            primary_ip = raw_ip
+        try:
+            ip_obj = ipaddress.ip_address(raw_ip)
+        except ValueError:
+            return False, f"Invalid IP address format: {raw_ip}", primary_ip
+
+        if ip_obj.is_loopback:
+            return False, f"Target IP {raw_ip} is a loopback address (Prohibited)", primary_ip
+        if ip_obj.is_private:
+            return False, f"Target IP {raw_ip} belongs to a private network (RFC 1918 Prohibited)", primary_ip
+        if ip_obj.is_link_local:
+            return False, f"Target IP {raw_ip} is link-local / cloud metadata (RFC 3927 Prohibited)", primary_ip
+        if ip_obj.is_multicast:
+            return False, f"Target IP {raw_ip} is multicast / broadcast (Prohibited)", primary_ip
+        if ip_obj.is_reserved:
+            return False, f"Target IP {raw_ip} is reserved by IETF (Prohibited)", primary_ip
+        if ip_obj.is_unspecified:
+            return False, f"Target IP {raw_ip} is unspecified (Prohibited)", primary_ip
+        if ip_obj in CGNAT_NETWORK:
+            return False, f"Target IP {raw_ip} is Carrier-Grade NAT (RFC 6598 Prohibited)", primary_ip
+
+    return True, "Safe public routable IP", primary_ip
+
+
+class SafeRedirectHandler(urllib.request.HTTPRedirectHandler):
+    """Intercepts and verifies redirect destinations against SSRF policy."""
+    def redirect_request(self, req, fp, code, msg, headers, newurl):
+        is_safe, reason, _ = is_safe_public_destination(newurl)
+        if not is_safe:
+            raise urllib.error.HTTPError(newurl, 403, f"SSRF Blocked redirect: {reason}", headers, fp)
+        return super().redirect_request(req, fp, code, msg, headers, newurl)
+
 
 
 def _fetch_search_results(query: str) -> List[Dict[str, str]]:
@@ -48,7 +129,7 @@ def _fetch_search_results(query: str) -> List[Dict[str, str]]:
     # 2. Wikipedia API Search for entity / topic intelligence
     try:
         wiki_url = f"https://en.wikipedia.org/w/api.php?action=opensearch&search={urllib.parse.quote_plus(query)}&limit=5&namespace=0&format=json"
-        req = urllib.request.Request(wiki_url, headers={"User-Agent": "CyberSquad-ThreatSearch/4.0"})
+        req = urllib.request.Request(wiki_url, headers={"User-Agent": "SUDO-SPANDR-ThreatSearch/4.0"})
         with urllib.request.urlopen(req, timeout=3) as resp:
             wiki_data = json.loads(resp.read().decode("utf-8", errors="ignore"))
             if len(wiki_data) >= 4:
@@ -93,7 +174,7 @@ def _fetch_search_results(query: str) -> List[Dict[str, str]]:
 
 
 def _build_search_results_page(query: str, results: List[Dict[str, str]]) -> str:
-    """Renders a beautiful Google/CyberSquad styled in-app search engine page."""
+    """Renders a beautiful Google/SUDO SPANDR styled in-app search engine page."""
     cards_html = ""
     for r in results:
         t = html.escape(r.get("title", "Result"))
@@ -169,14 +250,14 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
                 search_term = parsed_q["q"][0]
         except Exception:
             pass
-    elif not target_url.startswith(("http://", "https://")) and ("." not in target_url or " " in target_url):
+    elif not target_url.startswith(("http://", "https://")) and ("://" not in target_url) and ("." not in target_url or " " in target_url):
         is_search_query = True
         search_term = target_url
 
     norm_target = target_url.lower().replace("https://", "").replace("http://", "").rstrip("/")
     if norm_target in ["google.com", "www.google.com", "google", "search"]:
         is_search_query = True
-        search_term = "Cyber Squad Threat Intelligence"
+        search_term = "SUDO SPANDR Threat Intelligence"
 
     if is_search_query:
         search_results = _fetch_search_results(search_term)
@@ -200,48 +281,121 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
             "sanitized_html": _inject_safety_hud(page_html, f"Search: {search_term}", "142.250.190.46", False)
         }
 
+    raw_scheme = target_url.split("://")[0].lower() if "://" in target_url else ""
+    if raw_scheme and raw_scheme not in ("http", "https"):
+        return {
+            "status": "BLOCKED_SSRF_PROHIBITED",
+            "url": target_url,
+            "hostname": "restricted-protocol",
+            "resolved_ip": f"Prohibited Scheme '{raw_scheme}' (Not HTTP/HTTPS)",
+            "http_status": 403,
+            "page_title": f"🚨 BLOCKED: Prohibited Protocol '{raw_scheme}'",
+            "threat_verdict": f"🚨 CRITICAL SECURITY THREAT: Prohibited Protocol Scheme '{raw_scheme}' (SSRF Blocked)",
+            "risk_score": 100.0,
+            "password_inputs_count": 0,
+            "forms_count": 0,
+            "security_headers": {
+                "ssrf_protection": "STRICT_AIRGAP_ENFORCED",
+                "quarantine_reason": f"Scheme '{raw_scheme}' is strictly prohibited. Only HTTP and HTTPS are allowed.",
+                "x_frame_options": "DENY"
+            },
+            "sanitized_html": f"<html><body style='background:#0f172a;color:#f87171;padding:40px;font-family:sans-serif;text-align:center;'><h2>🚨 Prohibited Protocol Scheme '{html.escape(raw_scheme)}'</h2><p style='color:#94a3b8;'>Only HTTP and HTTPS protocols are permitted in the air-gapped sandbox.</p></body></html>"
+        }
+
     if not target_url.startswith(("http://", "https://")):
         target_url = "https://" + target_url
 
     parsed_url = urllib.parse.urlparse(target_url)
     hostname = parsed_url.hostname or "unknown"
 
+    # Strict SSRF validation before opening any socket or request
+    is_safe, safety_reason, resolved_ip = is_safe_public_destination(target_url)
+    if not is_safe:
+        blocked_html = f"""<!DOCTYPE html>
+<html>
+<head><meta charset="UTF-8"><title>SSRF Blocked: {html.escape(hostname)}</title></head>
+<body style="background:#0f172a;color:#f87171;font-family:system-ui,-apple-system,sans-serif;padding:32px 16px;display:flex;justify-content:center;align-items:center;min-height:80vh;">
+    <div style="max-width:620px;width:100%;background:rgba(15,23,42,0.95);border:2px solid #ef4444;border-radius:14px;padding:26px;box-shadow:0 12px 35px rgba(239,68,68,0.25);text-align:center;">
+        <div style="font-size:36px;margin-bottom:8px;">🛡️</div>
+        <h2 style="color:#ef4444;margin:0 0 6px 0;font-size:18px;font-weight:800;letter-spacing:-0.01em;">AIR-GAP SECURITY QUARANTINE</h2>
+        <h3 style="color:#fca5a5;margin:0 0 14px 0;font-size:14px;font-weight:700;">Server-Side Request Forgery (SSRF) Blocked</h3>
+        <p style="color:#cbd5e1;font-size:12.5px;line-height:1.5;margin-bottom:14px;">
+            SentinelMail strictly prevents outbound queries targeting private networks, loopback interfaces, local infrastructure, or cloud metadata endpoints.
+        </p>
+        <div style="background:#030712;border:1px solid rgba(239,68,68,0.4);padding:12px;border-radius:8px;font-family:'DM Mono',monospace;font-size:11.5px;color:#fca5a5;text-align:left;margin-bottom:16px;">
+            <div><strong>TARGET URL:</strong> {html.escape(target_url)}</div>
+            <div><strong>RESOLVED IP:</strong> {html.escape(str(resolved_ip or 'Restricted / Not Resolved'))}</div>
+            <div><strong>VIOLATION:</strong> {html.escape(safety_reason)}</div>
+            <div><strong>POLICY:</strong> RFC 1918 / RFC 3927 Air-Gap Security Boundary</div>
+        </div>
+        <span style="font-size:11px;color:#94a3b8;">Incident recorded with maximum threat score 100/100 (Critical Network Evasion).</span>
+    </div>
+</body>
+</html>"""
+        return {
+            "status": "BLOCKED_SSRF_PROHIBITED",
+            "url": target_url,
+            "hostname": hostname,
+            "resolved_ip": f"{resolved_ip or 'Restricted'} (Private / Internal Range)",
+            "http_status": 403,
+            "page_title": "🚨 BLOCKED: SSRF Restricted Destination",
+            "threat_verdict": "🚨 CRITICAL SECURITY THREAT: Prohibited Internal Network Address (SSRF Blocked)",
+            "risk_score": 100.0,
+            "password_inputs_count": 0,
+            "forms_count": 0,
+            "security_headers": {
+                "ssrf_protection": "STRICT_AIRGAP_ENFORCED",
+                "quarantine_reason": safety_reason,
+                "x_frame_options": "DENY"
+            },
+            "sanitized_html": blocked_html
+        }
+
     headers = {
         "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     }
-
-    resolved_ip = "Unresolved"
-    try:
-        resolved_ip = socket.gethostbyname(hostname)
-    except Exception:
-        pass
 
     req = urllib.request.Request(target_url, headers=headers)
     html_content = ""
     status_code = 200
     resp_headers = {}
+    ssl_status = "VALID_TLS"
+
+    opener = urllib.request.build_opener(SafeRedirectHandler())
 
     try:
-        ctx = ssl.create_default_context()
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
-
-        with urllib.request.urlopen(req, context=ctx, timeout=6) as response:
+        with opener.open(req, timeout=6) as response:
             status_code = response.status
             resp_headers = dict(response.headers)
             raw_bytes = response.read(350000)
             html_content = raw_bytes.decode("utf-8", errors="ignore")
+    except ssl.SSLCertVerificationError as cert_err:
+        ssl_status = f"UNTRUSTED_OR_EXPIRED_CERT ({cert_err})"
+        # For forensic triage, attempt cautious inspection with warning flag
+        try:
+            insecure_ctx = ssl.create_default_context()
+            insecure_ctx.check_hostname = False
+            insecure_ctx.verify_mode = ssl.CERT_NONE
+            opener_insecure = urllib.request.build_opener(urllib.request.HTTPSHandler(context=insecure_ctx), SafeRedirectHandler())
+            with opener_insecure.open(req, timeout=6) as response:
+                status_code = response.status
+                resp_headers = dict(response.headers)
+                raw_bytes = response.read(350000)
+                html_content = raw_bytes.decode("utf-8", errors="ignore")
+        except Exception:
+            status_code = 526
+            html_content = f"""<html><body style="background:#0f172a;color:#f87171;padding:30px;font-family:sans-serif;"><h3>🚨 Invalid TLS Certificate</h3><p>{html.escape(str(cert_err))}</p></body></html>"""
     except urllib.error.HTTPError as e:
         status_code = e.code
         resp_headers = dict(e.headers)
-        html_content = e.read(100000).decode("utf-8", errors="ignore")
+        html_content = e.read(100000).decode("utf-8", errors="ignore") if hasattr(e, "read") else str(e)
     except Exception as e:
         html_content = f"""
         <html>
         <body style="background:#0f172a;color:#f87171;font-family:sans-serif;padding:40px;text-align:center;">
             <h2>🚨 Target Server Unreachable</h2>
-            <p style="color:#94a3b8;font-size:13px;margin-top:10px;">The host <strong>{hostname}</strong> could not be reached.</p>
-            <p style="color:#64748b;font-size:11px;margin-top:6px;">Diagnostic: {str(e)}</p>
+            <p style="color:#94a3b8;font-size:13px;margin-top:10px;">The host <strong>{html.escape(hostname)}</strong> could not be reached.</p>
+            <p style="color:#64748b;font-size:11px;margin-top:6px;">Diagnostic: {html.escape(str(e))}</p>
         </body>
         </html>
         """
@@ -249,7 +403,7 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
             "status": "UNREACHABLE_OR_OFFLINE",
             "url": target_url,
             "hostname": hostname,
-            "resolved_ip": resolved_ip,
+            "resolved_ip": str(resolved_ip or "Unresolved"),
             "error": str(e),
             "threat_verdict": "HOST UNREACHABLE (Offline or Protected)",
             "risk_score": 40.0,
@@ -271,6 +425,8 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
         threat_score += 55.0
     if not target_url.startswith("https://"):
         threat_score += 20.0
+    if ssl_status != "VALID_TLS":
+        threat_score += 25.0
     if "hsts" not in str(resp_headers).lower():
         threat_score += 10.0
 
@@ -283,13 +439,13 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
     else:
         sanitized = f"<head>{base_tag}</head>\n" + html_content
 
-    sanitized = _inject_safety_hud(sanitized, target_url, resolved_ip, is_credential_trap)
+    sanitized = _inject_safety_hud(sanitized, target_url, str(resolved_ip or 'Unresolved'), is_credential_trap)
 
     return {
         "status": "DETONATED_SUCCESSFULLY",
         "url": target_url,
         "hostname": hostname,
-        "resolved_ip": resolved_ip,
+        "resolved_ip": str(resolved_ip or 'Unresolved'),
         "http_status": status_code,
         "page_title": page_title,
         "threat_verdict": "🚨 HIGH RISK: Deceptive Credential Harvesting Trap" if is_credential_trap else "SUSPICIOUS / EXTERNAL WEB ASSET",
@@ -297,6 +453,7 @@ def inspect_url_dom_and_headers(target_url: str) -> Dict[str, Any]:
         "password_inputs_count": len(password_inputs),
         "forms_count": len(form_tags),
         "security_headers": {
+            "tls_certificate_status": ssl_status,
             "strict_transport_security": resp_headers.get("strict-transport-security", "MISSING (Insecure)"),
             "content_security_policy": "STRICT_SANDBOX_ENFORCED",
             "x_frame_options": resp_headers.get("x-frame-options", "NONE (Clickjacking Vector)")
@@ -336,7 +493,7 @@ def _inject_safety_hud(sanitized: str, target_url: str, resolved_ip: str, is_cre
                 e.preventDefault();
                 e.stopPropagation();
                 
-                const enteredUser = form.querySelector('input[type="email"], input[type="text"], input[name*="user"], input[name*="login"], input[name*="email"]')?.value || 'test.analyst@cybersquad.gov.in';
+                const enteredUser = form.querySelector('input[type="email"], input[type="text"], input[name*="user"], input[name*="login"], input[name*="email"]')?.value || 'test.analyst@sudospandr.gov.in';
                 const passField = form.querySelector('input[type="password"]')?.value || '••••••••';
                 
                 try {

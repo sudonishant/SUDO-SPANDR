@@ -144,8 +144,8 @@ async function requestModel({ upstream, apiKey, model, safeEvidence, timeoutMs }
         headers: {
           authorization: `Bearer ${apiKey}`,
           'content-type': 'application/json',
-          'http-referer': process.env.OPENROUTER_SITE_URL || 'https://cybersquadsce.vercel.app',
-          'x-title': 'Cyber Squad SentinelMail',
+          'http-referer': process.env.OPENROUTER_SITE_URL || 'https://sudospandrsce.vercel.app',
+          'x-title': 'SUDO SPANDR SentinelMail',
         },
         body: JSON.stringify(requestBody),
       });
