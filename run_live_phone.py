@@ -47,8 +47,8 @@ for _ in range(40):
     line = cf_proc.stdout.readline()
     if not line:
         break
-    m = re.search(r'https://[a-zA-Z0-9.-]+\.trycloudflare\.com', line)
-    if m:
+    m = re.search(r'https://([a-zA-Z0-9-]+)\.trycloudflare\.com', line)
+    if m and m.group(1) != 'api':
         tunnel_url = m.group(0)
         break
 
