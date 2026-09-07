@@ -126,8 +126,12 @@ export default async function handler(req, res) {
     finalHtml = '<head>' + baseTag + '</head>' + finalHtml;
   }
 
-  if (finalHtml.includes('</body>')) {
-    finalHtml = finalHtml.replace('</body>', interceptor + '</body>');
+  // Safely inject interceptor before the LAST </body> tag of the outer document
+  const bodyMatches = [...finalHtml.matchAll(/<\/body\s*>/gi)];
+  if (bodyMatches.length > 0) {
+    const lastMatch = bodyMatches[bodyMatches.length - 1];
+    const idx = lastMatch.index;
+    finalHtml = finalHtml.substring(0, idx) + interceptor + finalHtml.substring(idx);
   } else {
     finalHtml = finalHtml + interceptor;
   }
