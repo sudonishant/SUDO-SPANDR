@@ -1718,7 +1718,16 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       document.getElementById('neo4j-nodes-tag').innerText = `${n4j.nodes_count || 5} Nodes · ${n4j.edges_count || 4} Edges`;
       
       const supa = data.supabase_sync || {};
-      document.getElementById('supabase-status-tag').innerText = supa.status || 'LIVE CONNECTED';
+      const statusEl = document.getElementById('supabase-status-tag');
+      if (statusEl) {
+        if (supa.status === 'LIVE_SYNCED_TO_SUPABASE') {
+          statusEl.innerText = 'LIVE SYNCED';
+          statusEl.style.color = '#34d399';
+        } else {
+          statusEl.innerText = 'LOCAL VAULT ACTIVE';
+          statusEl.style.color = '#38bdf8';
+        }
+      }
 
       // Populate Master Section 65B Dossier
       const custody = data.legal_chain_of_custody || {};
@@ -1911,13 +1920,54 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     async function viewSupabaseSQL() {
+      const defaultSchema = `-- =============================================================================
+-- SUDO SPANDR SENTINELMAIL: SUPABASE POSTGRESQL SCHEMA (SIH 2026 #26106)
+-- Run this in your Supabase SQL Editor: https://supabase.com/dashboard
+-- =============================================================================
+
+CREATE TABLE IF NOT EXISTS forensic_cases (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    case_id VARCHAR(64) UNIQUE NOT NULL,
+    sha256_hash VARCHAR(64) NOT NULL,
+    threat_score NUMERIC(5, 2) NOT NULL,
+    threat_status VARCHAR(32) NOT NULL,
+    category_label VARCHAR(128) NOT NULL,
+    sender VARCHAR(255),
+    recipient VARCHAR(255),
+    subject TEXT,
+    origin_ip VARCHAR(64),
+    origin_country VARCHAR(64),
+    origin_asn VARCHAR(64),
+    blockchain_tx_hash VARCHAR(128),
+    blockchain_block_number BIGINT,
+    blockchain_merkle_root VARCHAR(128),
+    evidence_json JSONB,
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Enable Row Level Security (RLS)
+ALTER TABLE forensic_cases ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Allow authenticated investigators to read cases"
+    ON forensic_cases FOR SELECT
+    TO authenticated
+    USING (true);
+
+CREATE POLICY "Allow service role full access"
+    ON forensic_cases FOR ALL
+    TO service_role
+    USING (true)
+    WITH CHECK (true);`;
+
       try {
         const res = await fetch('/api/v1/supabase/schema');
         const data = await res.json();
+        const sql = (data && data.schema_sql) ? data.schema_sql : defaultSchema;
         const w = window.open('', '_blank');
-        w.document.write('<pre style="background:#0f172a;color:#34d399;padding:20px;font-family:monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;">' + data.schema_sql + '</pre>');
+        w.document.write('<pre style="background:#0f172a;color:#34d399;padding:20px;font-family:monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;">' + sql + '</pre>');
       } catch (err) {
-        alert('Supabase SQL error: ' + err.message);
+        const w = window.open('', '_blank');
+        w.document.write('<pre style="background:#0f172a;color:#34d399;padding:20px;font-family:monospace;font-size:12px;line-height:1.6;white-space:pre-wrap;">' + defaultSchema + '</pre>');
       }
     }
 
