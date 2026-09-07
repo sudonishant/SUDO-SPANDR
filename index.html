@@ -2040,8 +2040,8 @@ CREATE POLICY "Allow service role full access"
       if (!iframe) return;
 
       iframe.removeAttribute('src');
-      iframe.srcdoc = `<!DOCTYPE html>
-<html>
+      iframe.srcdoc = `\x3C!DOCTYPE html\x3E
+\x3Chtml\x3E
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2057,7 +2057,7 @@ CREATE POLICY "Allow service role full access"
     .sc-icon { font-size: 22px; }
   </style>
 </head>
-<body>
+\x3Cbody\x3E
   <div class="logo">
     <span style="color:#8ab4f8;">C</span><span style="color:#ea4335;">h</span><span style="color:#fbbc04;">r</span><span style="color:#8ab4f8;">o</span><span style="color:#81c995;">m</span><span style="color:#ea4335;">i</span><span style="color:#8ab4f8;">u</span><span style="color:#fbbc04;">m</span>
     <span style="font-size:12px;background:#3c4043;padding:3px 8px;border-radius:6px;color:#9aa0a6;margin-left:6px;">SANDBOX</span>
@@ -2085,8 +2085,8 @@ CREATE POLICY "Allow service role full access"
       <span>Open File</span>
     </div>
   </div>
-</body>
-</html>`;
+\x3C/body\x3E
+\x3C/html\x3E`;
     }
 
     function loadChromiumUrl(url) {
@@ -2186,8 +2186,8 @@ CREATE POLICY "Allow service role full access"
 
       if (!query || query === 'google' || query === 'www.google.com' || query === 'google.com') {
         // Google Search Homepage
-        iframe.srcdoc = `<!DOCTYPE html>
-<html>
+        iframe.srcdoc = `\x3C!DOCTYPE html\x3E
+\x3Chtml\x3E
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2216,7 +2216,7 @@ CREATE POLICY "Allow service role full access"
     .footer { background: #171717; padding: 12px 24px; display: flex; justify-content: space-between; font-size: 12px; color: #9aa0a6; border-top: 1px solid #3c4043; flex-wrap: wrap; gap: 12px; }
   </style>
 </head>
-<body>
+\x3Cbody\x3E
   <div class="top-bar">
     <a href="#" onclick="window.parent.postMessage({type:'CHROMIUM_NAVIGATE', url:'https://accounts.google.com'}, '*')">Gmail</a>
     <a href="#" onclick="window.parent.postMessage({type:'CHROMIUM_NAVIGATE', url:'https://accounts.google.com'}, '*')">Images</a>
@@ -2246,8 +2246,8 @@ CREATE POLICY "Allow service role full access"
       <span>Zero External Tracking</span>
     </div>
   </div>
-</body>
-</html>`;
+\x3C/body\x3E
+\x3C/html\x3E`;
       } else {
         // Search Results Mode (fetch search results via proxy)
         fetch('/api/v1/sandbox/preview-frame?url=' + encodeURIComponent('search:' + query))
@@ -2276,8 +2276,8 @@ CREATE POLICY "Allow service role full access"
       if (!iframe) return;
 
       iframe.removeAttribute('src');
-      iframe.srcdoc = `<!DOCTYPE html>
-<html>
+      iframe.srcdoc = `\x3C!DOCTYPE html\x3E
+\x3Chtml\x3E
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2322,7 +2322,7 @@ CREATE POLICY "Allow service role full access"
     #email-detail { display: none; padding: 24px; background: #202124; flex: 1; overflow: auto; }
   </style>
 </head>
-<body>
+\x3Cbody\x3E
   
   <div class="header">
     <div class="brand">
@@ -2402,8 +2402,8 @@ CREATE POLICY "Allow service role full access"
     </div>
   </div>
 
-</body>
-</html>`;
+\x3C/body\x3E
+\x3C/html\x3E`;
     }
 
     function renderChromiumAuthPage(targetUrl) {
@@ -2414,8 +2414,8 @@ CREATE POLICY "Allow service role full access"
       const brandCol = isGoogle ? '#1a73e8' : (isOutlook ? '#0078d4' : '#003366');
 
       iframe.removeAttribute('src');
-      iframe.srcdoc = `<!DOCTYPE html>
-<html>
+      iframe.srcdoc = `\x3C!DOCTYPE html\x3E
+\x3Chtml\x3E
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -2433,7 +2433,7 @@ CREATE POLICY "Allow service role full access"
     .badge { background: #3c4043; color: #8ab4f8; font-size: 11px; padding: 4px 8px; border-radius: 4px; display: inline-block; margin-bottom: 16px; }
   </style>
 </head>
-<body>
+\x3Cbody\x3E
   <div class="card">
     <span class="badge">🛡️ CHROMIUM AIR-GAP AUTH TEST</span>
     <h2>Sign in</h2>
@@ -2446,8 +2446,8 @@ CREATE POLICY "Allow service role full access"
       <button type="submit">Next / Sign In</button>
     </form>
   </div>
-</body>
-</html>`;
+\x3C/body\x3E
+\x3C/html\x3E`;
     }
 
     // Message listener for Chromium Navigation & Login
