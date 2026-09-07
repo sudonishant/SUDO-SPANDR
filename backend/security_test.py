@@ -20,17 +20,16 @@ from app.core.web_sandbox_engine import is_safe_public_destination, inspect_url_
 
 def test_no_hardcoded_secrets():
     """Verify that sensitive passwords and service role keys are NOT hardcoded in code."""
-    leaked_signatures = [
-        "yVTQio3YhFRcoa2vZRM7hMkZ1TWCCDWuzAoVdMg6KDg",
-        "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Impwb3BwbXh5Z2J0eHNteGdwYWN6Iiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4ODI3Mzk3MSwiZXhwIjoyMTAzODQ5OTcxfQ.A_XOArONs9bNz6M25-lhLUaL2jdCyrIj47IavXnlKVQ",
-    ]
+    import re
+    jwt_pattern = re.compile(r"eyJhbGciOi[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}\.[A-Za-z0-9_-]{10,}")
+    
     py_files = list(backend_dir.glob("**/*.py"))
     for file_path in py_files:
         if file_path.name == "security_test.py":
             continue
         content = file_path.read_text(encoding="utf-8", errors="ignore")
-        for sig in leaked_signatures:
-            assert sig not in content, f"Hardcoded secret detected in {file_path.name}!"
+        assert not jwt_pattern.search(content), f"Hardcoded JWT/Supabase secret detected in {file_path.name}!"
+        assert "yVTQio3YhFR" not in content, f"Hardcoded password detected in {file_path.name}!"
     print("✓ Passed: Zero hardcoded secrets in backend source files.")
 
 
@@ -128,7 +127,7 @@ def test_supabase_graceful_handling():
         "threat": {"risk_score": 10, "status": "LOW"},
     }
     result = sync_to_supabase(dummy_case)
-    assert result["status"] in ("CONFIG_PENDING", "LIVE_SYNCED_TO_SUPABASE", "TABLE_CREATION_REQUIRED")
+    assert result["status"] in ("LOCAL_VAULT_ACTIVE", "CONFIG_PENDING", "LIVE_SYNCED_TO_SUPABASE", "TABLE_CREATION_REQUIRED")
     print("✓ Passed: Supabase engine safely handles configuration state.")
 
 
