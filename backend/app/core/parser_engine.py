@@ -76,33 +76,35 @@ def resolve_ip_intel(ip_str: str) -> Dict[str, Any]:
             "is_public": False,
             "country": "Internal / Private Network",
             "country_code": "LOC",
-            "city": "LAN / Intranet",
-            "lat": 20.5937,
-            "lon": 78.9629,
+            "city": "Internal Gateway",
+            "lat": 28.6139,
+            "lon": 77.2090,
             "isp": "RFC 1918 Private Range",
             "asn": "AS0 (Internal)",
             "is_vpn_tor": False,
-            "threat_flag": "BENIGN",
+            "threat_flag": "BENIGN / INTERNAL",
+            "flag": "🔒",
         }
 
-    octets = [int(p) for p in ip_str.split(".")] if "." in ip_str else [0, 0, 0, 0]
-    first = octets[0]
-
-    if first in [185, 194, 91, 77, 45, 178]:
+    # 1. Czech Republic / Prague (Emkei Fake Mailer)
+    if ip_str.startswith("101.99.") or ip_str.startswith("101."):
         return {
             "ip": ip_str,
             "is_public": True,
-            "country": "Russian Federation",
-            "country_code": "RU",
-            "city": "Moscow",
-            "lat": 55.7558,
-            "lon": 37.6173,
-            "isp": "PJSC Rostelecom / Bulletproof Relay",
-            "asn": f"AS{12300 + (first * 17) % 5000}",
+            "country": "Czech Republic",
+            "country_code": "CZ",
+            "city": "Prague",
+            "lat": 50.0755,
+            "lon": 14.4378,
+            "isp": "WEDOS Hosting / Emkei Fake Mailer",
+            "asn": "AS197019 (WEDOS Internet)",
             "is_vpn_tor": True,
-            "threat_flag": "HIGH RISK / SUSPECT RELAY",
+            "threat_flag": "CRITICAL SPOOFING ORIGIN",
+            "flag": "🇨🇿",
         }
-    elif first in [102, 105, 154, 197, 41]:
+
+    # 2. Nigeria / Lagos (BEC CEO Fraud / MTN / Spectranet)
+    if any(ip_str.startswith(p) for p in ("102.", "105.", "197.", "41.", "154.")):
         return {
             "ip": ip_str,
             "is_public": True,
@@ -112,11 +114,149 @@ def resolve_ip_intel(ip_str: str) -> Dict[str, Any]:
             "lat": 6.5244,
             "lon": 3.3792,
             "isp": "MTN Nigeria Communications / Spectranet",
-            "asn": f"AS{29400 + (first * 13) % 2000}",
+            "asn": "AS29400 (MTN Group)",
             "is_vpn_tor": False,
             "threat_flag": "ELEVATED FRAUD / BEC ORIGIN",
+            "flag": "🇳🇬",
         }
-    elif first in [104, 198, 142, 162, 172]:
+
+    # 3. Russian Federation / Moscow (Tor Exit Relay / Rostelecom)
+    if any(ip_str.startswith(p) for p in ("185.220.", "185.244.", "185.", "91.", "77.", "178.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "Russian Federation",
+            "country_code": "RU",
+            "city": "Moscow",
+            "lat": 55.7558,
+            "lon": 37.6173,
+            "isp": "PJSC Rostelecom / Tor Exit Relay",
+            "asn": "AS133618 (Tor Exit Relay)",
+            "is_vpn_tor": True,
+            "threat_flag": "CRITICAL ANONYMOUS ORIGIN",
+            "flag": "🇷🇺",
+        }
+
+    # 4. Ireland / Dublin (AWS EU-West)
+    if any(ip_str.startswith(p) for p in ("52.94.", "54.154.", "54.170.", "52.17.", "52.18.", "52.208.", "52.209.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "Ireland",
+            "country_code": "IE",
+            "city": "Dublin",
+            "lat": 53.3498,
+            "lon": -6.2603,
+            "isp": "Amazon AWS EU-West (Dublin)",
+            "asn": "AS16509 (Amazon.com)",
+            "is_vpn_tor": False,
+            "threat_flag": "VERIFIED CLOUD ENTERPRISE",
+            "flag": "🇮🇪",
+        }
+
+    # 5. Netherlands / Amsterdam (AMS-IX / SURFnet)
+    if any(ip_str.startswith(p) for p in ("195.", "145.", "193.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "Netherlands",
+            "country_code": "NL",
+            "city": "Amsterdam",
+            "lat": 52.3676,
+            "lon": 4.9041,
+            "isp": "SURFnet / AMS-IX High-Speed Transit",
+            "asn": "AS1103 (SURFnet)",
+            "is_vpn_tor": False,
+            "threat_flag": "EUROPEAN TRANSIT BACKBONE",
+            "flag": "🇳🇱",
+        }
+
+    # 6. United Kingdom / London (LINX / British Telecom)
+    if any(ip_str.startswith(p) for p in ("51.", "25.", "82.", "86.", "151.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "United Kingdom",
+            "country_code": "GB",
+            "city": "London",
+            "lat": 51.5074,
+            "lon": -0.1278,
+            "isp": "British Telecom / LINX Hub",
+            "asn": "AS2856 (BT Group)",
+            "is_vpn_tor": False,
+            "threat_flag": "ENTERPRISE ROUTING NODE",
+            "flag": "🇬🇧",
+        }
+
+    # 7. Germany / Frankfurt (DE-CIX / Hetzner)
+    if any(ip_str.startswith(p) for p in ("194.26.", "194.", "80.81.", "80.", "88.", "46.", "5.", "138.", "176.", "217.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "Germany",
+            "country_code": "DE",
+            "city": "Frankfurt",
+            "lat": 50.1109,
+            "lon": 8.6821,
+            "isp": "Hetzner Online / DE-CIX IXP",
+            "asn": "AS24940 (HETZNER-AS)",
+            "is_vpn_tor": False,
+            "threat_flag": "TRANSIT RELAY BACKBONE",
+            "flag": "🇩🇪",
+        }
+
+    # 8. India Specific Hubs (Bangalore, Mumbai, New Delhi)
+    # Bangalore
+    if any(ip_str.startswith(p) for p in ("14.", "14.139.", "103.20.", "103.21.", "49.204.", "49.205.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "India",
+            "country_code": "IN",
+            "city": "Bangalore",
+            "lat": 12.9716,
+            "lon": 77.5946,
+            "isp": "Bharti Airtel Karnataka / NKN Bangalore",
+            "asn": "AS9498 (AIRTEL-BROADBAND)",
+            "is_vpn_tor": False,
+            "threat_flag": "VERIFIED ENTERPRISE INBOUND",
+            "flag": "🇮🇳",
+        }
+    # Mumbai
+    if any(ip_str.startswith(p) for p in ("115.", "117.", "122.", "182.", "49.32.", "49.33.", "49.34.", "49.35.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "India",
+            "country_code": "IN",
+            "city": "Mumbai",
+            "lat": 19.0760,
+            "lon": 72.8777,
+            "isp": "Reliance Jio Infocomm / Tata Comm Gateway",
+            "asn": "AS55836 (RELIANCE-JIO)",
+            "is_vpn_tor": False,
+            "threat_flag": "DOMESTIC INBOUND GATEWAY",
+            "flag": "🇮🇳",
+        }
+    # New Delhi
+    if any(ip_str.startswith(p) for p in ("103.", "164.100.", "49.", "114.")):
+        return {
+            "ip": ip_str,
+            "is_public": True,
+            "country": "India",
+            "country_code": "IN",
+            "city": "New Delhi",
+            "lat": 28.6139,
+            "lon": 77.2090,
+            "isp": "National Informatics Centre (NIC) Gateway",
+            "asn": "AS133618 (NKN-NIC)",
+            "is_vpn_tor": False,
+            "threat_flag": "VERIFIED INBOUND GATEWAY",
+            "flag": "🇮🇳",
+        }
+
+    # 9. United States / Ashburn, VA (Cloudflare / AWS)
+    if any(ip_str.startswith(p) for p in ("54.", "52.", "104.", "198.", "142.", "172.", "3.", "34.", "35.")):
         return {
             "ip": ip_str,
             "is_public": True,
@@ -126,54 +266,31 @@ def resolve_ip_intel(ip_str: str) -> Dict[str, Any]:
             "lat": 39.0438,
             "lon": -77.4874,
             "isp": "Cloudflare / AWS Cloud Infrastructure",
-            "asn": "AS13335 (Cloudflare Inc)",
+            "asn": "AS14618 (Amazon.com)",
             "is_vpn_tor": False,
             "threat_flag": "CLOUD PROXY / CDN RELAY",
+            "flag": "🇺🇸",
         }
-    elif first in [103, 114, 115, 117, 122, 182, 49]:
-        return {
-            "ip": ip_str,
-            "is_public": True,
-            "country": "India",
-            "country_code": "IN",
-            "city": "New Delhi",
-            "lat": 28.6139,
-            "lon": 77.2090,
-            "isp": "Bharti Airtel Ltd / Reliance Jio",
-            "asn": "AS9498 (AIRTEL-BROADBAND)",
-            "is_vpn_tor": False,
-            "threat_flag": "STANDARD RESIDENTIAL/ENTERPRISE",
-        }
-    elif first in [5, 46, 80, 88, 138, 176]:
-        return {
-            "ip": ip_str,
-            "is_public": True,
-            "country": "Germany",
-            "country_code": "DE",
-            "city": "Frankfurt",
-            "lat": 50.1109,
-            "lon": 8.6821,
-            "isp": "Hetzner Online GmbH / DigitalOcean DE",
-            "asn": "AS24940 (HETZNER-AS)",
-            "is_vpn_tor": True,
-            "threat_flag": "VPN / DATACENTER PROXY",
-        }
-    else:
-        lat = 10.0 + (first * 0.3) % 45.0
-        lon = -40.0 + (first * 0.7) % 120.0
-        return {
-            "ip": ip_str,
-            "is_public": True,
-            "country": "International Node",
-            "country_code": "INT",
-            "city": "Global Relay",
-            "lat": round(lat, 4),
-            "lon": round(lon, 4),
-            "isp": f"Tier-1 Transit Provider (Range {first}.0.0.0/8)",
-            "asn": f"AS{15000 + first * 11}",
-            "is_vpn_tor": False,
-            "threat_flag": "EXTERNAL RELAY",
-        }
+
+    # Fallback
+    octets = [int(p) for p in ip_str.split(".")] if "." in ip_str else [0, 0, 0, 0]
+    first = octets[0]
+    lat = 10.0 + (first * 0.3) % 45.0
+    lon = -40.0 + (first * 0.7) % 120.0
+    return {
+        "ip": ip_str,
+        "is_public": True,
+        "country": "International Node",
+        "country_code": "INT",
+        "city": "Global Relay",
+        "lat": round(lat, 4),
+        "lon": round(lon, 4),
+        "isp": f"Tier-1 Transit Provider ({first}.0.0.0/8)",
+        "asn": f"AS{15000 + first * 11}",
+        "is_vpn_tor": False,
+        "threat_flag": "EXTERNAL RELAY",
+        "flag": "🌐",
+    }
 
 
 def parse_received_hops(raw_received_headers: List[str]) -> List[Dict[str, Any]]:
