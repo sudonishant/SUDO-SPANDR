@@ -1064,17 +1064,17 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           </span>
           <span style="font-size: 9.5px; color: var(--text-muted);">Instant Multi-Hop Geodesic Trajectory Demo</span>
         </div>
-        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
-          <button class="tactical-btn pulse-action" onclick="loadForensicSample('emkei')" style="font-size: 10px; padding: 5px 10px;">
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;" class="upload-corridor-buttons">
+          <button class="tactical-btn" onclick="selectCorridor('emkei')" style="font-size: 10px; padding: 5px 10px;">
             🚨 Emkei Spoof (Prague ➔ Frankfurt ➔ New Delhi)
           </button>
-          <button class="tactical-btn" onclick="loadForensicSample('apt_tor')" style="font-size: 10px; padding: 5px 10px; color: #f87171; border-color: rgba(239,68,68,0.4);">
+          <button class="tactical-btn" onclick="selectCorridor('apt_tor')" style="font-size: 10px; padding: 5px 10px; color: #f87171; border-color: rgba(239,68,68,0.4);">
             🇷🇺 APT Tor Node (Moscow ➔ Amsterdam ➔ London ➔ Target)
           </button>
-          <button class="tactical-btn" onclick="loadForensicSample('bec_wire')" style="font-size: 10px; padding: 5px 10px; color: #fbbf24; border-color: rgba(251,191,36,0.4);">
+          <button class="tactical-btn" onclick="selectCorridor('bec_wire')" style="font-size: 10px; padding: 5px 10px; color: #fbbf24; border-color: rgba(251,191,36,0.4);">
             💼 BEC CEO Fraud (Lagos ➔ AWS Ashburn ➔ Mumbai)
           </button>
-          <button class="tactical-btn" onclick="loadForensicSample('clean_mta')" style="font-size: 10px; padding: 5px 10px; color: #34d399; border-color: rgba(52,211,153,0.4);">
+          <button class="tactical-btn" onclick="selectCorridor('clean_mta')" style="font-size: 10px; padding: 5px 10px; color: #34d399; border-color: rgba(52,211,153,0.4);">
             🛡️ Clean Enterprise (Dublin ➔ Frankfurt ➔ Bangalore)
           </button>
         </div>
@@ -1329,6 +1329,32 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             </button>
             <button class="tactical-btn" onclick="toggleMapFullscreen()" title="Full Screen Radar View">
               <i data-lucide="maximize" style="width: 12px;"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- In-Tab 1-Click Forensic Flight Corridor Presets -->
+        <div class="flight-presets-tab-bar" style="margin-top: 10px; margin-bottom: 12px; background: rgba(15, 23, 42, 0.85); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px; backdrop-filter: blur(8px);">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <span style="font-size: 11px; font-weight: 800; color: #38bdf8; letter-spacing: 0.08em; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+              <i data-lucide="plane-takeoff" style="width: 14px; color: #38bdf8;"></i> 1-CLICK AIR CORRIDOR FLIGHT TRAJECTORY PRESETS
+            </span>
+            <span style="font-size: 10px; color: var(--text-muted); font-family: 'DM Mono', monospace;">
+              Click Any Corridor to Reroute & Simulate Geodesic Flight
+            </span>
+          </div>
+          <div style="display: flex; gap: 8px; flex-wrap: wrap;" id="geomap-corridor-buttons">
+            <button class="tactical-btn" id="btn-corridor-emkei" onclick="selectCorridor('emkei')" style="font-size: 10.5px; padding: 6px 12px; font-weight: 700; border-color: rgba(239, 68, 68, 0.4); color: #f87171;">
+              🚨 Emkei Spoof <span style="color: #94a3b8; font-weight: 400; margin-left: 3px;">(Prague ➔ Frankfurt ➔ New Delhi)</span>
+            </button>
+            <button class="tactical-btn" id="btn-corridor-apt_tor" onclick="selectCorridor('apt_tor')" style="font-size: 10.5px; padding: 6px 12px; font-weight: 700; border-color: rgba(239, 68, 68, 0.4); color: #f87171;">
+              🇷🇺 APT Tor Node <span style="color: #94a3b8; font-weight: 400; margin-left: 3px;">(Moscow ➔ Amsterdam ➔ London ➔ Target)</span>
+            </button>
+            <button class="tactical-btn" id="btn-corridor-bec_wire" onclick="selectCorridor('bec_wire')" style="font-size: 10.5px; padding: 6px 12px; font-weight: 700; border-color: rgba(251, 191, 36, 0.4); color: #fbbf24;">
+              💼 BEC CEO Fraud <span style="color: #94a3b8; font-weight: 400; margin-left: 3px;">(Lagos ➔ AWS Ashburn ➔ Mumbai)</span>
+            </button>
+            <button class="tactical-btn" id="btn-corridor-clean_mta" onclick="selectCorridor('clean_mta')" style="font-size: 10.5px; padding: 6px 12px; font-weight: 700; border-color: rgba(52, 211, 153, 0.4); color: #34d399;">
+              🛡️ Clean Enterprise <span style="color: #94a3b8; font-weight: 400; margin-left: 3px;">(Dublin ➔ Frankfurt ➔ Bangalore)</span>
             </button>
           </div>
         </div>
@@ -1821,7 +1847,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     function hashIpToGeo(ip) {
-      if (!ip || ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('127.')) {
+      if (!ip || ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('127.') || (ip.startsWith('172.') && parseInt(ip.split('.')[1], 10) >= 16 && parseInt(ip.split('.')[1], 10) <= 31)) {
         return {
           country: 'Local Network', country_code: 'LOC', city: 'Internal Gateway',
           lat: 28.6139, lon: 77.2090, latitude: 28.6139, longitude: 77.2090,
@@ -1829,7 +1855,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           threat_flag: 'BENIGN / INTERNAL', is_vpn_tor: false, flag: '🔒'
         };
       }
-      if (ip === '101.99.94.155' || ip.startsWith('101.99.')) {
+
+      // 1. Czech Republic / Prague (WEDOS Internet / Emkei Fake Mailer)
+      if (ip === '101.99.94.155' || ip.startsWith('101.99.') || ip.startsWith('101.')) {
         return {
           country: 'Czech Republic', country_code: 'CZ', city: 'Prague',
           lat: 50.0755, lon: 14.4378, latitude: 50.0755, longitude: 14.4378,
@@ -1837,7 +1865,19 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           threat_flag: 'CRITICAL SPOOFING ORIGIN', is_vpn_tor: true, flag: '🇨🇿'
         };
       }
-      if (ip.startsWith('185.220.') || ip.startsWith('185.244.')) {
+
+      // 2. Nigeria / Lagos (BEC CEO Fraud / MTN / Spectranet)
+      if (ip.startsWith('102.') || ip.startsWith('105.') || ip.startsWith('197.') || ip.startsWith('41.') || ip.startsWith('154.')) {
+        return {
+          country: 'Nigeria', country_code: 'NG', city: 'Lagos',
+          lat: 6.5244, lon: 3.3792, latitude: 6.5244, longitude: 3.3792,
+          asn: 'AS29400 (MTN Group)', isp: 'MTN Nigeria Communications', org: 'Spectranet Wireless Backbone',
+          threat_flag: 'ELEVATED FRAUD / BEC ORIGIN', is_vpn_tor: false, flag: '🇳🇬'
+        };
+      }
+
+      // 3. Russian Federation / Moscow (Tor Exit Relays / Rostelecom)
+      if (ip.startsWith('185.220.') || ip.startsWith('185.244.') || ip.startsWith('185.') || ip.startsWith('91.') || ip.startsWith('77.') || ip.startsWith('178.')) {
         return {
           country: 'Russian Federation', country_code: 'RU', city: 'Moscow',
           lat: 55.7558, lon: 37.6173, latitude: 55.7558, longitude: 37.6173,
@@ -1845,51 +1885,29 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           threat_flag: 'CRITICAL ANONYMOUS ORIGIN', is_vpn_tor: true, flag: '🇷🇺'
         };
       }
-      if (ip.startsWith('102.') || ip.startsWith('105.') || ip.startsWith('197.')) {
+
+      // 4. Ireland / Dublin (AWS EU-West / Enterprise)
+      if (ip.startsWith('52.94.') || ip.startsWith('54.154.') || ip.startsWith('54.170.') || ip.startsWith('52.17.') || ip.startsWith('52.18.') || ip.startsWith('52.208.') || ip.startsWith('52.209.')) {
         return {
-          country: 'Nigeria', country_code: 'NG', city: 'Lagos',
-          lat: 6.5244, lon: 3.3792, latitude: 6.5244, longitude: 3.3792,
-          asn: 'AS29400 (MTN Group)', isp: 'MTN Nigeria Communications', org: 'Spectranet Wireless',
-          threat_flag: 'ELEVATED FRAUD / BEC ORIGIN', is_vpn_tor: false, flag: '🇳🇬'
+          country: 'Ireland', country_code: 'IE', city: 'Dublin',
+          lat: 53.3498, lon: -6.2603, latitude: 53.3498, longitude: -6.2603,
+          asn: 'AS16509 (Amazon.com)', isp: 'Amazon AWS EU-West (Dublin)', org: 'AWS Ireland Datacenter',
+          threat_flag: 'VERIFIED CLOUD ENTERPRISE', is_vpn_tor: false, flag: '🇮🇪'
         };
       }
 
-      const parts = ip.split('.').map(Number);
-      if (parts.length !== 4) {
+      // 5. Netherlands / Amsterdam (AMS-IX / SURFnet)
+      if (ip.startsWith('195.') || ip.startsWith('145.') || ip.startsWith('193.')) {
         return {
-          country: 'India', country_code: 'IN', city: 'New Delhi',
-          lat: 28.6139, lon: 77.2090, latitude: 28.6139, longitude: 77.2090,
-          asn: 'AS133618 (NKN Backbone)', isp: 'National Informatics Gateway', org: 'Govt Email Exchange',
-          threat_flag: 'VERIFIED INBOUND GATEWAY', is_vpn_tor: false, flag: '🇮🇳'
+          country: 'Netherlands', country_code: 'NL', city: 'Amsterdam',
+          lat: 52.3676, lon: 4.9041, latitude: 52.3676, longitude: 4.9041,
+          asn: 'AS1103 (SURFnet)', isp: 'SURFnet / AMS-IX High-Speed Transit', org: 'AMS-IX Europe Exchange',
+          threat_flag: 'EUROPEAN TRANSIT BACKBONE', is_vpn_tor: false, flag: '🇳🇱'
         };
       }
 
-      const p0 = parts[0];
-      if (p0 >= 100 && p0 <= 125) {
-        return {
-          country: 'United States', country_code: 'US', city: 'Ashburn, VA',
-          lat: 39.0438, lon: -77.4874, latitude: 39.0438, longitude: -77.4874,
-          asn: 'AS14618 (Amazon.com)', isp: 'Amazon AWS Cloud Infrastructure', org: 'AWS us-east-1',
-          threat_flag: 'CLOUD TRANSIT PROXY', is_vpn_tor: false, flag: '🇺🇸'
-        };
-      }
-      if (p0 >= 140 && p0 <= 170) {
-        return {
-          country: 'Germany', country_code: 'DE', city: 'Frankfurt',
-          lat: 50.1109, lon: 8.6821, latitude: 50.1109, longitude: 8.6821,
-          asn: 'AS24940 (Hetzner)', isp: 'Hetzner Online / DE-CIX IXP', org: 'Hetzner Datacenter',
-          threat_flag: 'TRANSIT RELAY BACKBONE', is_vpn_tor: false, flag: '🇩🇪'
-        };
-      }
-      if (p0 >= 180 && p0 <= 205) {
-        return {
-          country: 'Russia', country_code: 'RU', city: 'Moscow',
-          lat: 55.7558, lon: 37.6173, latitude: 55.7558, longitude: 37.6173,
-          asn: 'AS12389 (Rostelecom)', isp: 'PJSC Rostelecom Data Backbone', org: 'Rostelecom Enterprise',
-          threat_flag: 'SUSPICIOUS ORIGINATING SUBNET', is_vpn_tor: true, flag: '🇷🇺'
-        };
-      }
-      if (p0 >= 40 && p0 <= 60) {
+      // 6. United Kingdom / London (LINX / British Telecom)
+      if (ip.startsWith('51.') || ip.startsWith('25.') || ip.startsWith('82.') || ip.startsWith('86.') || ip.startsWith('151.')) {
         return {
           country: 'United Kingdom', country_code: 'GB', city: 'London',
           lat: 51.5074, lon: -0.1278, latitude: 51.5074, longitude: -0.1278,
@@ -1897,19 +1915,62 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           threat_flag: 'ENTERPRISE ROUTING NODE', is_vpn_tor: false, flag: '🇬🇧'
         };
       }
-      if (p0 >= 103 && p0 <= 118) {
+
+      // 7. Germany / Frankfurt (DE-CIX / Hetzner Online)
+      if (ip.startsWith('194.26.') || ip.startsWith('194.') || ip.startsWith('80.81.') || ip.startsWith('80.') || ip.startsWith('88.') || ip.startsWith('46.') || ip.startsWith('5.') || ip.startsWith('138.') || ip.startsWith('176.') || ip.startsWith('217.')) {
+        return {
+          country: 'Germany', country_code: 'DE', city: 'Frankfurt',
+          lat: 50.1109, lon: 8.6821, latitude: 50.1109, longitude: 8.6821,
+          asn: 'AS24940 (Hetzner Online)', isp: 'Hetzner Online / DE-CIX IXP', org: 'DE-CIX Management GmbH',
+          threat_flag: 'TRANSIT RELAY BACKBONE', is_vpn_tor: false, flag: '🇩🇪'
+        };
+      }
+
+      // 8. India Specific Regional Gateways (Bangalore, Mumbai, New Delhi)
+      // Bangalore (Silicon Valley of India / IISc / ERNET)
+      if (ip.startsWith('14.') || ip.startsWith('14.139.') || ip.startsWith('103.20.') || ip.startsWith('103.21.') || ip.startsWith('49.204.') || ip.startsWith('49.205.')) {
+        return {
+          country: 'India', country_code: 'IN', city: 'Bangalore',
+          lat: 12.9716, lon: 77.5946, latitude: 12.9716, longitude: 77.5946,
+          asn: 'AS9498 (Airtel Broadband)', isp: 'Bharti Airtel Karnataka / NKN Backbone', org: 'ERNET Bangalore Gateway',
+          threat_flag: 'VERIFIED ENTERPRISE INBOUND', is_vpn_tor: false, flag: '🇮🇳'
+        };
+      }
+      // Mumbai (Financial Capital / Reliance Jio / Tata Comm)
+      if (ip.startsWith('115.') || ip.startsWith('117.') || ip.startsWith('122.') || ip.startsWith('182.') || ip.startsWith('49.32.') || ip.startsWith('49.33.') || ip.startsWith('49.34.') || ip.startsWith('49.35.')) {
         return {
           country: 'India', country_code: 'IN', city: 'Mumbai',
           lat: 19.0760, lon: 72.8777, latitude: 19.0760, longitude: 72.8777,
-          asn: 'AS55836 (Reliance Jio)', isp: 'Reliance Jio Infocomm Gateway', org: 'Jio Broadband',
+          asn: 'AS55836 (Reliance Jio)', isp: 'Reliance Jio Infocomm / Tata Comm Gateway', org: 'Jio Corporate Broadband',
           threat_flag: 'DOMESTIC INBOUND GATEWAY', is_vpn_tor: false, flag: '🇮🇳'
         };
       }
+      // New Delhi (National Capital / NIC / Govt Exchange)
+      if (ip.startsWith('103.') || ip.startsWith('164.100.') || ip.startsWith('49.') || ip.startsWith('114.')) {
+        return {
+          country: 'India', country_code: 'IN', city: 'New Delhi',
+          lat: 28.6139, lon: 77.2090, latitude: 28.6139, longitude: 77.2090,
+          asn: 'AS133618 (NKN Backbone)', isp: 'National Informatics Centre (NIC) Gateway', org: 'Govt Email Exchange',
+          threat_flag: 'VERIFIED INBOUND GATEWAY', is_vpn_tor: false, flag: '🇮🇳'
+        };
+      }
+
+      // 9. United States / Ashburn, VA (Cloudflare / AWS)
+      if (ip.startsWith('54.') || ip.startsWith('52.') || ip.startsWith('104.') || ip.startsWith('198.') || ip.startsWith('142.') || ip.startsWith('172.') || ip.startsWith('3.') || ip.startsWith('34.') || ip.startsWith('35.')) {
+        return {
+          country: 'United States', country_code: 'US', city: 'Ashburn, VA',
+          lat: 39.0438, lon: -77.4874, latitude: 39.0438, longitude: -77.4874,
+          asn: 'AS14618 (Amazon.com)', isp: 'Amazon AWS Cloud Infrastructure', org: 'AWS us-east-1',
+          threat_flag: 'CLOUD TRANSIT PROXY', is_vpn_tor: false, flag: '🇺🇸'
+        };
+      }
+
+      // Fallback
       return {
-        country: 'Netherlands', country_code: 'NL', city: 'Amsterdam',
-        lat: 52.3676, lon: 4.9041, latitude: 52.3676, longitude: 4.9041,
-        asn: 'AS1103 (SURFnet)', isp: 'SURFnet / AMS-IX High-Speed Transit', org: 'AMS-IX Europe',
-        threat_flag: 'EUROPEAN TRANSIT BACKBONE', is_vpn_tor: false, flag: '🇳🇱'
+        country: 'India', country_code: 'IN', city: 'New Delhi',
+        lat: 28.6139, lon: 77.2090, latitude: 28.6139, longitude: 77.2090,
+        asn: 'AS133618 (NKN Backbone)', isp: 'National Informatics Centre Gateway', org: 'Govt Email Exchange',
+        threat_flag: 'VERIFIED INBOUND GATEWAY', is_vpn_tor: false, flag: '🇮🇳'
       };
     }
 
@@ -3006,6 +3067,20 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       safeCreateIcons();
     }
 
+    // Active Corridor Controller
+    function selectCorridor(sampleType) {
+      document.querySelectorAll('#geomap-corridor-buttons .tactical-btn, .upload-corridor-buttons .tactical-btn').forEach(b => {
+        b.classList.remove('pulse-action');
+        b.style.boxShadow = 'none';
+      });
+      const inTabBtn = document.getElementById('btn-corridor-' + sampleType);
+      if (inTabBtn) {
+        inTabBtn.classList.add('pulse-action');
+        inTabBtn.style.boxShadow = '0 0 14px rgba(56, 189, 248, 0.5)';
+      }
+      loadForensicSample(sampleType);
+    }
+
     // 1-Click Forensic Sample Loader for Instant Geodesic Demonstrations
     async function loadForensicSample(sampleType) {
       showLoader(true);
@@ -3040,7 +3115,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             hops: [
               { hop_number: 1, is_origin: true, ip: '185.220.101.5', from_host: 'tor-exit-03.moscow.ru', by_host: 'ams-ix.surfnet.nl', latency_delta: '+0.32s' },
               { hop_number: 2, is_origin: false, ip: '195.12.50.4', from_host: 'ams-ix.surfnet.nl', by_host: 'linx-core.london.bt.com', latency_delta: '+0.78s' },
-              { hop_number: 3, is_origin: false, ip: '103.27.234.18', from_host: 'linx-core.london.bt.com', by_host: 'mx.nic.in', latency_delta: '+1.65s' }
+              { hop_number: 3, is_origin: false, ip: '51.89.145.20', from_host: 'linx-core.london.bt.com', by_host: 'delhi-gateway.nic.in', latency_delta: '+1.24s' },
+              { hop_number: 4, is_origin: false, ip: '103.27.234.18', from_host: 'delhi-gateway.nic.in', by_host: 'mx.critical-infrastructure.in', latency_delta: '+1.85s' }
             ]
           };
         } else if (sampleType === 'bec_wire') {
@@ -3056,7 +3132,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             hops: [
               { hop_number: 1, is_origin: true, ip: '102.89.33.10', from_host: 'spectranet-wifi.lagos.ng', by_host: 'aws-east-relay.amazon.com', latency_delta: '+0.42s' },
               { hop_number: 2, is_origin: false, ip: '54.240.14.88', from_host: 'aws-east-relay.amazon.com', by_host: 'jio-inbound-ix.mumbai.in', latency_delta: '+1.10s' },
-              { hop_number: 3, is_origin: false, ip: '103.27.234.18', from_host: 'jio-inbound-ix.mumbai.in', by_host: 'mx.corporate-finance.in', latency_delta: '+1.82s' }
+              { hop_number: 3, is_origin: false, ip: '115.112.9.22', from_host: 'jio-inbound-ix.mumbai.in', by_host: 'mx.corporate-finance.in', latency_delta: '+1.78s' }
             ]
           };
         } else {
@@ -3071,8 +3147,8 @@ HTML_CONTENT = r"""<!DOCTYPE html>
             categoryLabel: 'Clean / Cryptographically Signed Corporate Communication',
             hops: [
               { hop_number: 1, is_origin: true, ip: '52.94.225.10', from_host: 'mail-dub.amazon.com', by_host: 'de-cix.fra.hetzner.net', latency_delta: '+0.15s' },
-              { hop_number: 2, is_origin: false, ip: '194.26.29.112', from_host: 'de-cix.fra.hetzner.net', by_host: 'inbound-mx.bangalore.in', latency_delta: '+0.58s' },
-              { hop_number: 3, is_origin: false, ip: '142.250.190.26', from_host: 'inbound-mx.bangalore.in', by_host: 'mx.google.com', latency_delta: '+1.02s' }
+              { hop_number: 2, is_origin: false, ip: '80.81.192.1', from_host: 'de-cix.fra.hetzner.net', by_host: 'ernet-node.bangalore.in', latency_delta: '+0.58s' },
+              { hop_number: 3, is_origin: false, ip: '14.139.1.5', from_host: 'ernet-node.bangalore.in', by_host: 'mx.organization.in', latency_delta: '+1.02s' }
             ]
           };
         }
@@ -3804,7 +3880,7 @@ CREATE POLICY "Allow service role full access"
           if (['emkei', 'apt_tor', 'bec_wire', 'clean_mta'].includes(h)) sample = h;
         }
         if (sample && ['emkei', 'apt_tor', 'bec_wire', 'clean_mta'].includes(sample)) {
-          loadForensicSample(sample);
+          selectCorridor(sample);
         }
       } catch (e) {
         console.warn('URL param parse error:', e);
