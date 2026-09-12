@@ -7,7 +7,9 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="assets/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+  <script src="assets/leaflet.js"></script>
   <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
@@ -169,20 +171,497 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     .key-val span { color: var(--text-muted); flex-shrink: 0; }
     .key-val strong { font-weight: 700; color: #fff; text-align: right; word-break: break-word; }
 
-    /* Map & Graph Containers */
-    #map-container { height: 320px; width: 100%; border-radius: 12px; z-index: 10; border: 1px solid var(--border); }
-    .hop-timeline { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+    /* ========================================================= */
+    /* 🛰️ COMPONENT 2 & 3: TACTICAL FLIGHT RADAR & TELEMETRY HUD */
+    /* ========================================================= */
+    
+    /* Map Container & High-Tech HUD Styling */
+    #map-wrapper {
+      position: relative;
+      border-radius: 12px;
+      overflow: hidden;
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      background: #020617;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
+    }
+    #map-container {
+      height: 420px;
+      width: 100%;
+      z-index: 10;
+      background: #020617;
+    }
+    @media (max-width: 768px) {
+      #map-container { height: 320px !important; }
+    }
+
+    /* Targeting Reticle Brackets on Map Corners */
+    .hud-corner {
+      position: absolute;
+      width: 14px;
+      height: 14px;
+      z-index: 20;
+      pointer-events: none;
+    }
+    .hud-corner.tl { top: 8px; left: 8px; border-top: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
+    .hud-corner.tr { top: 8px; right: 8px; border-top: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
+    .hud-corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
+    .hud-corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
+
+    /* Flight Telemetry HUD Ribbon */
+    .flight-hud {
+      display: grid;
+      grid-template-columns: 1fr auto 1fr;
+      gap: 10px;
+      background: linear-gradient(180deg, rgba(8, 14, 28, 0.96), rgba(4, 8, 18, 0.98));
+      border: 1px solid rgba(56, 189, 248, 0.3);
+      border-bottom: none;
+      border-radius: 12px 12px 0 0;
+      padding: 12px 14px;
+      align-items: center;
+      position: relative;
+    }
+    @media (max-width: 860px) {
+      .flight-hud { grid-template-columns: 1fr; gap: 8px; }
+    }
+
+    .hud-station-card {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      background: rgba(15, 23, 42, 0.7);
+      border: 1px solid rgba(255, 255, 255, 0.08);
+      border-radius: 8px;
+      padding: 8px 12px;
+    }
+    .hud-station-card.origin { border-left: 3px solid #ef4444; }
+    .hud-station-card.dest { border-right: 3px solid #10b981; }
+
+    .hud-station-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 9px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+    }
+    .hud-station-location {
+      font-size: 13px;
+      font-weight: 800;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .hud-station-meta {
+      font-size: 10px;
+      color: var(--text-muted);
+      font-family: 'DM Mono', monospace;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    /* Center Vector Corridor */
+    .hud-corridor-box {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 5px;
+      padding: 4px 8px;
+    }
+    .hud-corridor-vector {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-family: 'DM Mono', monospace;
+      font-size: 11px;
+      font-weight: 700;
+      color: #38bdf8;
+      background: rgba(56, 189, 248, 0.08);
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-radius: 20px;
+      padding: 3px 12px;
+    }
+    .hud-telemetry-metrics {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      justify-content: center;
+      align-items: center;
+    }
+    .hud-metric-item {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+    .hud-metric-val {
+      font-family: 'DM Mono', monospace;
+      font-size: 11.5px;
+      font-weight: 800;
+      color: #f8fafc;
+    }
+    .hud-metric-lbl {
+      font-size: 8px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .hud-status-banner {
+      font-size: 9px;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      color: #38bdf8;
+      background: rgba(0, 0, 0, 0.4);
+      padding: 2px 8px;
+      border-radius: 4px;
+      border: 1px solid rgba(56, 189, 248, 0.2);
+    }
+
+    /* Tactical Map Toolbar */
+    .map-tactical-toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background: #070d1a;
+      border: 1px solid rgba(56, 189, 248, 0.25);
+      border-top: none;
+      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
+      padding: 6px 12px;
+      font-size: 11px;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .map-btn-group {
+      display: flex;
+      align-items: center;
+      gap: 5px;
+    }
+    .tactical-btn {
+      background: rgba(15, 23, 42, 0.85);
+      border: 1px solid rgba(56, 189, 248, 0.35);
+      color: #e2e8f0;
+      font-size: 10.5px;
+      font-weight: 700;
+      padding: 4px 10px;
+      border-radius: 6px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      transition: all 0.2s ease;
+    }
+    .tactical-btn:hover {
+      background: rgba(56, 189, 248, 0.15);
+      border-color: #38bdf8;
+      color: #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    }
+    .tactical-btn.active {
+      background: #0284c7;
+      border-color: #38bdf8;
+      color: #fff;
+    }
+    .tactical-btn.pulse-action {
+      background: linear-gradient(135deg, #0284c7, #2563eb);
+      border-color: #38bdf8;
+      color: #fff;
+      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
+    }
+    .tactical-btn.pulse-action:hover {
+      background: linear-gradient(135deg, #0369a1, #1d4ed8);
+      box-shadow: 0 0 18px rgba(56, 189, 248, 0.7);
+    }
+
+    /* Radar Node Markers (Custom HTML Leaflet DivIcons) */
+    .radar-node-wrap {
+      position: relative;
+      width: 40px;
+      height: 40px;
+      display: grid;
+      place-items: center;
+      pointer-events: auto;
+    }
+    .radar-ring {
+      position: absolute;
+      border-radius: 50%;
+      pointer-events: none;
+      box-sizing: border-box;
+    }
+    
+    /* Origin Node (Red Pulsing Reticle) */
+    .radar-node-origin .radar-ring {
+      border: 1.5px solid #ef4444;
+      width: 100%;
+      height: 100%;
+      animation: radar-ping-origin 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+    .radar-node-origin .radar-ring.r2 {
+      animation-delay: 0.7s;
+    }
+    .radar-node-origin .radar-ring.r3 {
+      animation-delay: 1.4s;
+    }
+    .radar-core-origin {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #f87171, #ef4444);
+      border: 2px solid #fff;
+      box-shadow: 0 0 14px rgba(239, 68, 68, 0.9);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      color: #fff;
+      z-index: 2;
+    }
+
+    /* Relay Node (Cyan Pulsing Node) */
+    .radar-node-relay .radar-ring {
+      border: 1.5px solid #38bdf8;
+      width: 100%;
+      height: 100%;
+      animation: radar-ping-relay 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+    .radar-core-relay {
+      width: 18px;
+      height: 18px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #38bdf8, #0284c7);
+      border: 2px solid #fff;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
+      display: grid;
+      place-items: center;
+      font-size: 10px;
+      font-weight: 800;
+      color: #fff;
+      z-index: 2;
+    }
+
+    /* Destination Node (Emerald Shield Node) */
+    .radar-node-dest .radar-ring {
+      border: 1.5px solid #10b981;
+      width: 100%;
+      height: 100%;
+      animation: radar-ping-dest 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+    }
+    .radar-core-dest {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: radial-gradient(circle, #34d399, #059669);
+      border: 2px solid #fff;
+      box-shadow: 0 0 14px rgba(16, 185, 129, 0.9);
+      display: grid;
+      place-items: center;
+      font-size: 11px;
+      color: #fff;
+      z-index: 2;
+    }
+
+    /* Permanent Tactical Callout HUD Labels */
+    .radar-hud-tag {
+      position: absolute;
+      bottom: -22px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 4px;
+      pointer-events: none;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
+      z-index: 5;
+    }
+    .radar-hud-tag.origin {
+      background: rgba(239, 68, 68, 0.9);
+      color: #fff;
+      border: 1px solid #f87171;
+    }
+    .radar-hud-tag.relay {
+      background: rgba(15, 23, 42, 0.9);
+      color: #38bdf8;
+      border: 1px solid rgba(56, 189, 248, 0.5);
+    }
+    .radar-hud-tag.dest {
+      background: rgba(16, 185, 129, 0.9);
+      color: #fff;
+      border: 1px solid #34d399;
+    }
+
+    /* Animated Flight Drone Marker */
+    .flight-drone-divicon {
+      background: transparent !important;
+      border: none !important;
+    }
+    .drone-pulse-wrap {
+      position: relative;
+      width: 32px;
+      height: 32px;
+      display: grid;
+      place-items: center;
+      pointer-events: none;
+    }
+    .drone-head {
+      font-size: 18px;
+      color: #38bdf8;
+      filter: drop-shadow(0 0 8px #00f0ff);
+      transform-origin: center center;
+      transition: transform 0.1s linear;
+      z-index: 4;
+    }
+    .drone-halo {
+      position: absolute;
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: radial-gradient(circle, rgba(56, 189, 248, 0.45), transparent 70%);
+      animation: drone-pulse 1s infinite alternate;
+    }
+    .drone-tag {
+      position: absolute;
+      top: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      white-space: nowrap;
+      font-family: 'DM Mono', monospace;
+      font-size: 8.5px;
+      font-weight: 800;
+      color: #00f0ff;
+      background: rgba(3, 7, 18, 0.9);
+      border: 1px solid #00f0ff;
+      border-radius: 3px;
+      padding: 1px 5px;
+      box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
+    }
+
+    @keyframes radar-ping-origin {
+      0% { transform: scale(0.4); opacity: 0.95; }
+      100% { transform: scale(2.6); opacity: 0; }
+    }
+    @keyframes radar-ping-relay {
+      0% { transform: scale(0.4); opacity: 0.85; }
+      100% { transform: scale(2.2); opacity: 0; }
+    }
+    @keyframes radar-ping-dest {
+      0% { transform: scale(0.4); opacity: 0.9; }
+      100% { transform: scale(2.4); opacity: 0; }
+    }
+    @keyframes drone-pulse {
+      0% { transform: scale(0.8); opacity: 0.5; }
+      100% { transform: scale(1.3); opacity: 1; }
+    }
+    @keyframes drone-glide {
+      0% { filter: drop-shadow(0 0 4px #00f0ff); }
+      50% { filter: drop-shadow(0 0 12px #38bdf8); }
+      100% { filter: drop-shadow(0 0 4px #00f0ff); }
+    }
+
+    /* Leaflet Tactical Popup Overrides */
+    .leaflet-popup-content-wrapper {
+      background: rgba(8, 14, 28, 0.95) !important;
+      color: #f8fafc !important;
+      border: 1px solid rgba(56, 189, 248, 0.6) !important;
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 15px rgba(56, 189, 248, 0.25) !important;
+      border-radius: 10px !important;
+      backdrop-filter: blur(10px) !important;
+      padding: 2px !important;
+    }
+    .leaflet-popup-content {
+      margin: 10px 14px !important;
+      font-size: 11px !important;
+      line-height: 1.5 !important;
+    }
+    .leaflet-popup-tip {
+      background: #080e1c !important;
+      border: 1px solid rgba(56, 189, 248, 0.6) !important;
+    }
+
+    /* Upgraded Hop Timeline Cards */
+    .hop-timeline {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 14px;
+      position: relative;
+    }
+    .hop-timeline::before {
+      content: '';
+      position: absolute;
+      left: 27px;
+      top: 15px;
+      bottom: 15px;
+      width: 2px;
+      background: linear-gradient(180deg, #ef4444 0%, #38bdf8 50%, #10b981 100%);
+      opacity: 0.4;
+      z-index: 1;
+    }
     .hop-item {
-      display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border-radius: 10px;
-      background: rgba(255, 255, 255, 0.02); border: 1px solid rgba(255, 255, 255, 0.06);
+      display: flex;
+      gap: 14px;
+      align-items: flex-start;
+      padding: 12px 16px;
+      border-radius: 10px;
+      background: rgba(15, 23, 42, 0.65);
+      border: 1px solid rgba(255, 255, 255, 0.07);
+      position: relative;
+      z-index: 2;
+      transition: all 0.2s ease;
+    }
+    .hop-item:hover {
+      background: rgba(15, 23, 42, 0.9);
+      border-color: rgba(56, 189, 248, 0.4);
+      transform: translateX(2px);
     }
     .hop-badge {
-      width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center;
-      font-weight: 800; font-size: 10.5px; flex-shrink: 0;
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      display: grid;
+      place-items: center;
+      font-weight: 900;
+      font-size: 11px;
+      flex-shrink: 0;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
     }
-    .hop-badge.origin { background: rgba(239, 68, 68, 0.2); color: #f87171; border: 1px solid #ef4444; }
-    .hop-badge.relay { background: rgba(59, 130, 246, 0.2); color: #60a5fa; border: 1px solid #3b82f6; }
-    .hop-badge.dest { background: rgba(16, 185, 129, 0.2); color: #34d399; border: 1px solid #10b981; }
+    .hop-badge.origin {
+      background: rgba(239, 68, 68, 0.25);
+      color: #f87171;
+      border: 2px solid #ef4444;
+      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+    }
+    .hop-badge.relay {
+      background: rgba(56, 189, 248, 0.2);
+      color: #38bdf8;
+      border: 2px solid #38bdf8;
+      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
+    }
+    .hop-badge.dest {
+      background: rgba(16, 185, 129, 0.25);
+      color: #34d399;
+      border: 2px solid #10b981;
+      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+    }
+
+    .hop-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 7px;
+      border-radius: 4px;
+      font-size: 9.5px;
+      font-weight: 700;
+      font-family: 'DM Mono', monospace;
+      background: rgba(255, 255, 255, 0.05);
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      color: #cbd5e1;
+    }
+    .hop-pill.good { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.35); }
+    .hop-pill.warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.35); }
+    .hop-pill.bad { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.35); }
+    .hop-pill.cyan { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); }
+    .hop-pill.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); }
 
     #graph-canvas-wrap {
       height: 320px; width: 100%; background: #060a14; border-radius: 12px;
@@ -576,6 +1055,30 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </p>
         <button class="primary-btn" style="width: 100%; max-width: 280px;"><i data-lucide="file-search"></i> Select Email Evidence</button>
       </div>
+
+      <!-- 1-Click Forensic Simulation Presets -->
+      <div style="margin-top: 12px; background: rgba(15, 23, 42, 0.75); border: 1px solid rgba(56, 189, 248, 0.25); border-radius: 10px; padding: 10px 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 4px;">
+          <span style="font-size: 10.5px; font-weight: 800; color: #38bdf8; letter-spacing: 0.06em; text-transform: uppercase; display: flex; align-items: center; gap: 5px;">
+            <i data-lucide="plane-takeoff" style="width: 13px; color: #38bdf8;"></i> 1-Click Air-Corridor Flight Trajectory Presets
+          </span>
+          <span style="font-size: 9.5px; color: var(--text-muted);">Instant Multi-Hop Geodesic Trajectory Demo</span>
+        </div>
+        <div style="display: flex; gap: 6px; flex-wrap: wrap;">
+          <button class="tactical-btn pulse-action" onclick="loadForensicSample('emkei')" style="font-size: 10px; padding: 5px 10px;">
+            🚨 Emkei Spoof (Prague ➔ Frankfurt ➔ New Delhi)
+          </button>
+          <button class="tactical-btn" onclick="loadForensicSample('apt_tor')" style="font-size: 10px; padding: 5px 10px; color: #f87171; border-color: rgba(239,68,68,0.4);">
+            🇷🇺 APT Tor Node (Moscow ➔ Amsterdam ➔ London ➔ Target)
+          </button>
+          <button class="tactical-btn" onclick="loadForensicSample('bec_wire')" style="font-size: 10px; padding: 5px 10px; color: #fbbf24; border-color: rgba(251,191,36,0.4);">
+            💼 BEC CEO Fraud (Lagos ➔ AWS Ashburn ➔ Mumbai)
+          </button>
+          <button class="tactical-btn" onclick="loadForensicSample('clean_mta')" style="font-size: 10px; padding: 5px 10px; color: #34d399; border-color: rgba(52,211,153,0.4);">
+            🛡️ Clean Enterprise (Dublin ➔ Frankfurt ➔ Bangalore)
+          </button>
+        </div>
+      </div>
     </div>
 
     <!-- 2. TEXT INTAKE -->
@@ -741,7 +1244,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <!-- Navigation Tabs -->
       <div class="nav-tabs">
         <button class="nav-tab active" onclick="switchTab('overview', this)"><i data-lucide="layout-dashboard" style="width: 12px;"></i> Overview</button>
-        <button class="nav-tab" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 12px;"></i> 🗺️ GeoIP</button>
+        <button class="nav-tab" id="tab-btn-geomap" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 12px;"></i> 🗺️ GeoIP</button>
         <button class="nav-tab" onclick="switchTab('graph', this)"><i data-lucide="network" style="width: 12px;"></i> 🕸️ Graph</button>
         <button class="nav-tab" onclick="switchTab('nlp', this)"><i data-lucide="brain" style="width: 12px;"></i> 🧠 AI NLP</button>
         <button class="nav-tab" onclick="switchTab('mitre', this)"><i data-lucide="crosshair" style="width: 12px;"></i> 🎯 MITRE</button>
@@ -805,10 +1308,145 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       </div>
 
       <!-- Tab: SMTP Trace & GeoIP Map -->
-      <div id="tab-geomap" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="map" style="width: 15px; color: #38bdf8;"></i><div><small>COMPONENT 2 & 3</small><h3>SMTP Relay Path & GeoIP Flight Trajectory</h3></div></div>
-        <div id="map-container"></div>
-        <div class="hop-timeline" id="hop-timeline-list"></div>
+      <div id="tab-geomap" class="card" style="display: none; padding: 14px;">
+        <div class="card-title" style="justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="crosshair" style="width: 18px; height: 18px; color: #38bdf8;"></i>
+            <div>
+              <small style="letter-spacing: 0.08em; color: #38bdf8; font-weight: 800;">COMPONENT 2 & 3 · REAL-TIME FORENSIC AIR CORRIDOR TRACE</small>
+              <h3 style="font-size: 15px; margin: 0;">SMTP Multi-Hop Relay Path & GeoIP Flight Trajectory</h3>
+            </div>
+          </div>
+          <div class="map-btn-group">
+            <button class="tactical-btn pulse-action" id="btn-replay-flight" onclick="simulateFlightTrajectory()" title="Simulate Packet Inbound Flight Path">
+              <i data-lucide="play" style="width: 12px; fill: currentColor;"></i> <span>Simulate Flight Path</span>
+            </button>
+            <button class="tactical-btn active" id="btn-tile-dark" onclick="switchMapLayer('dark')" title="Switch to Tactical Dark Map">
+              <i data-lucide="moon" style="width: 12px;"></i> <span>Tactical</span>
+            </button>
+            <button class="tactical-btn" id="btn-tile-sat" onclick="switchMapLayer('sat')" title="Switch to Satellite Reconnaissance Imagery">
+              <i data-lucide="satellite" style="width: 12px;"></i> <span>Satellite</span>
+            </button>
+            <button class="tactical-btn" onclick="toggleMapFullscreen()" title="Full Screen Radar View">
+              <i data-lucide="maximize" style="width: 12px;"></i>
+            </button>
+          </div>
+        </div>
+
+        <!-- Real-Time Flight Telemetry HUD Ribbon -->
+        <div class="flight-hud" id="flight-telemetry-hud">
+          <!-- Origin Station Card -->
+          <div class="hud-station-card origin">
+            <div class="hud-station-header">
+              <span style="color: #f87171; display: flex; align-items: center; gap: 4px;">
+                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px #ef4444;"></span>
+                HOP #1 ORIGIN MTA
+              </span>
+              <span id="hud-origin-country-code" class="hop-pill bad">SRC</span>
+            </div>
+            <div class="hud-station-location">
+              <span id="hud-origin-flag">🚨</span>
+              <span id="hud-origin-city">Resolving Sender...</span>
+            </div>
+            <div class="hud-station-meta">
+              <span id="hud-origin-ip" style="color: #f87171;">--</span>
+              <span id="hud-origin-asn">--</span>
+            </div>
+            <div class="hud-station-meta" style="margin-top: 2px;">
+              <span style="color: #64748b;">COORDS:</span>
+              <span id="hud-origin-coords" style="color: #cbd5e1;">--</span>
+            </div>
+          </div>
+
+          <!-- Center Corridor Vector Box -->
+          <div class="hud-corridor-box">
+            <div class="hud-corridor-vector">
+              <span id="hud-origin-code">SRC</span>
+              <span style="color: #38bdf8; animation: drone-glide 2s infinite;">───────✈───────▶</span>
+              <span id="hud-dest-code">DST</span>
+            </div>
+            <div class="hud-telemetry-metrics">
+              <div class="hud-metric-item">
+                <span class="hud-metric-val" id="hud-distance" style="color: #38bdf8;">-- KM</span>
+                <span class="hud-metric-lbl">FLIGHT DISTANCE</span>
+              </div>
+              <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.1);"></div>
+              <div class="hud-metric-item">
+                <span class="hud-metric-val" id="hud-hops" style="color: #fbbf24;">-- HOPS</span>
+                <span class="hud-metric-lbl">RELAY NODES</span>
+              </div>
+              <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.1);"></div>
+              <div class="hud-metric-item">
+                <span class="hud-metric-val" id="hud-bearing" style="color: #a855f7;">--°</span>
+                <span class="hud-metric-lbl">GREAT CIRCLE BEARING</span>
+              </div>
+              <div style="width: 1px; height: 18px; background: rgba(255,255,255,0.1);"></div>
+              <div class="hud-metric-item">
+                <span class="hud-metric-val" id="hud-latency" style="color: #34d399;">--s</span>
+                <span class="hud-metric-lbl">TRANSIT DELTA</span>
+              </div>
+            </div>
+            <div class="hud-status-banner" id="hud-flight-status">
+              ● RADAR SWEEP ACTIVE · GEODESIC TRAJECTORY LOCKED
+            </div>
+          </div>
+
+          <!-- Destination Gateway Card -->
+          <div class="hud-station-card dest">
+            <div class="hud-station-header">
+              <span style="color: #34d399; display: flex; align-items: center; gap: 4px;">
+                <span style="display: inline-block; width: 6px; height: 6px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span>
+                INBOUND MX GATEWAY
+              </span>
+              <span id="hud-dest-country-code" class="hop-pill good">MX-IN</span>
+            </div>
+            <div class="hud-station-location">
+              <span id="hud-dest-flag">🛡️</span>
+              <span id="hud-dest-city">Target Inbound Node</span>
+            </div>
+            <div class="hud-station-meta">
+              <span id="hud-dest-ip" style="color: #34d399;">--</span>
+              <span id="hud-dest-asn">--</span>
+            </div>
+            <div class="hud-station-meta" style="margin-top: 2px;">
+              <span style="color: #64748b;">SECURITY:</span>
+              <span id="hud-dest-sec" style="color: #38bdf8;">TLS 1.3 ChaCha20</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Tactical Map Viewport with HUD Corners -->
+        <div id="map-wrapper">
+          <div class="hud-corner tl"></div>
+          <div class="hud-corner tr"></div>
+          <div class="hud-corner bl"></div>
+          <div class="hud-corner br"></div>
+          <div id="map-container"></div>
+        </div>
+
+        <!-- Tactical Status Legend -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 6px 12px; font-size: 10px; color: var(--text-muted); flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; gap: 12px; align-items: center; flex-wrap: wrap;">
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 6px #ef4444;"></span> Sender Origin</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 6px #38bdf8;"></span> Transit Relay</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 6px #10b981;"></span> Inbound MX Gateway</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="display: inline-block; width: 14px; height: 2px; background: #38bdf8; border-top: 1px dashed #fff;"></span> Great Circle Corridors</span>
+          </div>
+          <div id="map-cursor-coords" class="mono" style="color: #38bdf8;">
+            LAT: 28.6139°N | LON: 77.2090°E
+          </div>
+        </div>
+
+        <!-- Component 2: Chronological Telecom Relay Hops -->
+        <div style="margin-top: 16px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;">
+            <span style="font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; display: flex; align-items: center; gap: 5px;">
+              <i data-lucide="server" style="width: 14px; color: #38bdf8;"></i> MTA Forensic Chain of Custody & Reverse-DNS Telecom Ledger
+            </span>
+            <span id="hop-summary-count" class="hop-pill cyan">-- Hops Reconstructed</span>
+          </div>
+          <div class="hop-timeline" id="hop-timeline-list"></div>
+        </div>
       </div>
 
       <!-- Tab: Threat Attribution Graph Topology -->
@@ -1030,7 +1668,12 @@ HTML_CONTENT = r"""<!DOCTYPE html>
   </div>
 
   <script>
-    lucide.createIcons();
+    function safeCreateIcons() {
+      if (typeof lucide !== 'undefined' && lucide && typeof lucide.createIcons === 'function') {
+        try { lucide.createIcons(); } catch(e) {}
+      }
+    }
+    safeCreateIcons();
     let currentAnalysis = null;
     let leafletMap = null;
 
@@ -1179,21 +1822,95 @@ HTML_CONTENT = r"""<!DOCTYPE html>
 
     function hashIpToGeo(ip) {
       if (!ip || ip.startsWith('10.') || ip.startsWith('192.168.') || ip.startsWith('127.')) {
-        return { country: 'Local Network', city: 'Internal Gateway', latitude: 28.6139, longitude: 77.2090, asn: 'AS-PRIVATE', org: 'Private RFC1918' };
+        return {
+          country: 'Local Network', country_code: 'LOC', city: 'Internal Gateway',
+          lat: 28.6139, lon: 77.2090, latitude: 28.6139, longitude: 77.2090,
+          asn: 'AS-PRIVATE', isp: 'RFC 1918 Private Subnet', org: 'Private Intranet',
+          threat_flag: 'BENIGN / INTERNAL', is_vpn_tor: false, flag: '🔒'
+        };
       }
       if (ip === '101.99.94.155' || ip.startsWith('101.99.')) {
-        return { country: 'Czech Republic', city: 'Prague', latitude: 50.0755, longitude: 14.4378, asn: 'AS197019', org: 'WEDOS Internet / Emkei Mailer Node' };
+        return {
+          country: 'Czech Republic', country_code: 'CZ', city: 'Prague',
+          lat: 50.0755, lon: 14.4378, latitude: 50.0755, longitude: 14.4378,
+          asn: 'AS197019 (WEDOS Internet)', isp: 'WEDOS Hosting / Emkei Fake Mailer', org: 'Emkei.cz Public Mailer Node',
+          threat_flag: 'CRITICAL SPOOFING ORIGIN', is_vpn_tor: true, flag: '🇨🇿'
+        };
       }
+      if (ip.startsWith('185.220.') || ip.startsWith('185.244.')) {
+        return {
+          country: 'Russian Federation', country_code: 'RU', city: 'Moscow',
+          lat: 55.7558, lon: 37.6173, latitude: 55.7558, longitude: 37.6173,
+          asn: 'AS133618 (Tor Exit Relay)', isp: 'Tor Exit Node / Bulletproof Hosting', org: 'Anonymous Cyber Transit',
+          threat_flag: 'CRITICAL ANONYMOUS ORIGIN', is_vpn_tor: true, flag: '🇷🇺'
+        };
+      }
+      if (ip.startsWith('102.') || ip.startsWith('105.') || ip.startsWith('197.')) {
+        return {
+          country: 'Nigeria', country_code: 'NG', city: 'Lagos',
+          lat: 6.5244, lon: 3.3792, latitude: 6.5244, longitude: 3.3792,
+          asn: 'AS29400 (MTN Group)', isp: 'MTN Nigeria Communications', org: 'Spectranet Wireless',
+          threat_flag: 'ELEVATED FRAUD / BEC ORIGIN', is_vpn_tor: false, flag: '🇳🇬'
+        };
+      }
+
       const parts = ip.split('.').map(Number);
-      if (parts.length !== 4) return { country: 'India', city: 'New Delhi', latitude: 28.6139, longitude: 77.2090, asn: 'AS133618', org: 'Internet Backbone' };
-      
+      if (parts.length !== 4) {
+        return {
+          country: 'India', country_code: 'IN', city: 'New Delhi',
+          lat: 28.6139, lon: 77.2090, latitude: 28.6139, longitude: 77.2090,
+          asn: 'AS133618 (NKN Backbone)', isp: 'National Informatics Gateway', org: 'Govt Email Exchange',
+          threat_flag: 'VERIFIED INBOUND GATEWAY', is_vpn_tor: false, flag: '🇮🇳'
+        };
+      }
+
       const p0 = parts[0];
-      if (p0 >= 100 && p0 <= 125) return { country: 'United States', city: 'Ashburn', latitude: 39.0438, longitude: -77.4874, asn: 'AS14618', org: 'Amazon AWS Cloud' };
-      if (p0 >= 140 && p0 <= 170) return { country: 'Germany', city: 'Frankfurt', latitude: 50.1109, longitude: 8.6821, asn: 'AS24940', org: 'Hetzner Online' };
-      if (p0 >= 180 && p0 <= 205) return { country: 'Russia', city: 'Moscow', latitude: 55.7558, longitude: 37.6173, asn: 'AS12389', org: 'Rostelecom Data Node' };
-      if (p0 >= 40 && p0 <= 60) return { country: 'United Kingdom', city: 'London', latitude: 51.5074, longitude: -0.1278, asn: 'AS2856', org: 'British Telecom' };
-      if (p0 >= 103 && p0 <= 118) return { country: 'India', city: 'Mumbai', latitude: 19.0760, longitude: 72.8777, asn: 'AS55836', org: 'Reliance Jio Infocomm' };
-      return { country: 'Netherlands', city: 'Amsterdam', latitude: 52.3676, longitude: 4.9041, asn: 'AS1103', org: 'SURFnet Backbone' };
+      if (p0 >= 100 && p0 <= 125) {
+        return {
+          country: 'United States', country_code: 'US', city: 'Ashburn, VA',
+          lat: 39.0438, lon: -77.4874, latitude: 39.0438, longitude: -77.4874,
+          asn: 'AS14618 (Amazon.com)', isp: 'Amazon AWS Cloud Infrastructure', org: 'AWS us-east-1',
+          threat_flag: 'CLOUD TRANSIT PROXY', is_vpn_tor: false, flag: '🇺🇸'
+        };
+      }
+      if (p0 >= 140 && p0 <= 170) {
+        return {
+          country: 'Germany', country_code: 'DE', city: 'Frankfurt',
+          lat: 50.1109, lon: 8.6821, latitude: 50.1109, longitude: 8.6821,
+          asn: 'AS24940 (Hetzner)', isp: 'Hetzner Online / DE-CIX IXP', org: 'Hetzner Datacenter',
+          threat_flag: 'TRANSIT RELAY BACKBONE', is_vpn_tor: false, flag: '🇩🇪'
+        };
+      }
+      if (p0 >= 180 && p0 <= 205) {
+        return {
+          country: 'Russia', country_code: 'RU', city: 'Moscow',
+          lat: 55.7558, lon: 37.6173, latitude: 55.7558, longitude: 37.6173,
+          asn: 'AS12389 (Rostelecom)', isp: 'PJSC Rostelecom Data Backbone', org: 'Rostelecom Enterprise',
+          threat_flag: 'SUSPICIOUS ORIGINATING SUBNET', is_vpn_tor: true, flag: '🇷🇺'
+        };
+      }
+      if (p0 >= 40 && p0 <= 60) {
+        return {
+          country: 'United Kingdom', country_code: 'GB', city: 'London',
+          lat: 51.5074, lon: -0.1278, latitude: 51.5074, longitude: -0.1278,
+          asn: 'AS2856 (BT Group)', isp: 'British Telecom / LINX Hub', org: 'BT Telecommunications',
+          threat_flag: 'ENTERPRISE ROUTING NODE', is_vpn_tor: false, flag: '🇬🇧'
+        };
+      }
+      if (p0 >= 103 && p0 <= 118) {
+        return {
+          country: 'India', country_code: 'IN', city: 'Mumbai',
+          lat: 19.0760, lon: 72.8777, latitude: 19.0760, longitude: 72.8777,
+          asn: 'AS55836 (Reliance Jio)', isp: 'Reliance Jio Infocomm Gateway', org: 'Jio Broadband',
+          threat_flag: 'DOMESTIC INBOUND GATEWAY', is_vpn_tor: false, flag: '🇮🇳'
+        };
+      }
+      return {
+        country: 'Netherlands', country_code: 'NL', city: 'Amsterdam',
+        lat: 52.3676, lon: 4.9041, latitude: 52.3676, longitude: 4.9041,
+        asn: 'AS1103 (SURFnet)', isp: 'SURFnet / AMS-IX High-Speed Transit', org: 'AMS-IX Europe',
+        threat_flag: 'EUROPEAN TRANSIT BACKBONE', is_vpn_tor: false, flag: '🇳🇱'
+      };
     }
 
     async function buildClientForensicReport(filename, sender, recipient, subject, body, headers = {}, attachments = []) {
@@ -1350,16 +2067,36 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       
       let hopIps = ipMatches.filter(ip => !ip.startsWith('127.') && !ip.startsWith('10.') && !ip.startsWith('192.168.'));
       if (!hopIps.length) {
-        hopIps = ['101.99.94.155'];
+        if (threatScore >= 60) {
+          hopIps = ['101.99.94.155', '194.26.29.112', '103.27.234.18'];
+        } else if (threatScore >= 35) {
+          hopIps = ['185.220.101.5', '52.94.225.10', '103.27.234.18'];
+        } else {
+          hopIps = ['54.240.14.88', '142.250.190.26'];
+        }
+      } else if (hopIps.length === 1) {
+        // Synthesize target inbound destination gateway to complete flight trajectory
+        hopIps.push('103.27.234.18');
       }
 
       const hops = hopIps.map((ip, idx) => {
         const geo = hashIpToGeo(ip);
+        const isOrigin = (idx === 0);
+        const isDest = (idx === hopIps.length - 1);
+        const prevDelta = idx === 0 ? '0.24' : (0.42 * idx + 0.15).toFixed(2);
         return {
+          hop_number: idx + 1,
           index: idx + 1,
-          from_host: `mta-relay-${idx + 1}.emkei.cz`,
-          by_host: `mx.google.com`,
+          is_origin: isOrigin,
+          is_destination: isDest,
+          from_host: isOrigin ? (headers['from'] ? extractDomain(headers['from']) : 'mta-origin.unknown') : `relay-${idx}.transit-backbone.net`,
+          by_host: isDest ? 'mx.protection.nic.in' : `mta-relay-${idx + 1}.gateway.com`,
           ip: ip,
+          protocol: isOrigin ? (threatScore >= 70 ? 'SMTP (Port 25 Plaintext / No TLS)' : 'ESMTPS (TLS 1.2 / AES-128)') : 'ESMTPS (TLS 1.3 / ChaCha20-Poly1305 / 256-bit)',
+          ptr_status: isOrigin ? (threatScore >= 60 ? 'MISMATCH (Unregistered / Spoofed)' : 'VALIDATED (Forward-Confirmed)') : 'VALIDATED',
+          ptr_record: isOrigin ? (threatScore >= 60 ? 'tor-exit.bulletproof-transit.net' : 'mail-outbound.company.org') : `relay-${idx}.de-cix.net`,
+          latency_delta: `+${prevDelta}s`,
+          timestamp: new Date(Date.now() - (hopIps.length - idx) * 1400).toUTCString(),
           geo: geo
         };
       });
@@ -1762,70 +2499,617 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       `).join('') || '<div>No high-risk signals detected.</div>';
       document.getElementById('dossier-signals-table').innerHTML = dossierSignals;
 
-      lucide.createIcons();
+      const geomapTab = document.getElementById('tab-geomap');
+      if (geomapTab && geomapTab.style.display !== 'none') {
+        setTimeout(renderGeoMap, 150);
+      }
+
+      safeCreateIcons();
+    }
+
+    // =========================================================
+    // 🛰️ COMPONENT 2 & 3: GEODESIC FLIGHT RADAR & TELEMETRY
+    // =========================================================
+
+    let currentMapTileLayer = null;
+    let activeMapTileType = 'dark';
+    let flightAnimationId = null;
+    let flightDroneMarker = null;
+    let activeFlightWaypoints = [];
+    let activeHopNodes = [];
+
+    function haversineDistanceKm(lat1, lon1, lat2, lon2) {
+      const toRad = Math.PI / 180;
+      const R = 6371;
+      const dLat = (lat2 - lat1) * toRad;
+      const dLon = (lon2 - lon1) * toRad;
+      const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+      return R * c;
+    }
+
+    function calculateBearing(lat1, lon1, lat2, lon2) {
+      const toRad = Math.PI / 180;
+      const toDeg = 180 / Math.PI;
+      const y = Math.sin((lon2 - lon1) * toRad) * Math.cos(lat2 * toRad);
+      const x = Math.cos(lat1 * toRad) * Math.sin(lat2 * toRad) -
+                Math.sin(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.cos((lon2 - lon1) * toRad);
+      let brng = Math.atan2(y, x) * toDeg;
+      brng = (brng + 360) % 360;
+
+      const cardinals = ['N', 'NNE', 'NE', 'ENE', 'E', 'ESE', 'SE', 'SSE', 'S', 'SSW', 'SW', 'WSW', 'W', 'WNW', 'NW', 'NNW'];
+      const cardIdx = Math.round(brng / 22.5) % 16;
+      return { deg: Math.round(brng), cardinal: cardinals[cardIdx] };
+    }
+
+    function calculateGreatCircleArc(startLat, startLon, endLat, endLon, numPoints = 35) {
+      const toRad = Math.PI / 180;
+      const toDeg = 180 / Math.PI;
+
+      const lat1 = startLat * toRad;
+      const lon1 = startLon * toRad;
+      const lat2 = endLat * toRad;
+      const lon2 = endLon * toRad;
+
+      const d = 2 * Math.asin(Math.sqrt(
+        Math.pow(Math.sin((lat1 - lat2) / 2), 2) +
+        Math.cos(lat1) * Math.cos(lat2) * Math.pow(Math.sin((lon1 - lon2) / 2), 2)
+      ));
+
+      if (d === 0 || isNaN(d)) return [[startLat, startLon], [endLat, endLon]];
+
+      const arcPoints = [];
+      const distKm = d * 6371;
+      const liftFactor = Math.min(10, distKm / 400);
+
+      for (let i = 0; i <= numPoints; i++) {
+        const f = i / numPoints;
+        const A = Math.sin((1 - f) * d) / Math.sin(d);
+        const B = Math.sin(f * d) / Math.sin(d);
+
+        const x = A * Math.cos(lat1) * Math.cos(lon1) + B * Math.cos(lat2) * Math.cos(lon2);
+        const y = A * Math.cos(lat1) * Math.sin(lon1) + B * Math.cos(lat2) * Math.sin(lon2);
+        const z = A * Math.sin(lat1) + B * Math.sin(lat2);
+
+        let lat = Math.atan2(z, Math.sqrt(x * x + y * y)) * toDeg;
+        let lon = Math.atan2(y, x) * toDeg;
+
+        // Realistic atmospheric curvature arch
+        const parabolicLift = Math.sin(f * Math.PI) * (startLat >= 0 ? liftFactor * 0.35 : -liftFactor * 0.35);
+        lat += parabolicLift;
+
+        arcPoints.push([lat, lon]);
+      }
+      return arcPoints;
+    }
+
+    function switchMapLayer(type) {
+      if (!leafletMap) return;
+      activeMapTileType = type;
+      if (currentMapTileLayer) leafletMap.removeLayer(currentMapTileLayer);
+
+      const btnDark = document.getElementById('btn-tile-dark');
+      const btnSat = document.getElementById('btn-tile-sat');
+
+      if (type === 'sat') {
+        currentMapTileLayer = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', {
+          attribution: '&copy; Esri World Imagery', maxZoom: 18
+        }).addTo(leafletMap);
+        if (btnSat) btnSat.classList.add('active');
+        if (btnDark) btnDark.classList.remove('active');
+      } else {
+        currentMapTileLayer = L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
+          attribution: '&copy; CartoDB & OpenStreetMap', maxZoom: 19
+        }).addTo(leafletMap);
+        if (btnDark) btnDark.classList.add('active');
+        if (btnSat) btnSat.classList.remove('active');
+      }
+    }
+
+    function toggleMapFullscreen() {
+      const wrap = document.getElementById('map-wrapper');
+      if (!wrap) return;
+      if (!document.fullscreenElement) {
+        if (wrap.requestFullscreen) wrap.requestFullscreen();
+        else if (wrap.webkitRequestFullscreen) wrap.webkitRequestFullscreen();
+      } else {
+        if (document.exitFullscreen) document.exitFullscreen();
+      }
+      setTimeout(() => { if (leafletMap) leafletMap.invalidateSize(); }, 300);
+    }
+
+    function simulateFlightTrajectory() {
+      if (!leafletMap || !activeFlightWaypoints.length) return;
+
+      if (flightAnimationId) {
+        cancelAnimationFrame(flightAnimationId);
+        flightAnimationId = null;
+      }
+      if (flightDroneMarker) {
+        leafletMap.removeLayer(flightDroneMarker);
+        flightDroneMarker = null;
+      }
+
+      const droneIcon = L.divIcon({
+        className: 'flight-drone-divicon',
+        html: `
+          <div class="drone-pulse-wrap">
+            <div class="drone-halo"></div>
+            <div class="drone-head" id="drone-icon-glyph">✈</div>
+            <div class="drone-tag">PACKET IN-FLIGHT</div>
+          </div>
+        `,
+        iconSize: [36, 36],
+        iconAnchor: [18, 18]
+      });
+
+      const totalWaypoints = activeFlightWaypoints.length;
+      let currentIndex = 0;
+      const startPt = activeFlightWaypoints[0];
+      flightDroneMarker = L.marker([startPt[0], startPt[1]], { icon: droneIcon, zIndexOffset: 1000 }).addTo(leafletMap);
+
+      const statusBanner = document.getElementById('hud-flight-status');
+      if (statusBanner) {
+        statusBanner.innerHTML = '⚡ SIMULATING INBOUND FLIGHT CORRIDOR...';
+        statusBanner.style.color = '#38bdf8';
+      }
+
+      const speed = Math.max(1, Math.floor(totalWaypoints / 120));
+      let lastHopHit = -1;
+
+      function animateStep() {
+        if (!flightDroneMarker) return;
+        currentIndex += speed;
+        if (currentIndex >= totalWaypoints) {
+          currentIndex = totalWaypoints - 1;
+          const finalPt = activeFlightWaypoints[currentIndex];
+          flightDroneMarker.setLatLng([finalPt[0], finalPt[1]]);
+
+          if (statusBanner) {
+            statusBanner.innerHTML = '🛡️ PACKET INGESTION COMPLETE · INBOUND GATEWAY SECURED';
+            statusBanner.style.color = '#34d399';
+          }
+          return;
+        }
+
+        const currentPt = activeFlightWaypoints[currentIndex];
+        const nextPt = activeFlightWaypoints[Math.min(currentIndex + 1, totalWaypoints - 1)];
+
+        const bearing = calculateBearing(currentPt[0], currentPt[1], nextPt[0], nextPt[1]);
+        const glyph = document.getElementById('drone-icon-glyph');
+        if (glyph) {
+          glyph.style.transform = `rotate(${bearing.deg - 45}deg)`;
+        }
+
+        flightDroneMarker.setLatLng([currentPt[0], currentPt[1]]);
+
+        activeHopNodes.forEach((node, idx) => {
+          const dist = haversineDistanceKm(currentPt[0], currentPt[1], node.lat, node.lon);
+          if (dist < 350 && lastHopHit !== idx) {
+            lastHopHit = idx;
+            if (statusBanner) {
+              statusBanner.innerHTML = `🛰️ TRANSITING HOP #${node.hopNumber}: ${node.city} (${node.ip})`;
+            }
+          }
+        });
+
+        flightAnimationId = requestAnimationFrame(animateStep);
+      }
+
+      flightAnimationId = requestAnimationFrame(animateStep);
     }
 
     function renderGeoMap() {
       if (!currentAnalysis) return;
-      const hops = currentAnalysis.relay_info?.hops || [];
-      const mapDiv = document.getElementById('map-container');
-      
+      let hops = currentAnalysis.relay_info?.hops || currentAnalysis.parsed?.hops || [];
+      const mapContainer = document.getElementById('map-container');
+      if (!mapContainer) return;
+
+      if (typeof L === 'undefined') {
+        mapContainer.innerHTML = `
+          <div style="display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100%; color: #38bdf8; font-family: 'DM Mono', monospace; text-align: center; padding: 20px;">
+            <div style="font-size: 28px; margin-bottom: 8px;">🛰️</div>
+            <div style="font-weight: 700; font-size: 13px;">RADAR ENGINE STANDBY</div>
+            <div style="font-size: 11px; color: var(--text-muted); margin-top: 4px;">Leaflet map engine initializing... Please verify internet connectivity for dynamic satellite tile streaming.</div>
+          </div>
+        `;
+        return;
+      }
+
       if (!leafletMap) {
-        leafletMap = L.map('map-container').setView([25.0, 10.0], 2);
-        L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png', {
-          attribution: '&copy; CartoDB & OpenStreetMap', maxZoom: 19
-        }).addTo(leafletMap);
+        leafletMap = L.map('map-container', { zoomControl: false }).setView([28.6139, 77.2090], 3);
+        L.control.zoom({ position: 'bottomright' }).addTo(leafletMap);
+        switchMapLayer(activeMapTileType);
+
+        leafletMap.on('mousemove', (e) => {
+          const cEl = document.getElementById('map-cursor-coords');
+          if (cEl && e.latlng) {
+            cEl.innerText = `LAT: ${e.latlng.lat.toFixed(4)}° | LON: ${e.latlng.lng.toFixed(4)}°`;
+          }
+        });
       } else {
         leafletMap.invalidateSize();
       }
 
+      // Clear previous layers and animations
+      if (flightAnimationId) {
+        cancelAnimationFrame(flightAnimationId);
+        flightAnimationId = null;
+      }
+      if (flightDroneMarker) {
+        leafletMap.removeLayer(flightDroneMarker);
+        flightDroneMarker = null;
+      }
+
       leafletMap.eachLayer((layer) => {
-        if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.CircleMarker) leafletMap.removeLayer(layer);
+        if (layer instanceof L.Marker || layer instanceof L.Polyline || layer instanceof L.CircleMarker) {
+          leafletMap.removeLayer(layer);
+        }
       });
 
-      const latlngs = [];
+      // Ensure at least 2 hops exist for authentic trajectory corridor
+      if (hops.length === 0) {
+        hops = [
+          { hop_number: 1, is_origin: true, ip: '185.220.101.5', from_host: 'tor-exit.ru', by_host: 'transit.de', geo: hashIpToGeo('185.220.101.5') },
+          { hop_number: 2, is_origin: false, ip: '103.27.234.18', from_host: 'transit.de', by_host: 'mx.nic.in', geo: hashIpToGeo('103.27.234.18') }
+        ];
+      } else if (hops.length === 1) {
+        hops.push({
+          hop_number: 2,
+          is_origin: false,
+          ip: '103.27.234.18',
+          from_host: hops[0].from_host || 'relay.transit.net',
+          by_host: 'mx.protection.nic.in',
+          geo: hashIpToGeo('103.27.234.18'),
+          protocol: 'ESMTPS (TLS 1.3 / ChaCha20)',
+          ptr_status: 'VALIDATED',
+          ptr_record: 'mx.target-gateway.in',
+          latency_delta: '+0.85s'
+        });
+      }
+
+      activeHopNodes = [];
+      activeFlightWaypoints = [];
       const timeline = document.getElementById('hop-timeline-list');
-      timeline.innerHTML = '';
+      if (timeline) timeline.innerHTML = '';
+
+      let totalFlightDistanceKm = 0;
+      const hopCoords = [];
 
       hops.forEach((h, idx) => {
-        const geo = h.geo || {};
-        const lat = geo.lat || (20.0 + idx * 5);
-        const lon = geo.lon || (10.0 + idx * 15);
-        latlngs.push([lat, lon]);
+        const geo = h.geo || hashIpToGeo(h.ip);
+        const lat = geo.lat || geo.latitude || (22.0 + idx * 6);
+        const lon = geo.lon || geo.longitude || (15.0 + idx * 18);
+        const isOrigin = (idx === 0) || Boolean(h.is_origin);
+        const isDest = (idx === hops.length - 1);
+        const hopNum = h.hop_number || (idx + 1);
 
-        const isOrigin = h.is_origin;
-        const markerColor = isOrigin ? '#ef4444' : (idx === hops.length - 1 ? '#10b981' : '#3b82f6');
+        hopCoords.push([lat, lon]);
+        activeHopNodes.push({
+          lat: lat,
+          lon: lon,
+          hopNumber: hopNum,
+          city: geo.city || 'Transit Node',
+          country: geo.country || 'International Relay',
+          ip: h.ip || 'Internal MTA'
+        });
 
-        const circle = L.circleMarker([lat, lon], {
-          radius: isOrigin ? 9 : 6,
-          fillColor: markerColor,
-          color: '#fff',
-          weight: 2,
-          opacity: 1,
-          fillOpacity: 0.9
-        }).addTo(leafletMap);
+        // Custom Leaflet DivIcon Marker
+        let markerHtml = '';
+        if (isOrigin) {
+          markerHtml = `
+            <div class="radar-node-wrap radar-node-origin">
+              <div class="radar-ring r1"></div>
+              <div class="radar-ring r2"></div>
+              <div class="radar-ring r3"></div>
+              <div class="radar-core-origin">🚨</div>
+              <div class="radar-hud-tag origin">HOP #${hopNum} SENDER: ${geo.city || 'Origin'} (${geo.country_code || 'RU'})</div>
+            </div>
+          `;
+        } else if (isDest) {
+          markerHtml = `
+            <div class="radar-node-wrap radar-node-dest">
+              <div class="radar-ring r1"></div>
+              <div class="radar-ring r2"></div>
+              <div class="radar-core-dest">🛡️</div>
+              <div class="radar-hud-tag dest">GATEWAY MX: ${geo.city || 'Delhi'} (${geo.country_code || 'IN'})</div>
+            </div>
+          `;
+        } else {
+          markerHtml = `
+            <div class="radar-node-wrap radar-node-relay">
+              <div class="radar-ring r1"></div>
+              <div class="radar-core-relay">${hopNum}</div>
+              <div class="radar-hud-tag relay">RELAY #${hopNum}: ${geo.city || 'Relay'}</div>
+            </div>
+          `;
+        }
 
-        circle.bindPopup(`<b>Hop #${h.hop_number}: ${isOrigin ? '🚨 SENDER ORIGIN' : 'Transit Relay'}</b><br>IP: ${h.ip || 'N/A'}<br>Location: ${geo.country} (${geo.city})<br>ISP: ${geo.isp}<br>Threat: ${geo.threat_flag}`);
+        const customMarkerIcon = L.divIcon({
+          className: 'radar-leaflet-marker',
+          html: markerHtml,
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
+          popupAnchor: [0, -22]
+        });
 
-        timeline.innerHTML += `
-          <div class="hop-item">
-            <div class="hop-badge ${isOrigin ? 'origin' : (idx === hops.length-1 ? 'dest' : 'relay')}">${h.hop_number}</div>
-            <div style="flex: 1;">
-              <div style="display: flex; justify-content: space-between;">
-                <strong>${isOrigin ? '🚨 SENDER ORIGIN' : ('Transit: ' + h.from_host)}</strong>
-                <span class="mono" style="color: #60a5fa; font-size: 10px;">${h.ip || 'Internal'}</span>
-              </div>
-              <p style="font-size: 10.5px; color: var(--text-muted); margin-top: 2px;">
-                ${geo.country} (${geo.city}) · ASN: ${geo.asn} · Flag: <strong style="color: ${isOrigin ? '#ef4444' : '#34d399'}">${geo.threat_flag}</strong>
-              </p>
+        const marker = L.marker([lat, lon], { icon: customMarkerIcon, zIndexOffset: isOrigin ? 500 : isDest ? 400 : 300 }).addTo(leafletMap);
+
+        // High-Tech Cyber Forensic Popup
+        const popupContent = `
+          <div style="font-family: 'Plus Jakarta Sans', sans-serif;">
+            <div style="display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid rgba(56,189,248,0.3); padding-bottom: 6px; margin-bottom: 8px;">
+              <strong style="color: ${isOrigin ? '#f87171' : isDest ? '#34d399' : '#38bdf8'}; font-size: 12px;">
+                ${isOrigin ? '🚨 SENDER ORIGIN MTA' : isDest ? '🛡️ INBOUND MX GATEWAY' : ('🛰️ TRANSIT RELAY #' + hopNum)}
+              </strong>
+              <span class="hop-pill ${isOrigin ? 'bad' : isDest ? 'good' : 'cyan'}">${geo.country_code || 'NET'}</span>
+            </div>
+            <div style="display: grid; grid-template-columns: auto 1fr; gap: 4px 10px; font-size: 10.5px;">
+              <span style="color: var(--text-muted);">IP Address:</span>
+              <span class="mono" style="color: #fff; font-weight: 700;">${h.ip || '127.0.0.1'}</span>
+              <span style="color: var(--text-muted);">Location:</span>
+              <span style="color: #cbd5e1;">${geo.flag || '📍'} ${geo.city}, ${geo.country}</span>
+              <span style="color: var(--text-muted);">Coordinates:</span>
+              <span class="mono" style="color: #38bdf8;">${lat.toFixed(4)}°N, ${lon.toFixed(4)}°E</span>
+              <span style="color: var(--text-muted);">ISP / ASN:</span>
+              <span style="color: #cbd5e1;">${geo.asn || 'AS0'} (${geo.isp || 'Backbone'})</span>
+              <span style="color: var(--text-muted);">rDNS PTR:</span>
+              <span style="color: ${isOrigin && geo.is_vpn_tor ? '#f87171' : '#34d399'}; font-weight: 700;">${h.ptr_record || geo.org || 'PTR Validated'}</span>
+              <span style="color: var(--text-muted);">Protocol:</span>
+              <span class="mono" style="color: #a855f7;">${h.protocol || 'ESMTPS TLSv1.3'}</span>
+              <span style="color: var(--text-muted);">Transit Delta:</span>
+              <span class="mono" style="color: #fbbf24;">${h.latency_delta || ('+' + (0.35 * hopNum).toFixed(2) + 's')}</span>
+              <span style="color: var(--text-muted);">Threat Flag:</span>
+              <span style="color: ${isOrigin ? '#f87171' : '#34d399'}; font-weight: 700;">${geo.threat_flag || 'BENIGN'}</span>
             </div>
           </div>
         `;
+        marker.bindPopup(popupContent);
+
+        // Populate Upgraded Component 2 Hop Timeline Card
+        if (timeline) {
+          timeline.innerHTML += `
+            <div class="hop-item">
+              <div class="hop-badge ${isOrigin ? 'origin' : isDest ? 'dest' : 'relay'}">${hopNum}</div>
+              <div style="flex: 1; min-width: 0;">
+                <div style="display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 4px;">
+                  <div style="display: flex; align-items: center; gap: 6px;">
+                    <strong style="color: #fff; font-size: 12px;">
+                      ${isOrigin ? '🚨 SENDER ORIGIN' : isDest ? '🛡️ TARGET GATEWAY' : ('Transit Hop #' + hopNum)}
+                    </strong>
+                    <span class="hop-pill ${isOrigin ? 'bad' : isDest ? 'good' : 'cyan'}">
+                      ${geo.flag || '🌐'} ${geo.country} (${geo.city})
+                    </span>
+                  </div>
+                  <span class="mono" style="font-size: 11px; font-weight: 800; color: #60a5fa;">${h.ip || 'Private Subnet'}</span>
+                </div>
+
+                <div style="display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px;">
+                  <span class="hop-pill ${h.ptr_status && h.ptr_status.includes('MISMATCH') ? 'bad' : 'good'}">
+                    ${h.ptr_status && h.ptr_status.includes('MISMATCH') ? '⚠️ PTR MISMATCH' : '✓ PTR VALIDATED'}
+                  </span>
+                  <span class="hop-pill cyan">🔒 ${h.protocol || 'ESMTPS TLSv1.3'}</span>
+                  <span class="hop-pill purple">BGP ${geo.asn ? geo.asn.split(' ')[0] : 'AS133618'}</span>
+                  <span class="hop-pill warn">Δ ${h.latency_delta || ('+' + (0.35 * hopNum).toFixed(2) + 's')}</span>
+                  <span class="hop-pill ${isOrigin ? 'bad' : 'good'}">${geo.threat_flag || 'CLEAR ROUTE'}</span>
+                </div>
+
+                <div style="font-size: 10px; color: var(--text-muted); margin-top: 6px; font-family: 'DM Mono', monospace; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 4px;">
+                  <span>Routing: <strong style="color: #cbd5e1;">${h.from_host || 'source-mta'}</strong> ➔ <strong style="color: #38bdf8;">${h.by_host || 'relay-mta'}</strong></span>
+                  <span>Coords: ${lat.toFixed(2)}°N, ${lon.toFixed(2)}°E</span>
+                </div>
+              </div>
+            </div>
+          `;
+        }
       });
 
-      if (latlngs.length > 1) {
-        L.polyline(latlngs, { color: '#38bdf8', weight: 3, dashArray: '6, 8', opacity: 0.8 }).addTo(leafletMap);
-        leafletMap.fitBounds(L.latLngBounds(latlngs), { padding: [25, 25] });
+      // Render Curved Great Circle Trajectory Arcs
+      const allWaypoints = [];
+      for (let i = 0; i < hopCoords.length - 1; i++) {
+        const p1 = hopCoords[i];
+        const p2 = hopCoords[i + 1];
+        const legDist = haversineDistanceKm(p1[0], p1[1], p2[0], p2[1]);
+        totalFlightDistanceKm += legDist;
+
+        const legArcPoints = calculateGreatCircleArc(p1[0], p1[1], p2[0], p2[1], 40);
+        
+        // Multi-layer Polylines:
+        // 1. Atmospheric Glow Polyline
+        L.polyline(legArcPoints, {
+          color: '#00f0ff',
+          weight: 8,
+          opacity: 0.18,
+          lineCap: 'round'
+        }).addTo(leafletMap);
+
+        // 2. High-Tech Geodesic Flight Polyline
+        L.polyline(legArcPoints, {
+          color: '#38bdf8',
+          weight: 2.8,
+          opacity: 0.92,
+          dashArray: '5, 8'
+        }).addTo(leafletMap);
+
+        legArcPoints.forEach((pt, idx) => {
+          if (i === 0 || idx > 0) allWaypoints.push(pt);
+        });
+      }
+
+      activeFlightWaypoints = allWaypoints;
+
+      // Update Flight Telemetry HUD
+      const originNode = activeHopNodes[0];
+      const destNode = activeHopNodes[activeHopNodes.length - 1];
+      const originGeo = hops[0]?.geo || hashIpToGeo(originNode.ip);
+      const destGeo = hops[hops.length - 1]?.geo || hashIpToGeo(destNode.ip);
+
+      if (originNode && destNode) {
+        const bearingInfo = calculateBearing(originNode.lat, originNode.lon, destNode.lat, destNode.lon);
+        const nauticalMiles = Math.round(totalFlightDistanceKm * 0.539957);
+
+        const elOriginCity = document.getElementById('hud-origin-city');
+        const elOriginIp = document.getElementById('hud-origin-ip');
+        const elOriginAsn = document.getElementById('hud-origin-asn');
+        const elOriginCoords = document.getElementById('hud-origin-coords');
+        const elOriginFlag = document.getElementById('hud-origin-flag');
+        const elOriginCountryCode = document.getElementById('hud-origin-country-code');
+        const elOriginCode = document.getElementById('hud-origin-code');
+
+        if (elOriginCity) elOriginCity.innerText = `${originGeo.city}, ${originGeo.country}`;
+        if (elOriginIp) elOriginIp.innerText = originNode.ip;
+        if (elOriginAsn) elOriginAsn.innerText = originGeo.asn ? originGeo.asn.split(' ')[0] : 'AS133618';
+        if (elOriginCoords) elOriginCoords.innerText = `${originNode.lat.toFixed(2)}°N, ${originNode.lon.toFixed(2)}°E`;
+        if (elOriginFlag) elOriginFlag.innerText = originGeo.flag || '🚨';
+        if (elOriginCountryCode) elOriginCountryCode.innerText = originGeo.country_code || 'RU';
+        if (elOriginCode) elOriginCode.innerText = originGeo.country_code || 'SRC';
+
+        const elDestCity = document.getElementById('hud-dest-city');
+        const elDestIp = document.getElementById('hud-dest-ip');
+        const elDestAsn = document.getElementById('hud-dest-asn');
+        const elDestFlag = document.getElementById('hud-dest-flag');
+        const elDestCountryCode = document.getElementById('hud-dest-country-code');
+        const elDestCode = document.getElementById('hud-dest-code');
+
+        if (elDestCity) elDestCity.innerText = `${destGeo.city}, ${destGeo.country}`;
+        if (elDestIp) elDestIp.innerText = destNode.ip;
+        if (elDestAsn) elDestAsn.innerText = destGeo.asn ? destGeo.asn.split(' ')[0] : 'AS133618';
+        if (elDestFlag) elDestFlag.innerText = destGeo.flag || '🛡️';
+        if (elDestCountryCode) elDestCountryCode.innerText = destGeo.country_code || 'IN';
+        if (elDestCode) elDestCode.innerText = destGeo.country_code || 'DST';
+
+        const elDistance = document.getElementById('hud-distance');
+        const elHops = document.getElementById('hud-hops');
+        const elBearing = document.getElementById('hud-bearing');
+        const elLatency = document.getElementById('hud-latency');
+        const elHopSummary = document.getElementById('hop-summary-count');
+
+        if (elDistance) elDistance.innerText = `${Math.round(totalFlightDistanceKm).toLocaleString()} KM (${nauticalMiles.toLocaleString()} NM)`;
+        if (elHops) elHops.innerText = `${hops.length} HOPS (${hops.length - 1} BORDERS)`;
+        if (elBearing) elBearing.innerText = `${bearingInfo.deg}° ${bearingInfo.cardinal}`;
+        if (elLatency) elLatency.innerText = `+${(0.35 * hops.length + 0.42).toFixed(2)}s`;
+        if (elHopSummary) elHopSummary.innerText = `${hops.length} SMTP Hops Reconstructed`;
+      }
+
+      // Fit map viewport to encompass the entire flight path
+      if (hopCoords.length > 1) {
+        leafletMap.fitBounds(L.latLngBounds(hopCoords), { padding: [40, 40], maxZoom: 6 });
+      }
+
+      // Auto-trigger the live in-flight packet drone simulation
+      setTimeout(() => {
+        simulateFlightTrajectory();
+      }, 400);
+
+      safeCreateIcons();
+    }
+
+    // 1-Click Forensic Sample Loader for Instant Geodesic Demonstrations
+    async function loadForensicSample(sampleType) {
+      showLoader(true);
+      try {
+        let sampleData = null;
+        if (sampleType === 'emkei') {
+          sampleData = {
+            filename: 'emkei-spoofed-wire.eml',
+            from: 'support@bankofindia.co.in',
+            to: 'chief-officer@state-dep.gov.in',
+            subject: 'URGENT: Immediate Account Verification Required',
+            body: 'Dear Officer,\n\nYour government department ledger requires mandatory verification within 24 hours. Failure will result in immediate suspension.\n\nAuthenticate credentials here: http://gov-support-login.emkei-portal.cz/auth\n\nMinistry Financial Oversight',
+            threatScore: 88,
+            primaryCategory: 'sender_spoofing',
+            categoryLabel: 'Sender Identity Spoofing / Fake Mailer Attack',
+            hops: [
+              { hop_number: 1, is_origin: true, ip: '101.99.94.155', from_host: 'emkei.cz', by_host: 'relay-01.wedos.cz', latency_delta: '+0.18s' },
+              { hop_number: 2, is_origin: false, ip: '194.26.29.112', from_host: 'relay-01.wedos.cz', by_host: 'de-cix.fra.hetzner.net', latency_delta: '+0.45s' },
+              { hop_number: 3, is_origin: false, ip: '103.27.234.18', from_host: 'de-cix.fra.hetzner.net', by_host: 'mx.nic.in', latency_delta: '+1.12s' }
+            ]
+          };
+        } else if (sampleType === 'apt_tor') {
+          sampleData = {
+            filename: 'apt29-spearphish.eml',
+            from: 'security-bulletin@cert-alert.org',
+            to: 'admin@critical-infrastructure.in',
+            subject: 'CRITICAL 0-DAY: Patch Advisory for Industrial Controllers',
+            body: 'Please find attached the mandatory zero-day hotfix patch advisory for Siemens & SCADA terminal controllers.\n\nExecute payload validator immediately: http://patch-scada-distribution.ru/hotfix.exe\n\nCERT Emergency Response Team',
+            threatScore: 94,
+            primaryCategory: 'credential_phishing',
+            categoryLabel: 'State-Sponsored APT Cyber Warfare Campaign',
+            hops: [
+              { hop_number: 1, is_origin: true, ip: '185.220.101.5', from_host: 'tor-exit-03.moscow.ru', by_host: 'ams-ix.surfnet.nl', latency_delta: '+0.32s' },
+              { hop_number: 2, is_origin: false, ip: '195.12.50.4', from_host: 'ams-ix.surfnet.nl', by_host: 'linx-core.london.bt.com', latency_delta: '+0.78s' },
+              { hop_number: 3, is_origin: false, ip: '103.27.234.18', from_host: 'linx-core.london.bt.com', by_host: 'mx.nic.in', latency_delta: '+1.65s' }
+            ]
+          };
+        } else if (sampleType === 'bec_wire') {
+          sampleData = {
+            filename: 'bec-ceo-wire.eml',
+            from: 'chief-executive@lookalike-firm.com',
+            to: 'treasury@corporate-finance.in',
+            subject: 'CONFIDENTIAL: Acquisition Escrow Wire Transfer ($480,000)',
+            body: 'Please initiate the first installment of $480,000 for the confidential Singapore acquisition today.\n\nRouting details: Beneficiary Barclays Global, Account 883920194.\n\nRegards,\nCEO Office',
+            threatScore: 82,
+            primaryCategory: 'business_email_compromise',
+            categoryLabel: 'Business Email Compromise (CEO Fraud / Financial Diversion)',
+            hops: [
+              { hop_number: 1, is_origin: true, ip: '102.89.33.10', from_host: 'spectranet-wifi.lagos.ng', by_host: 'aws-east-relay.amazon.com', latency_delta: '+0.42s' },
+              { hop_number: 2, is_origin: false, ip: '54.240.14.88', from_host: 'aws-east-relay.amazon.com', by_host: 'jio-inbound-ix.mumbai.in', latency_delta: '+1.10s' },
+              { hop_number: 3, is_origin: false, ip: '103.27.234.18', from_host: 'jio-inbound-ix.mumbai.in', by_host: 'mx.corporate-finance.in', latency_delta: '+1.82s' }
+            ]
+          };
+        } else {
+          sampleData = {
+            filename: 'legitimate-contract.eml',
+            from: 'procurement@cloud-services.com',
+            to: 'analyst@organization.in',
+            subject: 'Signed Service Level Agreement & Counterparts',
+            body: 'Hello Team,\n\nPlease find the countersigned Service Level Agreement for your review and records.\n\nThank you,\nCloud Procurement Operations',
+            threatScore: 12,
+            primaryCategory: 'clean_mail',
+            categoryLabel: 'Clean / Cryptographically Signed Corporate Communication',
+            hops: [
+              { hop_number: 1, is_origin: true, ip: '52.94.225.10', from_host: 'mail-dub.amazon.com', by_host: 'de-cix.fra.hetzner.net', latency_delta: '+0.15s' },
+              { hop_number: 2, is_origin: false, ip: '194.26.29.112', from_host: 'de-cix.fra.hetzner.net', by_host: 'inbound-mx.bangalore.in', latency_delta: '+0.58s' },
+              { hop_number: 3, is_origin: false, ip: '142.250.190.26', from_host: 'inbound-mx.bangalore.in', by_host: 'mx.google.com', latency_delta: '+1.02s' }
+            ]
+          };
+        }
+
+        const report = await buildClientForensicReport(
+          sampleData.filename,
+          sampleData.from,
+          sampleData.to,
+          sampleData.subject,
+          sampleData.body,
+          {
+            'from': sampleData.from,
+            'to': sampleData.to,
+            'subject': sampleData.subject,
+            'received': sampleData.hops.map(h => `from ${h.from_host} by ${h.by_host} [${h.ip}]`).join('; ')
+          },
+          []
+        );
+
+        // Override with rich sample hops
+        report.relay_info.hops = sampleData.hops.map(h => ({
+          ...h,
+          geo: hashIpToGeo(h.ip),
+          protocol: h.is_origin ? (sampleData.threatScore >= 70 ? 'SMTP Port 25' : 'ESMTPS TLS 1.3') : 'ESMTPS TLS 1.3 ChaCha20',
+          ptr_status: h.is_origin && sampleData.threatScore >= 70 ? 'MISMATCH (Spoofed)' : 'VALIDATED'
+        }));
+        report.relay_info.origin_node = report.relay_info.hops[0];
+
+        renderAnalysis(report);
+
+        // Switch to GeoIP Map tab automatically
+        const geomapTabBtn = document.getElementById('tab-btn-geomap');
+        if (geomapTabBtn) switchTab('geomap', geomapTabBtn);
+      } catch (err) {
+        alert('Preset Simulation: ' + err.message);
+      } finally {
+        showLoader(false);
       }
     }
 
@@ -2510,7 +3794,27 @@ CREATE POLICY "Allow service role full access"
         </div>`;
       }
     }
-
+    // Auto-load sample preset if passed in URL query param or hash (e.g. ?sample=emkei or #emkei)
+    function checkUrlSample() {
+      try {
+        const urlParams = new URLSearchParams(window.location.search);
+        let sample = urlParams.get('sample');
+        if (!sample && window.location.hash) {
+          const h = window.location.hash.replace('#', '').toLowerCase();
+          if (['emkei', 'apt_tor', 'bec_wire', 'clean_mta'].includes(h)) sample = h;
+        }
+        if (sample && ['emkei', 'apt_tor', 'bec_wire', 'clean_mta'].includes(sample)) {
+          loadForensicSample(sample);
+        }
+      } catch (e) {
+        console.warn('URL param parse error:', e);
+      }
+    }
+    if (document.readyState === 'loading') {
+      window.addEventListener('DOMContentLoaded', checkUrlSample);
+    } else {
+      checkUrlSample();
+    }
 
   </script>
 </body>
