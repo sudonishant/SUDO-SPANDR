@@ -144,7 +144,7 @@ def _extract_domain(val: str) -> str:
     return ".".join(parts[-2:]) if len(parts) >= 2 else (parts[0] if parts else "")
 
 
-def _header_findings(headers: Dict[str, str], sender: str, reply_to: str) -> List[Dict[str, Any]]:
+def _header_findings(headers: Dict[str, str], sender: str, reply_to: str, is_raw: bool = False) -> List[Dict[str, Any]]:
     findings = []
     from_domain = _extract_domain(sender)
     reply_domain = _extract_domain(reply_to)
@@ -159,7 +159,7 @@ def _header_findings(headers: Dict[str, str], sender: str, reply_to: str) -> Lis
 
     auth_str = (headers.get("authentication-results", "") + "\n" + headers.get("received-spf", "") + "\n" + headers.get("arc-authentication-results", "")).lower()
 
-    # 2. SPF Softfail & Fail (User request: Softfail ko medium-high weight do)
+    # 2. SPF Softfail & Fail (Only penalize if explicit failure observed)
     if "spf=softfail" in auth_str or "softfail" in headers.get("received-spf", "").lower():
         findings.append({
             "id": "spf-softfail",
@@ -173,7 +173,7 @@ def _header_findings(headers: Dict[str, str], sender: str, reply_to: str) -> Lis
             "weight": 34
         })
 
-    # 3. Missing / Unverified DKIM Signature (User request: Missing DKIM ko negative signal banao)
+    # 3. Missing / Unverified DKIM Signature (Never penalize on raw text or normal email inputs)
     has_dkim_sig = bool(headers.get("dkim-signature"))
     dkim_pass_in_auth = "dkim=pass" in auth_str
     if "dkim=fail" in auth_str or "dkim=permerror" in auth_str:
@@ -182,17 +182,16 @@ def _header_findings(headers: Dict[str, str], sender: str, reply_to: str) -> Lis
             "label": "DKIM Signature Invalid / Hash Failed (Message body or headers modified in transit)",
             "weight": 30
         })
-    elif not has_dkim_sig and not dkim_pass_in_auth:
+    elif not is_raw and not has_dkim_sig and not dkim_pass_in_auth and from_domain in {"gov.in", "nic.in", "bank", "sbi.co.in", "hdfcbank.com", "icicibank.com"}:
         findings.append({
             "id": "missing-dkim",
-            "label": "Missing DKIM Signature (Sender lacks cryptographic domain signature authentication)",
+            "label": "Missing DKIM Signature on Institutional Domain (Sender domain lacks cryptographic signature)",
             "weight": 20
         })
 
-    # 4. Relay Domain vs From Domain Mismatch (User request: Received domain vs From domain relay mismatch flag)
+    # 4. Relay Domain vs From Domain Mismatch
     received_hdr = headers.get("received", "")
     if received_hdr and from_domain:
-        # Extract the earliest/origin hop hostname
         from_matches = re.findall(r"from\s+([^\s;()]+)", received_hdr, re.IGNORECASE)
         if from_matches:
             origin_host = from_matches[-1].strip().lower()
@@ -226,12 +225,14 @@ def _header_findings(headers: Dict[str, str], sender: str, reply_to: str) -> Lis
             "weight": 30
         })
 
-    if not headers.get("message-id"):
-        findings.append({"id": "missing-message-id", "label": "Message-ID header is missing (Non-RFC compliant)", "weight": 6})
-    if not headers.get("date"):
-        findings.append({"id": "missing-date", "label": "Date header is missing", "weight": 4})
-    if not headers.get("received"):
-        findings.append({"id": "missing-received", "label": "No Received headers supplied (Relay path blinded)", "weight": 10})
+    # Only check missing structural RFC headers if this is a full transport EML/MSG email file with envelope
+    if not is_raw and len(headers) > 6:
+        if not headers.get("message-id"):
+            findings.append({"id": "missing-message-id", "label": "Message-ID header is missing (Non-RFC compliant)", "weight": 6})
+        if not headers.get("date"):
+            findings.append({"id": "missing-date", "label": "Date header is missing", "weight": 4})
+        if not headers.get("received"):
+            findings.append({"id": "missing-received", "label": "No Received headers supplied (Relay path blinded)", "weight": 10})
 
     return findings
 
@@ -253,13 +254,14 @@ def _build_result(
     filename: str,
     raw_bytes: bytes,
     parsed: Optional[Dict[str, Any]] = None,
-    attachments: Optional[List[Dict[str, Any]]] = None
+    attachments: Optional[List[Dict[str, Any]]] = None,
+    is_raw: bool = False
 ) -> Dict[str, Any]:
     parsed = parsed or {}
     attachments = attachments or []
     urls = _url_items(f"{body}\n{json.dumps(headers, ensure_ascii=False)}")
     reply_to = str(headers.get("reply-to", ""))
-    header_findings = _header_findings(headers, sender, reply_to)
+    header_findings = _header_findings(headers, sender, reply_to, is_raw=is_raw)
     
     # Deep NLP Paragraph & Psychological Threat Extraction (1,000,000+ words capacity)
     nlp_analysis = analyze_body_paragraphs(body)
@@ -291,25 +293,124 @@ def _build_result(
     graph_nodes = []
     graph_edges = []
     
+    sender_clean = sender.split("<")[0].replace('"', '').strip() or sender if sender else "Unknown Sender"
+    recipient_clean = recipient.split("<")[0].replace('"', '').strip() or recipient if recipient else "Target Mailbox"
+
     if sender:
-        graph_nodes.append({"id": "sender", "label": f"Sender: {sender}", "type": "identity", "color": "#f87171"})
+        graph_nodes.append({
+            "id": "sender",
+            "label": f"Sender: {sender_clean[:22]}.." if len(sender_clean) > 22 else f"Sender: {sender_clean}",
+            "sub_label": sender,
+            "full_value": sender,
+            "type": "identity",
+            "color": "#f87171",
+            "icon": "👤",
+            "risk_weight": "Claimed Sender Identity"
+        })
     if recipient:
-        graph_nodes.append({"id": "recipient", "label": f"Target: {recipient}", "type": "target", "color": "#38bdf8"})
+        graph_nodes.append({
+            "id": "recipient",
+            "label": f"Target: {recipient_clean[:22]}.." if len(recipient_clean) > 22 else f"Target: {recipient_clean}",
+            "sub_label": recipient,
+            "full_value": recipient,
+            "type": "target",
+            "color": "#38bdf8",
+            "icon": "🎯",
+            "risk_weight": "Target Enterprise Mailbox"
+        })
+        if sender:
+            graph_edges.append({"from": "sender", "to": "recipient", "label": "TARGETED"})
     
     if origin_hop:
-        origin_ip = origin_hop.get("ip") or origin_hop.get("from_host")
-        geo_str = f"{origin_hop['geo'].get('country')} ({origin_hop['geo'].get('city')})"
-        graph_nodes.append({"id": "origin_ip", "label": f"Origin IP: {origin_ip}\n{geo_str}", "type": "origin", "color": "#ef4444"})
-        graph_edges.append({"from": "origin_ip", "to": "sender", "label": "Transmitted By"})
-    
-    for idx, u in enumerate(urls[:5]):
-        u_id = f"url_{idx}"
-        graph_nodes.append({"id": u_id, "label": f"Payload URL: {u.get('display_domain', 'Link')}", "type": "payload", "color": "#fbbf24"})
-        graph_edges.append({"from": "sender", "to": u_id, "label": "Embeds"})
+        origin_ip = origin_hop.get("ip") or origin_hop.get("from_host") or "127.0.0.1"
+        geo_dict = origin_hop.get("geo") or {}
+        geo_str = f"{geo_dict.get('country', 'MTA')} ({geo_dict.get('city', 'Gateway')})"
+        graph_nodes.append({
+            "id": "origin_ip",
+            "label": f"Origin IP: {origin_ip}",
+            "sub_label": geo_str,
+            "full_value": f"{origin_ip} · {geo_str} · ASN: {geo_dict.get('asn', 'N/A')}",
+            "type": "origin",
+            "color": "#ef4444",
+            "icon": "🖥️",
+            "risk_weight": "Originating Transmission Host"
+        })
+        graph_edges.append({"from": "origin_ip", "to": "sender", "label": "TRANSMITTED_BY"})
+
+    # Intermediate relay hops
+    if len(hops) > 1:
+        for h_idx, h in enumerate(hops[1:], start=2):
+            h_ip = h.get("ip") or f"relay-{h_idx}"
+            h_geo = h.get("geo") or {}
+            geo_sub = f"{h_geo.get('city', '')}, {h_geo.get('country_code', '')}" if h_geo else (h.get("by_host") or "relay")
+            h_id = f"relay_{h_idx}"
+            graph_nodes.append({
+                "id": h_id,
+                "label": f"Relay: {h_ip}",
+                "sub_label": geo_sub,
+                "full_value": f"{h_ip} ({h.get('by_host', '')})",
+                "type": "relay",
+                "color": "#3b82f6",
+                "icon": "🔀",
+                "risk_weight": "Intermediate Transit Relay"
+            })
+            prev_id = "origin_ip" if h_idx == 2 else f"relay_{h_idx - 1}"
+            graph_edges.append({"from": prev_id, "to": h_id, "label": "FORWARDED_TO"})
 
     campaign_name = f"CAMP-{category.get('category_id', 'SUSPECT').upper()}-{sha256[:6].upper()}"
-    graph_nodes.append({"id": "campaign", "label": f"Campaign: {campaign_name}", "type": "campaign", "color": "#a855f7"})
-    graph_edges.append({"from": "sender", "to": "campaign", "label": "Attributed To"})
+    graph_nodes.append({
+        "id": "campaign",
+        "label": f"Campaign: {campaign_name}",
+        "sub_label": category.get("category_label", "Attribution Cluster"),
+        "full_value": f"{campaign_name} [Score: {score}/100 - {category.get('category_label', '')}]",
+        "type": "campaign",
+        "color": "#a855f7",
+        "icon": "☣️",
+        "risk_weight": f"Risk Score: {score}/100"
+    })
+    graph_edges.append({"from": "sender", "to": "campaign", "label": "ATTRIBUTED_TO"})
+
+    graph_nodes.append({
+        "id": "evidence",
+        "label": f"Evidence: {sha256[:10]}...",
+        "sub_label": "Section 65B Anchor",
+        "full_value": f"SHA-256: {sha256}",
+        "type": "evidence",
+        "color": "#10b981",
+        "icon": "⛓️",
+        "risk_weight": "Cryptographic Proof Digest"
+    })
+    graph_edges.append({"from": "evidence", "to": "campaign", "label": "ANCHORED_TO"})
+
+    for idx, u in enumerate(urls[:5]):
+        u_id = f"url_{idx}"
+        display_domain = u.get("display_domain", "Link")
+        graph_nodes.append({
+            "id": u_id,
+            "label": f"Payload: {display_domain[:18]}.." if len(display_domain) > 18 else f"Payload: {display_domain}",
+            "sub_label": u.get("risk", "REVIEW"),
+            "full_value": u.get("url", ""),
+            "type": "payload",
+            "color": "#fbbf24",
+            "icon": "🔗",
+            "risk_weight": "Embedded Web URL"
+        })
+        graph_edges.append({"from": "sender", "to": u_id, "label": "EMBEDS_PAYLOAD"})
+
+    for idx, att in enumerate(attachments[:3]):
+        att_id = f"att_{idx}"
+        fname = att.get("filename", "attachment")
+        graph_nodes.append({
+            "id": att_id,
+            "label": f"File: {fname[:16]}.." if len(fname) > 16 else f"File: {fname}",
+            "sub_label": f"Entropy: {att.get('entropy', 5.0)}",
+            "full_value": f"{fname} ({att.get('size_bytes', 0)} bytes)",
+            "type": "file",
+            "color": "#ec4899",
+            "icon": "📎",
+            "risk_weight": "Attached File Carrier"
+        })
+        graph_edges.append({"from": "sender", "to": att_id, "label": "CARRIES_ATTACHMENT"})
 
     parsed_output = {
         "meta": {"from": sender or "Not available", "to": recipient or "Not available", "subject": subject or "Not available", "date": headers.get("date") or "Not available"},
@@ -436,7 +537,7 @@ async def analyze_raw_text(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
     headers = {str(key).lower(): str(value) for key, value in (req.headers or {}).items()}
     if not req.body.strip() and not req.subject.strip() and not req.sender.strip():
         raise HTTPException(status_code=422, detail="Provide message text, subject, sender, or headers before analysis.")
-    return _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "pasted-text.txt", b"", {}, [])
+    return _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "pasted-text.txt", b"", {}, [], is_raw=True)
 
 
 @app.post("/api/gateway-milter-check")
@@ -444,7 +545,7 @@ async def analyze_raw_text(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
 async def gateway_milter_check(req: RawEmailAnalyzeRequest) -> Dict[str, Any]:
     """Endpoint specifically designed for SUDO SPANDR Milter Daemon and Mail Flow Gateways."""
     headers = {str(key).lower(): str(value) for key, value in (req.headers or {}).items()}
-    result = _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "gateway-stream.eml", b"", {}, [])
+    result = _build_result(req.subject.strip(), req.sender.strip(), req.recipient.strip(), req.body, headers, "gateway-stream.eml", b"", {}, [], is_raw=False)
     score = result.get("threat", {}).get("risk_score", 0)
     category = result.get("category_analysis", {})
     
@@ -485,25 +586,21 @@ async def analyze_attachment_endpoint(file: UploadFile = File(...)) -> Dict[str,
     
     report = disassemble_attachment(filename, content)
     sha256 = report.get("sha256") or hashlib.sha256(content).hexdigest()
-    parsed_data = {
-        "meta": {"from": "Standalone File Intake", "to": "Forensic Analyzer", "subject": f"Attachment Disassembly: {filename}", "date": datetime.now(timezone.utc).isoformat()},
-        "body": f"File: {filename}\nEntropy: {report.get('entropy', 0)}\nFindings: {report.get('findings', [])}",
-        "headers": {},
-        "sha256_hash": sha256,
-        "hops": [],
-        "defects": []
+    return {
+        "status": "SUCCESS",
+        "mode": "standalone_attachment_disassembly",
+        "filename": filename,
+        "size_bytes": len(content),
+        "sha256": sha256,
+        "risk_score": report.get("risk_score", 0),
+        "risk_level": report.get("risk_level", "LOW"),
+        "detected_type": report.get("detected_type", "Unknown"),
+        "magic_bytes": report.get("magic_bytes", ""),
+        "entropy": report.get("entropy", 0.0),
+        "findings": report.get("findings", []),
+        "verdict": report.get("verdict", "SAFE / BENIGN"),
+        "report": report
     }
-    return _build_result(
-        f"Attachment: {filename}",
-        "Standalone Attachment File",
-        "Forensic Intake",
-        f"Attachment Analysis: {filename}",
-        {},
-        filename,
-        content,
-        parsed_data,
-        [report]
-    )
 
 
 @app.post(f"{settings.API_V1_STR}/upload")
