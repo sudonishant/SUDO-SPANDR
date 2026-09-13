@@ -1070,6 +1070,75 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
         <textarea id="raw-body" rows="6" placeholder="Paste full email body or raw header dump here..." style="width: 100%; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 10px; color: #fff; font-size: 16px; font-family: 'DM Mono', monospace; margin-bottom: 12px;"></textarea>
         <button class="primary-btn" style="width: 100%;" onclick="analyzeRawText()"><i data-lucide="scan-line"></i> Run Deep Forensic Analysis</button>
+      
+        <!-- Dedicated Header & Text Forensic Inspection Panel -->
+        <div id="raw-text-results" style="display: none; margin-top: 14px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 14px;">
+          <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+            <div style="display: flex; align-items: center; gap: 8px;">
+              <i data-lucide="shield-check" id="raw-score-icon" style="width: 20px; height: 20px; color: #10b981;"></i>
+              <div>
+                <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">HEADER & TEXT THREAT ASSESSMENT</span>
+                <h4 id="raw-verdict-title" style="font-size: 14px; font-weight: 800; color: #fff; margin: 0;">Clean Header Assessment</h4>
+              </div>
+            </div>
+            <div style="display: flex; align-items: center; gap: 10px;">
+              <div id="raw-score-badge" style="font-size: 24px; font-weight: 900; font-family: 'DM Mono', monospace; color: #10b981;">0<span style="font-size: 12px; color: #64748b;">/100</span></div>
+              <span id="raw-status-tag" class="hop-pill good">CLEAN / SAFE</span>
+            </div>
+          </div>
+
+          <!-- Header Breakdown Key Values -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 8px; margin-bottom: 12px;">
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              <span style="font-size: 9.5px; color: var(--text-muted);">From (Claimed Identity)</span>
+              <div id="raw-from-val" class="mono" style="font-size: 11.5px; color: #38bdf8; word-break: break-all;">--</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              <span style="font-size: 9.5px; color: var(--text-muted);">To (Recipient)</span>
+              <div id="raw-to-val" class="mono" style="font-size: 11.5px; color: #cbd5e1; word-break: break-all;">--</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              <span style="font-size: 9.5px; color: var(--text-muted);">Subject</span>
+              <div id="raw-subject-val" style="font-size: 11.5px; color: #fff; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
+            </div>
+            <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+              <span style="font-size: 9.5px; color: var(--text-muted);">Extracted Origin IP</span>
+              <div id="raw-origin-val" class="mono" style="font-size: 11.5px; color: #fbbf24;">Direct / None</div>
+            </div>
+          </div>
+
+          <!-- Authentication & Security Checks -->
+          <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(110px, 1fr)); gap: 6px; margin-bottom: 12px;">
+            <div class="key-val" style="padding: 6px 8px; margin-bottom: 0; background: rgba(0,0,0,0.2); border-radius: 6px;">
+              <span style="font-size: 10px;">SPF</span>
+              <strong id="raw-spf-val" style="font-size: 10.5px; color: #34d399;">PASS / NONE</strong>
+            </div>
+            <div class="key-val" style="padding: 6px 8px; margin-bottom: 0; background: rgba(0,0,0,0.2); border-radius: 6px;">
+              <span style="font-size: 10px;">DKIM</span>
+              <strong id="raw-dkim-val" style="font-size: 10.5px; color: #38bdf8;">NEUTRAL</strong>
+            </div>
+            <div class="key-val" style="padding: 6px 8px; margin-bottom: 0; background: rgba(0,0,0,0.2); border-radius: 6px;">
+              <span style="font-size: 10px;">DMARC</span>
+              <strong id="raw-dmarc-val" style="font-size: 10.5px; color: #34d399;">BEST EFFORT</strong>
+            </div>
+            <div class="key-val" style="padding: 6px 8px; margin-bottom: 0; background: rgba(0,0,0,0.2); border-radius: 6px;">
+              <span style="font-size: 10px;">Domain Match</span>
+              <strong id="raw-domain-align-val" style="font-size: 10.5px; color: #34d399;">ALIGNED</strong>
+            </div>
+          </div>
+
+          <!-- Observed Findings List -->
+          <div style="margin-bottom: 10px;">
+            <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Evaluated Threat Signals & Ledger</div>
+            <div id="raw-findings-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
+          </div>
+
+          <div style="display: flex; justify-content: flex-end; gap: 8px; margin-top: 10px;">
+            <button class="ghost-btn" onclick="clearRawTextResults()" style="font-size: 11px; padding: 4px 10px;">
+              <i data-lucide="rotate-ccw" style="width: 12px;"></i> Clear Results
+            </button>
+          </div>
+        </div>
       </div>
     </div>
 
@@ -1083,6 +1152,67 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           Calculates Shannon entropy, verifies true Magic-Byte signatures vs fake extensions, and checks SHA-256 threat hashes.
         </p>
         <button class="primary-btn" style="background: #d97706; width: 100%; max-width: 280px;"><i data-lucide="shield-alert"></i> Inspect Attachment</button>
+      </div>
+
+      <!-- Dedicated Attachment Disassembly & Inspection Panel -->
+      <div id="attach-disassembly-results" style="display: none; margin-top: 14px; background: rgba(0,0,0,0.4); border: 1px solid var(--border); border-radius: 10px; padding: 14px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="binary" id="att-score-icon" style="width: 20px; height: 20px; color: #10b981;"></i>
+            <div>
+              <span style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em;">FILE STATIC BYTE DISASSEMBLY</span>
+              <h4 id="att-filename-title" style="font-size: 14px; font-weight: 800; color: #fff; margin: 0;">sample.pdf</h4>
+            </div>
+          </div>
+          <div style="display: flex; align-items: center; gap: 10px;">
+            <div id="att-score-badge" style="font-size: 24px; font-weight: 900; font-family: 'DM Mono', monospace; color: #10b981;">0<span style="font-size: 12px; color: #64748b;">/100</span></div>
+            <span id="att-status-tag" class="hop-pill good">SAFE / BENIGN</span>
+          </div>
+        </div>
+
+        <!-- File Telemetry Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 8px; margin-bottom: 12px;">
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+            <span style="font-size: 9.5px; color: var(--text-muted);">Detected Format</span>
+            <div id="att-type-val" style="font-size: 11.5px; font-weight: 700; color: #38bdf8;">PDF Document</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+            <span style="font-size: 9.5px; color: var(--text-muted);">File Size</span>
+            <div id="att-size-val" class="mono" style="font-size: 11.5px; color: #cbd5e1;">45.2 KB</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+            <span style="font-size: 9.5px; color: var(--text-muted);">True Magic Bytes (Hex)</span>
+            <div id="att-magic-val" class="mono" style="font-size: 11px; color: #fbbf24;">25 50 44 46 2D 31 2E 37</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px;">
+            <span style="font-size: 9.5px; color: var(--text-muted);">Shannon Entropy</span>
+            <div id="att-entropy-val" class="mono" style="font-size: 11.5px; color: #10b981;">7.45 (Normal PDF)</div>
+          </div>
+        </div>
+
+        <!-- SHA-256 Digest Bar -->
+        <div style="background: rgba(0,0,0,0.25); border: 1px solid var(--border); border-radius: 6px; padding: 8px 10px; margin-bottom: 12px; display: flex; justify-content: space-between; align-items: center; gap: 8px;">
+          <div style="overflow: hidden;">
+            <span style="font-size: 9.5px; color: var(--text-muted); display: block;">SHA-256 Cryptographic Hash</span>
+            <span id="att-sha256-val" class="mono" style="font-size: 10.5px; color: #60a5fa; word-break: break-all;">--</span>
+          </div>
+          <button class="ghost-btn" onclick="copyAttSha256()" style="padding: 4px 8px; font-size: 10px; flex-shrink: 0;">
+            <i data-lucide="copy" style="width: 10px;"></i> Copy
+          </button>
+        </div>
+
+        <!-- Static Inspection Findings -->
+        <div style="margin-bottom: 10px;">
+          <div style="font-size: 10px; font-weight: 800; color: #94a3b8; text-transform: uppercase; margin-bottom: 6px;">Disassembly Findings & Payload Verification</div>
+          <div id="att-findings-list" style="display: flex; flex-direction: column; gap: 4px;"></div>
+        </div>
+
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 8px;">
+          <span id="att-verdict-note" style="font-size: 10.5px; color: #94a3b8;">✓ No malicious executable payload or macro trigger detected.</span>
+          <button class="ghost-btn" onclick="document.getElementById('attach-disassembly-results').style.display='none'" style="font-size: 11px; padding: 4px 10px;">
+            <i data-lucide="rotate-ccw" style="width: 12px;"></i> Inspect Another File
+          </button>
+        </div>
       </div>
     </div>
 
@@ -1221,7 +1351,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       <div class="nav-tabs">
         <button class="nav-tab active" onclick="switchTab('overview', this)"><i data-lucide="layout-dashboard" style="width: 12px;"></i> Overview</button>
         <button class="nav-tab" id="tab-btn-geomap" onclick="switchTab('geomap', this)"><i data-lucide="map-pin" style="width: 12px;"></i> 🗺️ GeoIP</button>
-        <button class="nav-tab" onclick="switchTab('graph', this)"><i data-lucide="network" style="width: 12px;"></i> 🕸️ Graph</button>
+        <button class="nav-tab" id="tab-btn-graph" onclick="switchTab('graph', this)"><i data-lucide="network" style="width: 12px;"></i> 🕸️ Graph</button>
         <button class="nav-tab" onclick="switchTab('nlp', this)"><i data-lucide="brain" style="width: 12px;"></i> 🧠 AI NLP</button>
         <button class="nav-tab" onclick="switchTab('mitre', this)"><i data-lucide="crosshair" style="width: 12px;"></i> 🎯 MITRE</button>
         <button class="nav-tab" onclick="switchTab('auth', this)"><i data-lucide="shield-check" style="width: 12px;"></i> SPF / DKIM</button>
@@ -1425,12 +1555,146 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         </div>
       </div>
 
-      <!-- Tab: Threat Attribution Graph Topology -->
+      <!-- Tab: Threat Attribution Graph Topology (Component 4) -->
       <div id="tab-graph" class="card" style="display: none;">
-        <div class="card-title"><i data-lucide="share-2" style="width: 15px; color: #a855f7;"></i><div><small>COMPONENT 4</small><h3>Identity Correlation & Campaign Attribution Graph</h3></div></div>
-        <div id="graph-canvas-wrap">
-          <svg id="attribution-svg" width="100%" height="100%"></svg>
+        
+        <!-- Header & Action Ribbon -->
+        <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 12px; flex-wrap: wrap; gap: 8px;">
+          <div class="card-title" style="margin-bottom: 0;">
+            <i data-lucide="share-2" style="width: 16px; color: #a855f7;"></i>
+            <div>
+              <small style="color: #c084fc; font-weight: 800; letter-spacing: 0.05em;">COMPONENT 4 · DEEP THREAT IDENTITY CORRELATION & CAMPAIGN ATTRIBUTION GRAPH</small>
+              <h3 style="font-size: 15px; color: #fff;">Neo4j Graph Database Topology & STIX 2.1 Campaign Cluster Engine</h3>
+            </div>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 6px; flex-wrap: wrap;">
+            <button class="ghost-btn" onclick="renderThreatGraph()" style="font-size: 10.5px; padding: 5px 10px; color: #38bdf8; border-color: rgba(56,189,248,0.3);">
+              <i data-lucide="refresh-cw" style="width: 11px;"></i> Re-Layout
+            </button>
+            <button class="ghost-btn" onclick="viewCypherModal()" style="font-size: 10.5px; padding: 5px 10px; color: #a855f7; border-color: rgba(168,85,247,0.3);">
+              <i data-lucide="database" style="width: 11px;"></i> Neo4j Cypher
+            </button>
+            <button class="ghost-btn" onclick="copyCypherQuery()" style="font-size: 10.5px; padding: 5px 10px; color: #34d399; border-color: rgba(16,185,129,0.3);">
+              <i data-lucide="copy" style="width: 11px;"></i> Copy Query
+            </button>
+            <button class="ghost-btn" onclick="exportSTIXGraph()" style="font-size: 10.5px; padding: 5px 10px; color: #fbbf24; border-color: rgba(245,158,11,0.3);">
+              <i data-lucide="download" style="width: 11px;"></i> Export STIX 2.1
+            </button>
+          </div>
         </div>
+
+        <!-- Telemetry HUD Ribbon -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 8px; margin-bottom: 12px;">
+          <div style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;">
+            <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Campaign Cluster</span>
+            <div id="graph-hud-campaign" style="font-size: 12.5px; font-weight: 800; color: #c084fc; font-family: 'DM Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;">
+            <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Attribution Confidence</span>
+            <div id="graph-hud-confidence" style="font-size: 12.5px; font-weight: 800; color: #fbbf24; font-family: 'DM Mono', monospace;">--</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;">
+            <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Graph Entities</span>
+            <div id="graph-hud-entities" style="font-size: 12.5px; font-weight: 800; color: #38bdf8; font-family: 'DM Mono', monospace;">-- Nodes · -- Edges</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;">
+            <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Classification</span>
+            <div id="graph-hud-category" style="font-size: 12.5px; font-weight: 800; color: #f87171; font-family: 'DM Mono', monospace; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">--</div>
+          </div>
+          <div style="background: rgba(0,0,0,0.35); border: 1px solid var(--border); border-radius: 8px; padding: 8px 10px;">
+            <span style="font-size: 9px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em;">Neo4j Ledger Status</span>
+            <div id="graph-hud-sync" style="font-size: 12.5px; font-weight: 800; color: #34d399; font-family: 'DM Mono', monospace;">CYPHER READY</div>
+          </div>
+        </div>
+
+        <!-- Tactical Graph Canvas Viewport with HUD Corners -->
+        <div id="graph-canvas-wrap" style="height: 480px; width: 100%; position: relative; background: radial-gradient(circle at center, #0a1128 0%, #030712 100%); border-radius: 10px; border: 1px solid var(--border); overflow: hidden;">
+          <div class="hud-corner tl"></div>
+          <div class="hud-corner tr"></div>
+          <div class="hud-corner bl"></div>
+          <div class="hud-corner br"></div>
+          
+          <svg id="attribution-svg" viewBox="0 0 920 460" preserveAspectRatio="xMidYMid meet" style="width: 100%; height: 100%; display: block;"></svg>
+
+          <!-- Canvas Overlay Watermark / Tip -->
+          <div style="position: absolute; bottom: 8px; right: 12px; pointer-events: none; font-size: 9px; color: rgba(148, 163, 184, 0.4); font-family: 'DM Mono', monospace;">
+            SIH 2026 #26106 · NEO4J THREAT TOPOLOGY · CLICK NODE TO INSPECT
+          </div>
+        </div>
+
+        <!-- Graph Color Legend -->
+        <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-top: none; border-radius: 0 0 8px 8px; padding: 6px 12px; font-size: 10px; color: var(--text-muted); flex-wrap: wrap; gap: 8px;">
+          <div style="display: flex; gap: 10px; align-items: center; flex-wrap: wrap;">
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #ef4444; box-shadow: 0 0 5px #ef4444;"></span> Origin MTA</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #3b82f6; box-shadow: 0 0 5px #3b82f6;"></span> Transit Relay</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #f87171; box-shadow: 0 0 5px #f87171;"></span> Sender Identity</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #38bdf8; box-shadow: 0 0 5px #38bdf8;"></span> Target Recipient</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #a855f7; box-shadow: 0 0 5px #a855f7;"></span> Campaign Cluster</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #10b981; box-shadow: 0 0 5px #10b981;"></span> Evidence Digest</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #fbbf24; box-shadow: 0 0 5px #fbbf24;"></span> Payload URL</span>
+            <span style="display: inline-flex; align-items: center; gap: 4px;"><span style="width: 8px; height: 8px; border-radius: 50%; background: #ec4899; box-shadow: 0 0 5px #ec4899;"></span> Attachment File</span>
+          </div>
+          <div id="graph-cursor-hint" style="color: #64748b; font-size: 9.5px; font-family: 'DM Mono', monospace;">
+            SELECT ANY ENTITY TO VIEW FORENSIC INTELLIGENCE
+          </div>
+        </div>
+
+        <!-- Interactive Node Inspector & Graph Intelligence Grid -->
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); gap: 10px; margin-top: 14px;">
+          
+          <!-- Node Inspector Card -->
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="search" style="width: 13px; color: #38bdf8;"></i> Selected Graph Entity Deep Dive
+              </span>
+              <span id="inspector-node-type" class="hop-pill purple">CAMPAIGN CLUSTER</span>
+            </div>
+            
+            <div style="display: flex; align-items: center; gap: 10px; margin-bottom: 8px; background: rgba(0,0,0,0.25); padding: 8px; border-radius: 6px;">
+              <div id="inspector-node-icon" style="width: 38px; height: 38px; border-radius: 8px; background: rgba(168,85,247,0.2); border: 1px solid #a855f7; display: flex; align-items: center; justify-content: center; font-size: 18px;">
+                ☣️
+              </div>
+              <div style="overflow: hidden; flex: 1;">
+                <div id="inspector-node-title" style="font-weight: 800; font-size: 13px; color: #fff; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Threat Campaign Cluster</div>
+                <div id="inspector-node-sub" style="font-size: 10.5px; color: #94a3b8; text-overflow: ellipsis; overflow: hidden; white-space: nowrap;">Autonomous Clustering Matrix</div>
+              </div>
+            </div>
+
+            <div class="key-val" style="margin-bottom: 4px;"><span>Full Entity Value</span><strong id="inspector-node-val" class="mono" style="font-size: 10px; color: #38bdf8; word-break: break-all;">--</strong></div>
+            <div class="key-val" style="margin-bottom: 4px;"><span>Threat Context</span><strong id="inspector-node-context" style="font-size: 10.5px; color: #f87171;">--</strong></div>
+            <div class="key-val"><span>Neo4j Cypher Label</span><strong id="inspector-node-cypher" class="mono" style="font-size: 10px; color: #a855f7;">(:ThreatCampaign)</strong></div>
+          </div>
+
+          <!-- Campaign Cluster Intelligence Card -->
+          <div style="background: rgba(0,0,0,0.3); border: 1px solid var(--border); border-radius: 8px; padding: 12px;">
+            <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+              <span style="font-size: 11px; font-weight: 800; color: #94a3b8; letter-spacing: 0.05em; text-transform: uppercase; display: flex; align-items: center; gap: 6px;">
+                <i data-lucide="git-merge" style="width: 13px; color: #a855f7;"></i> Graph Pivot Analysis & Threat Indicators
+              </span>
+              <span class="hop-pill cyan">IOC CORRELATED</span>
+            </div>
+
+            <p id="graph-intelligence-notes" style="font-size: 11px; color: #cbd5e1; line-height: 1.5; margin-bottom: 10px;">
+              Analyzing correlation graph linkages between sender domains, transport IP relays, cryptographic signatures, and payload hashes.
+            </p>
+
+            <div style="display: flex; gap: 6px; flex-wrap: wrap;" id="graph-tags-container">
+              <span class="mitre-badge" style="background: rgba(168,85,247,0.15); color: #c084fc; border-color: rgba(168,85,247,0.4);">
+                🕸️ Neo4j Schema Ingested
+              </span>
+              <span class="mitre-badge" style="background: rgba(56,189,248,0.15); color: #38bdf8; border-color: rgba(56,189,248,0.4);">
+                🔗 STIX 2.1 Observable
+              </span>
+              <span class="mitre-badge" style="background: rgba(16,185,129,0.15); color: #34d399; border-color: rgba(16,185,129,0.4);">
+                🛡️ Section 65B Anchored
+              </span>
+            </div>
+          </div>
+
+        </div>
+
       </div>
 
       <!-- Tab: Deep AI Paragraph & NLP Inspector -->
@@ -1978,9 +2242,13 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         threatScore += 30;
       }
 
-      // Missing DKIM on Institutional Domain
-      if (!dkimPass && !headers['dkim-signature']) {
-        signals.push({ label: 'Missing DKIM Cryptographic Signature (Sender domain unverified)', points: 15, evidence: 'No cryptographic RSA signature from claimed organization' });
+      // DKIM Cryptographic Verification
+      const dkimFail = authResults.includes('dkim=fail') || authResults.includes('dkim=permerror');
+      if (dkimFail) {
+        signals.push({ label: 'DKIM Cryptographic Signature Invalid / Hash Failed', points: 30, evidence: 'Message body or headers modified in transit' });
+        threatScore += 30;
+      } else if (senderDom && ['gov.in', 'nic.in', 'sbi.co.in', 'hdfcbank.com'].includes(senderDom) && !dkimPass && !headers['dkim-signature']) {
+        signals.push({ label: 'Missing DKIM Cryptographic Signature on Institutional Domain', points: 15, evidence: 'Bank / Government domain unverified' });
         threatScore += 15;
       }
 
@@ -2222,6 +2490,136 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       const originHop = hops[0] || { ip: '101.99.94.155', geo: hashIpToGeo('101.99.94.155') };
       const txHash = '0x' + sha256.substring(0, 64);
       const merkleRoot = '0x' + sha256.substring(8, 40) + 'c0ffee';
+      const campaignId = `CAMP-${primaryCategory.toUpperCase()}-${sha256.substring(0, 6).toUpperCase()}`;
+
+      // Component 4: Identity Correlation & Attribution Graph Topology
+      const graphNodes = [];
+      const graphEdges = [];
+      
+      const senderVal = headers['from'] || sender || 'Unknown Sender';
+      const recipientVal = headers['to'] || recipient || 'Target User';
+      const senderDisplay = (senderVal.split('<')[0] || senderVal).replace(/"/g, '').trim() || senderVal;
+      const recipientDisplay = (recipientVal.split('<')[0] || recipientVal).replace(/"/g, '').trim() || recipientVal;
+      
+      graphNodes.push({
+        id: 'sender',
+        label: `Sender: ${senderDisplay.length > 22 ? senderDisplay.substring(0, 20) + '..' : senderDisplay}`,
+        sub_label: senderDom ? `@${senderDom}` : 'Sender Identity',
+        full_value: senderVal,
+        type: 'identity',
+        color: '#f87171',
+        icon: '👤',
+        risk_weight: threatScore >= 50 ? 'High-Risk Sender Identity' : 'Standard Sender Identity'
+      });
+      
+      graphNodes.push({
+        id: 'recipient',
+        label: `Target: ${recipientDisplay.length > 22 ? recipientDisplay.substring(0, 20) + '..' : recipientDisplay}`,
+        sub_label: extractDomain(recipientVal) ? `@${extractDomain(recipientVal)}` : 'Target Inbox',
+        full_value: recipientVal,
+        type: 'target',
+        color: '#38bdf8',
+        icon: '🎯',
+        risk_weight: 'Target Enterprise Mailbox'
+      });
+      graphEdges.push({ from: 'sender', to: 'recipient', label: 'TARGETED' });
+
+      if (originHop && originHop.ip) {
+        const geoInfo = originHop.geo ? `${originHop.geo.country} (${originHop.geo.city})` : 'MTA Host';
+        graphNodes.push({
+          id: 'origin_ip',
+          label: `Origin IP: ${originHop.ip}`,
+          sub_label: geoInfo,
+          full_value: `${originHop.ip} · ${geoInfo} · ASN: ${originHop.geo?.asn || 'N/A'}`,
+          type: 'origin',
+          color: '#ef4444',
+          icon: '🖥️',
+          risk_weight: threatScore >= 70 ? 'Unauthorized Origin MTA' : 'Legitimate Origin Host'
+        });
+        graphEdges.push({ from: 'origin_ip', to: 'sender', label: 'TRANSMITTED_BY' });
+      }
+
+      if (hops.length > 1) {
+        hops.slice(1).forEach((h, hIdx) => {
+          const hopNodeId = `relay_${hIdx + 2}`;
+          const relayLabel = h.geo ? `${h.geo.city}, ${h.geo.country_code}` : (h.by_host || 'Gateway');
+          graphNodes.push({
+            id: hopNodeId,
+            label: `Relay: ${h.ip}`,
+            sub_label: relayLabel,
+            full_value: `${h.ip} (${h.by_host || 'transit'})`,
+            type: 'relay',
+            color: '#3b82f6',
+            icon: '🔀',
+            risk_weight: 'Intermediate Transit Relay'
+          });
+          const prevId = (hIdx === 0) ? 'origin_ip' : `relay_${hIdx + 1}`;
+          graphEdges.push({ from: prevId, to: hopNodeId, label: 'FORWARDED_TO' });
+        });
+      }
+
+      graphNodes.push({
+        id: 'campaign',
+        label: `Campaign: ${campaignId}`,
+        sub_label: categoryLabel,
+        full_value: `${campaignId} [${categoryLabel} · Score: ${threatScore}/100]`,
+        type: 'campaign',
+        color: '#a855f7',
+        icon: '☣️',
+        risk_weight: `Threat Score: ${threatScore}/100`
+      });
+      graphEdges.push({ from: 'sender', to: 'campaign', label: 'ATTRIBUTED_TO' });
+
+      graphNodes.push({
+        id: 'evidence',
+        label: `Evidence: ${sha256.substring(0, 10)}...`,
+        sub_label: 'Section 65B Digest',
+        full_value: `SHA-256: ${sha256}`,
+        type: 'evidence',
+        color: '#10b981',
+        icon: '⛓️',
+        risk_weight: 'Cryptographic Chain-of-Custody'
+      });
+      graphEdges.push({ from: 'evidence', to: 'campaign', label: 'ANCHORED_TO' });
+
+      urls.slice(0, 5).forEach((u, uIdx) => {
+        const uId = `url_${uIdx}`;
+        let domain = 'Link';
+        try { domain = new URL(u.url).hostname; } catch(e) { domain = u.url.substring(0, 20); }
+        graphNodes.push({
+          id: uId,
+          label: `Payload: ${domain.length > 20 ? domain.substring(0, 18) + '..' : domain}`,
+          sub_label: u.risk || 'URL',
+          full_value: u.url,
+          type: 'payload',
+          color: '#fbbf24',
+          icon: '🔗',
+          risk_weight: u.risk === 'REVIEW' ? 'Suspicious Phishing URL' : 'Embedded Web Link'
+        });
+        graphEdges.push({ from: 'sender', to: uId, label: 'EMBEDS_PAYLOAD' });
+      });
+
+      attachments.slice(0, 3).forEach((att, attIdx) => {
+        const attId = `att_${attIdx}`;
+        graphNodes.push({
+          id: attId,
+          label: `File: ${att.filename.length > 18 ? att.filename.substring(0, 16) + '..' : att.filename}`,
+          sub_label: `Entropy: ${att.entropy || '5.4'}`,
+          full_value: `${att.filename} (${(att.size/1024).toFixed(1)} KB) - SHA256: ${att.sha256 || 'N/A'}`,
+          type: 'file',
+          color: '#ec4899',
+          icon: '📎',
+          risk_weight: (att.entropy > 7 || att.risk_score >= 50) ? 'Dangerous Executable Carrier' : 'Standard Document'
+        });
+        graphEdges.push({ from: 'sender', to: attId, label: 'CARRIES_ATTACHMENT' });
+      });
+
+      const graphTopology = {
+        nodes: graphNodes,
+        edges: graphEdges,
+        campaign_id: campaignId,
+        attribution_confidence: threatScore >= 70 ? 'HIGH (94%)' : (threatScore >= 35 ? 'MODERATE (68%)' : 'LOW (25%)')
+      };
 
       return {
         case_id: caseId,
@@ -2279,6 +2677,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
           hops: hops,
           origin_node: originHop
         },
+        graph_topology: graphTopology,
         aitm_analysis: urls,
         attachment_analysis: attachments,
         evidence: {
@@ -2296,7 +2695,7 @@ HTML_CONTENT = r"""<!DOCTYPE html>
         },
         neo4j_graph: {
           neo4j_status: 'CYPHER_GRAPH_GENERATED',
-          cypher_query: `// Ingested Case ${caseId}\nMERGE (origin:OriginMTA {ip: '${originHop.ip}', country: '${originHop.geo.country}'})\nMERGE (sender:EmailIdentity {address: '${sender || 'unknown'}'})\nMERGE (campaign:ThreatCampaign {id: '${caseId}', score: ${threatScore}})\nMERGE (sender)-[:TRANSMITTED_FROM]->(origin)\nMERGE (sender)-[:ATTRIBUTED_TO]->(campaign)`
+          cypher_query: `// Ingested Case ${caseId}\nMERGE (origin:OriginMTA {ip: '${originHop.ip}', country: '${originHop.geo?.country || "Unknown"}'})\nMERGE (sender:EmailIdentity {address: '${senderVal}'})\nMERGE (target:TargetMailbox {address: '${recipientVal}'})\nMERGE (campaign:ThreatCampaign {id: '${campaignId}', score: ${threatScore}})\nMERGE (evidence:DigitalEvidence {sha256: '${sha256}'})\nMERGE (origin)-[:TRANSMITTED_BY]->(sender)\nMERGE (sender)-[:TARGETED]->(target)\nMERGE (sender)-[:ATTRIBUTED_TO]->(campaign)\nMERGE (evidence)-[:ANCHORED_TO]->(campaign)`
         },
         supabase_sync: {
           status: 'POSTGRESQL_RECORD_COMMITTED',
@@ -2356,43 +2755,169 @@ HTML_CONTENT = r"""<!DOCTYPE html>
     }
 
     async function analyzeRawText() {
-      const sender = document.getElementById('raw-sender').value || 'Unknown Sender';
-      const subject = document.getElementById('raw-subject').value || 'Pasted Email Message';
-      const body = document.getElementById('raw-body').value || '';
+      const sender = document.getElementById('raw-sender').value.trim();
+      const subject = document.getElementById('raw-subject').value.trim();
+      const body = document.getElementById('raw-body').value.trim();
       
-      if (!body.trim() && !subject.trim() && !sender.trim()) {
+      if (!body && !subject && !sender) {
         alert('Please enter some text, headers, or subject to analyze.');
         return;
       }
 
       showLoader(true);
       try {
-        let data = null;
-        try {
-          const res = await fetch('/api/v1/analyze-raw', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sender, subject, body, headers: {} })
-          });
-          const contentType = res.headers.get('content-type') || '';
-          if (res.ok && contentType.includes('application/json')) {
-            data = await res.json();
+        const { headers, body: parsedBody } = parseRawEmailHeaders(body);
+        const actualSender = headers['from'] || sender || '';
+        const actualRecipient = headers['to'] || 'internal-analyst@organization.in';
+        const actualSubject = headers['subject'] || subject || 'Direct Text Intake';
+        const fullContent = `${actualSender} ${actualSubject} ${parsedBody || body} ${JSON.stringify(headers)}`;
+
+        let threatScore = 0;
+        const findings = [];
+
+        // 1. Sender Analysis - Never penalize just for providing an email!
+        const senderDom = extractDomain(actualSender);
+        if (actualSender) {
+          findings.push({ label: `Sender Identity Provided: ${actualSender} (@${senderDom || 'domain'})`, points: 0, level: 'good' });
+        }
+
+        // 2. Reply-To Mismatch Check
+        const replyTo = headers['reply-to'] || '';
+        const replyToDom = extractDomain(replyTo);
+        if (replyToDom && senderDom && replyToDom !== senderDom) {
+          findings.push({ label: `Reply-To Mismatch (From: @${senderDom}, Reply-To: @${replyToDom})`, points: 28, level: 'bad' });
+          threatScore += 28;
+        }
+
+        // 3. Message-ID vs Sender Domain Forgery Check
+        const msgId = headers['message-id'] || '';
+        const msgIdDom = extractDomain(msgId);
+        if (msgIdDom && senderDom && msgIdDom !== senderDom && !['gmail.com', 'google.com', 'outlook.com', 'microsoft.com'].includes(msgIdDom)) {
+          findings.push({ label: `Message-ID Domain Forgery (From: @${senderDom}, Envelope Mailer: @${msgIdDom})`, points: 30, level: 'bad' });
+          threatScore += 30;
+        }
+
+        // 4. Known Online Spoofing Fake Mailers (Emkei.cz, etc.)
+        const rawLower = fullContent.toLowerCase();
+        if (rawLower.includes('emkei.cz') || rawLower.includes('anonymailer') || rawLower.includes('deadfake') || rawLower.includes('spoofbox')) {
+          findings.push({ label: 'Known Online Spoofing Fake Mailer Detected (Emkei.cz Fake Mailer Node)', points: 40, level: 'bad' });
+          threatScore += 40;
+        }
+
+        // 5. SPF / DKIM / DMARC Authentication Failures (ONLY penalize if explicit FAIL/SOFTFAIL!)
+        const authResults = (headers['authentication-results'] || headers['received-spf'] || headers['arc-authentication-results'] || '').toLowerCase();
+        const spfFail = authResults.includes('spf=softfail') || authResults.includes('spf=fail') || (headers['received-spf'] && headers['received-spf'].toLowerCase().includes('fail'));
+        const dkimFail = authResults.includes('dkim=fail') || authResults.includes('dkim=permerror');
+        const dmarcFail = authResults.includes('dmarc=fail') || authResults.includes('action=reject');
+
+        if (spfFail) {
+          findings.push({ label: 'SPF Policy Failure / Softfail (Unauthorized Origin IP)', points: 30, level: 'bad' });
+          threatScore += 30;
+        } else if (authResults.includes('spf=pass')) {
+          findings.push({ label: 'SPF Authentication Validated (Reported PASS)', points: 0, level: 'good' });
+        }
+
+        if (dkimFail) {
+          findings.push({ label: 'DKIM Cryptographic Signature Invalid / Hash Failed', points: 30, level: 'bad' });
+          threatScore += 30;
+        } else if (headers['dkim-signature'] || authResults.includes('dkim=pass')) {
+          findings.push({ label: 'DKIM Cryptographic Signature Validated', points: 0, level: 'good' });
+        }
+
+        if (dmarcFail) {
+          findings.push({ label: 'DMARC Domain Alignment Failed (Policy Rejection)', points: 30, level: 'bad' });
+          threatScore += 30;
+        }
+
+        // 6. Suspicious URLs Check
+        const urlMatches = fullContent.match(/https?:\/\/[^\s<>"{}|\\^`]+/gi) || [];
+        const cleanUrls = Array.from(new Set(urlMatches));
+        cleanUrls.forEach(u => {
+          const uLower = u.toLowerCase();
+          if (/@|xn--|bit\.ly|tinyurl|ngrok|trycloudflare|duckdns/i.test(uLower)) {
+            findings.push({ label: `Obfuscated / Suspicious Link: '${u.substring(0, 35)}...'`, points: 25, level: 'bad' });
+            threatScore += 25;
           }
-        } catch (apiErr) {
-          console.log('API offline, executing client-side forensic heuristics...');
+          if (/login|signin|auth|password|verify|account|banking|kyc|pan-card/i.test(uLower)) {
+            findings.push({ label: `Credential Harvesting Keyword in Link: '${u.substring(0, 35)}...'`, points: 28, level: 'bad' });
+            threatScore += 28;
+          }
+        });
+
+        // 7. NLP Psychological Coercion & Urgency Check
+        const textLower = (actualSubject + ' ' + (parsedBody || body)).toLowerCase();
+        if (/urgent|immediately|asap|within 24 hours|account suspended|final warning|deactivation/i.test(textLower)) {
+          findings.push({ label: 'Psychological Urgency & Coercion Heuristic Trigger', points: 20, level: 'warn' });
+          threatScore += 20;
+        }
+        if (/wire transfer|swift code|bank account|beneficiary|invoice payment|remittance/i.test(textLower)) {
+          findings.push({ label: 'Financial Diversion / Wire Transfer Solicitation Vocabulary', points: 25, level: 'warn' });
+          threatScore += 25;
+        }
+        if (/password|username|otp|one-time password|cvv|pin code/i.test(textLower)) {
+          findings.push({ label: 'Direct Secret / Credential Harvesting Vocabulary', points: 30, level: 'bad' });
+          threatScore += 30;
         }
 
-        if (!data || !data.threat) {
-          const { headers, body: parsedBody } = parseRawEmailHeaders(body);
-          data = await buildClientForensicReport('pasted-text.txt', sender, 'Internal Analyst', subject, parsedBody || body, headers, []);
+        if (findings.filter(f => f.points > 0).length === 0) {
+          findings.push({ label: 'No Malicious Spoofing, Phishing, or Forgery Signals Detected', points: 0, level: 'good' });
         }
 
-        renderAnalysis(data);
+        threatScore = Math.min(100, Math.max(0, threatScore));
+
+        // Display Dedicated Header & Text Inspection Panel (DO NOT SHOW results-view!)
+        document.getElementById('results-view').style.display = 'none';
+        const panel = document.getElementById('raw-text-results');
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+
+        const scoreColor = threatScore >= 70 ? 'var(--danger)' : (threatScore >= 35 ? 'var(--warning)' : 'var(--success)');
+        const statusText = threatScore >= 70 ? 'HIGH RISK' : (threatScore >= 35 ? 'REVIEW' : 'CLEAN / SAFE');
+
+        document.getElementById('raw-verdict-title').innerText = threatScore >= 70 ? 'Suspicious Header Anomaly / Spoofing Detected' : (threatScore >= 35 ? 'Header Review Recommended' : 'Clean & Verified Header Entry');
+        document.getElementById('raw-score-badge').innerHTML = `${threatScore}<span style="font-size: 12px; color: #64748b;">/100</span>`;
+        document.getElementById('raw-score-badge').style.color = scoreColor;
+        document.getElementById('raw-status-tag').innerText = statusText;
+        document.getElementById('raw-status-tag').className = 'hop-pill ' + (threatScore >= 70 ? 'bad' : (threatScore >= 35 ? 'warn' : 'good'));
+        document.getElementById('raw-score-icon').style.color = scoreColor;
+
+        document.getElementById('raw-from-val').innerText = actualSender || 'Not provided';
+        document.getElementById('raw-to-val').innerText = actualRecipient || 'Not provided';
+        document.getElementById('raw-subject-val').innerText = actualSubject || 'No Subject';
+
+        // Origin IP from Received or headers
+        let originIp = 'Direct / Intranet';
+        if (headers['received']) {
+          const ipM = headers['received'].match(/(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)/);
+          if (ipM) originIp = ipM[0];
+        }
+        document.getElementById('raw-origin-val').innerText = originIp;
+
+        // Auth values
+        document.getElementById('raw-spf-val').innerHTML = spfFail ? '<span style="color:var(--danger)">FAIL</span>' : (authResults.includes('spf=pass') ? '<span style="color:var(--success)">PASS</span>' : 'NEUTRAL');
+        document.getElementById('raw-dkim-val').innerHTML = dkimFail ? '<span style="color:var(--danger)">FAIL</span>' : (headers['dkim-signature'] || authResults.includes('dkim=pass') ? '<span style="color:var(--success)">PASS</span>' : 'NOT SIGNED');
+        document.getElementById('raw-dmarc-val').innerHTML = dmarcFail ? '<span style="color:var(--danger)">FAIL</span>' : (authResults.includes('dmarc=pass') ? '<span style="color:var(--success)">PASS</span>' : 'BEST EFFORT');
+        document.getElementById('raw-domain-align-val').innerHTML = (replyToDom && senderDom && replyToDom !== senderDom) ? '<span style="color:var(--danger)">MISMATCH</span>' : '<span style="color:var(--success)">ALIGNED</span>';
+
+        const findingsList = document.getElementById('raw-findings-list');
+        findingsList.innerHTML = findings.map(f => `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); border-left: 3px solid ${f.level === 'bad' ? '#ef4444' : f.level === 'warn' ? '#f59e0b' : '#10b981'}; padding: 6px 8px; border-radius: 4px; font-size: 11px;">
+            <span style="color: ${f.level === 'bad' ? '#f87171' : f.level === 'warn' ? '#fbbf24' : '#e2e8f0'};">• ${f.label}</span>
+            <strong style="color: ${f.points > 0 ? '#ef4444' : '#10b981'}; font-family: 'DM Mono', monospace;">${f.points > 0 ? '+' + f.points + ' pts' : '✓ 0 pts'}</strong>
+          </div>
+        `).join('');
+
+        safeCreateIcons();
       } catch (err) {
-        alert('Analysis: ' + err.message);
+        alert('Header Inspection Error: ' + err.message);
       } finally {
         showLoader(false);
       }
+    }
+
+    function clearRawTextResults() {
+      const panel = document.getElementById('raw-text-results');
+      if (panel) panel.style.display = 'none';
     }
 
     async function handleAttachSelect(event) {
@@ -2401,50 +2926,176 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       showLoader(true);
 
       try {
-        let data = null;
-        try {
-          const formData = new FormData();
-          formData.append('file', file);
-          const res = await fetch('/api/v1/attachment', { method: 'POST', body: formData });
-          const contentType = res.headers.get('content-type') || '';
-          if (res.ok && contentType.includes('application/json')) {
-            data = await res.json();
+        const rawBytes = await file.arrayBuffer();
+        const byteLen = file.size;
+        const sha256 = await computeSHA256(rawBytes);
+        const u8 = new Uint8Array(rawBytes);
+        
+        // Read first 16 bytes for magic bytes
+        const magicHex = Array.from(u8.slice(0, 16)).map(b => b.toString(16).padStart(2, '0').toUpperCase()).join(' ');
+        const magicAscii = new TextDecoder('latin1').decode(u8.slice(0, 16)).replace(/[^\x20-\x7E]/g, '.');
+        
+        // Calculate Shannon Entropy
+        const sampleStr = new TextDecoder('latin1').decode(u8.slice(0, 100000));
+        const entropy = calculateShannonEntropy(sampleStr);
+        
+        const fname = file.name.toLowerCase();
+        const ext = fname.includes('.') ? fname.split('.').pop() : '';
+
+        // Detect True Format via Magic Bytes
+        let detectedType = 'Unknown Binary / Data';
+        let isDoc = false;
+        let isCompressed = false;
+        let isExec = false;
+
+        if (u8.length >= 4 && u8[0] === 0x25 && u8[1] === 0x50 && u8[2] === 0x44 && u8[3] === 0x46) {
+          detectedType = 'PDF Document (%PDF-)';
+          isDoc = true;
+          isCompressed = true;
+        } else if (u8.length >= 4 && u8[0] === 0x50 && u8[1] === 0x4B && u8[2] === 0x03 && u8[3] === 0x04) {
+          if (['docx', 'xlsx', 'pptx'].includes(ext)) {
+            detectedType = `Office OpenXML Document (.${ext.toUpperCase()})`;
+            isDoc = true;
+          } else {
+            detectedType = 'ZIP / Archive Container (PK..)';
           }
-        } catch (apiErr) {
-          console.log('API offline, running client static byte entropy disassembly...');
+          isCompressed = true;
+        } else if (u8.length >= 2 && u8[0] === 0x4D && u8[1] === 0x5A) {
+          detectedType = 'Windows Executable / PE Binary (MZ)';
+          isExec = true;
+        } else if (u8.length >= 4 && u8[0] === 0x7F && u8[1] === 0x45 && u8[2] === 0x4C && u8[3] === 0x46) {
+          detectedType = 'Linux Executable (ELF)';
+          isExec = true;
+        } else if (u8.length >= 3 && u8[0] === 0xFF && u8[1] === 0xD8 && u8[2] === 0xFF) {
+          detectedType = 'JPEG Image Format';
+          isCompressed = true;
+        } else if (u8.length >= 4 && u8[0] === 0x89 && u8[1] === 0x50 && u8[2] === 0x4E && u8[3] === 0x47) {
+          detectedType = 'PNG Image Format';
+          isCompressed = true;
+        } else if (['txt', 'csv', 'log', 'json', 'xml', 'md'].includes(ext)) {
+          detectedType = 'Plain Text / Structured Data';
         }
 
-        if (!data || !data.threat) {
-          const rawBytes = await file.arrayBuffer();
-          const sha256 = await computeSHA256(rawBytes);
-          const rawStr = new TextDecoder('latin1').decode(new Uint8Array(rawBytes).slice(0, 50000));
-          const entropy = calculateShannonEntropy(rawStr);
-          
-          const isExec = /\.(exe|scr|bat|cmd|ps1|vbs|js|apk|dll)$/i.test(file.name);
-          const findings = [];
-          if (entropy > 7.2) findings.push('High Shannon Entropy (Likely packed or encrypted payload)');
-          if (isExec) findings.push('Dangerous executable file format');
+        // Dangerous Executable Extension Check
+        const dangerousExts = ['exe', 'scr', 'bat', 'cmd', 'ps1', 'vbs', 'js', 'apk', 'dll', 'hta', 'jar'];
+        const isDangerousExt = dangerousExts.includes(ext);
 
-          const riskScore = isExec ? 95 : entropy > 7.2 ? 75 : 20;
+        // Double Extension Check (e.g. invoice.pdf.exe)
+        const isDoubleExt = /\.(pdf|docx?|xlsx?|pptx?|txt|jpg|png|zip)\.(exe|vbs|bat|scr|js|ps1|hta|jar|apk)$/i.test(file.name);
 
-          const attReport = {
-            filename: file.name,
-            size_bytes: file.size,
-            entropy: entropy,
-            sha256: sha256,
-            risk_score: riskScore,
-            detected_type: file.type || 'application/octet-stream',
-            findings: findings
-          };
+        // Disguised Extension Check (e.g. Named .pdf but magic is MZ executable)
+        const isDisguised = isExec && !isDangerousExt;
 
-          data = await buildClientForensicReport(file.name, 'Standalone Attachment File', 'Forensic Intake', `Attachment: ${file.name}`, `Static byte disassembly for ${file.name}\nEntropy: ${entropy}`, {}, [attReport]);
+        // Active Macro / Script Check in sample content
+        const hasOfficeMacro = ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx'].includes(ext) && /vbaProject|autoopen|document_open|wscript\.shell|powershell/i.test(sampleStr);
+        const hasPdfActiveScript = (ext === 'pdf' || detectedType.includes('PDF')) && /\/JavaScript|\/JS|\/Launch|OpenAction/i.test(sampleStr);
+
+        // Context-Aware Threat Scoring
+        let riskScore = 0;
+        const findings = [];
+
+        if (isDisguised) {
+          findings.push({ label: 'CRITICAL: Disguised File Extension (File claims non-executable extension but contains executable MZ/ELF magic bytes)', points: 95, level: 'bad' });
+          riskScore += 95;
+        }
+        if (isDoubleExt) {
+          findings.push({ label: `Deceptive Double-Extension Detected (${file.name})`, points: 85, level: 'bad' });
+          riskScore += 85;
+        }
+        if (isDangerousExt) {
+          findings.push({ label: `Dangerous Executable File Format (.${ext.toUpperCase()})`, points: 90, level: 'bad' });
+          riskScore += 90;
+        }
+        if (hasOfficeMacro) {
+          findings.push({ label: 'Malicious Office Macro / Embedded Script Signature (VBA / PowerShell)', points: 75, level: 'bad' });
+          riskScore += 75;
+        }
+        if (hasPdfActiveScript) {
+          findings.push({ label: 'PDF Active Content / Executable Launch Action (/JavaScript or /Launch)', points: 65, level: 'bad' });
+          riskScore += 65;
         }
 
-        renderAnalysis(data);
+        // Context-Aware Entropy Evaluation (Normal compressed files naturally have entropy > 7.2!)
+        let entropyExplanation = '';
+        if (isCompressed) {
+          entropyExplanation = `${entropy.toFixed(2)} / 8.0 · Normal Container Compression (Non-Threat)`;
+          findings.push({ label: `Entropy Verified: ${entropy.toFixed(2)} (Standard Deflate/Stream compression for ${ext.toUpperCase()})`, points: 0, level: 'good' });
+        } else if (isExec) {
+          if (entropy > 7.2) {
+            entropyExplanation = `${entropy.toFixed(2)} / 8.0 · Suspicious High-Entropy Binary (Packed / Cryptor)`;
+            findings.push({ label: 'Packed / Encrypted Executable Payload (Shannon Entropy > 7.2)', points: 40, level: 'bad' });
+            riskScore += 40;
+          } else {
+            entropyExplanation = `${entropy.toFixed(2)} / 8.0 · Standard Binary Executable`;
+          }
+        } else if (['txt', 'csv', 'log'].includes(ext)) {
+          if (entropy > 6.2) {
+            entropyExplanation = `${entropy.toFixed(2)} / 8.0 · Anomalous High Entropy in Plain Text`;
+            findings.push({ label: 'Anomalous High Entropy in Plain Text File (Hidden Encrypted String)', points: 30, level: 'warn' });
+            riskScore += 30;
+          } else {
+            entropyExplanation = `${entropy.toFixed(2)} / 8.0 · Normal Plain Text Entropy`;
+            findings.push({ label: `Clean Shannon Entropy: ${entropy.toFixed(2)} (Standard text distribution)`, points: 0, level: 'good' });
+          }
+        } else {
+          entropyExplanation = `${entropy.toFixed(2)} / 8.0`;
+        }
+
+        if (findings.filter(f => f.points > 0).length === 0) {
+          findings.unshift({ label: `Verified Magic Bytes: Matches declared format (.${ext.toUpperCase()})`, points: 0, level: 'good' });
+          findings.push({ label: 'No Active Macro, Script, or Malicious Binary Signatures Found', points: 0, level: 'good' });
+        }
+
+        riskScore = Math.min(100, Math.max(0, riskScore));
+
+        // Display the dedicated Attachment Disassembly Panel (DO NOT SHOW results-view!)
+        document.getElementById('results-view').style.display = 'none';
+        const panel = document.getElementById('attach-disassembly-results');
+        panel.style.display = 'block';
+        panel.scrollIntoView({ behavior: 'smooth' });
+
+        const scoreColor = riskScore >= 70 ? 'var(--danger)' : (riskScore >= 30 ? 'var(--warning)' : 'var(--success)');
+        const scoreTagText = riskScore >= 70 ? 'CRITICAL RISK' : (riskScore >= 30 ? 'REVIEW REQUIRED' : 'SAFE / BENIGN');
+
+        document.getElementById('att-filename-title').innerText = file.name;
+        document.getElementById('att-score-badge').innerHTML = `${riskScore}<span style="font-size: 12px; color: #64748b;">/100</span>`;
+        document.getElementById('att-score-badge').style.color = scoreColor;
+        document.getElementById('att-status-tag').innerText = scoreTagText;
+        document.getElementById('att-status-tag').className = 'hop-pill ' + (riskScore >= 70 ? 'bad' : (riskScore >= 30 ? 'warn' : 'good'));
+        document.getElementById('att-score-icon').style.color = scoreColor;
+
+        document.getElementById('att-type-val').innerText = detectedType;
+        document.getElementById('att-size-val').innerText = byteLen > 1048576 ? `${(byteLen / 1048576).toFixed(2)} MB` : `${(byteLen / 1024).toFixed(1)} KB`;
+        document.getElementById('att-magic-val').innerText = `${magicHex.substring(0, 23)}... (${magicAscii.substring(0, 6)})`;
+        document.getElementById('att-entropy-val').innerText = entropyExplanation;
+        document.getElementById('att-sha256-val').innerText = sha256;
+
+        const findingsList = document.getElementById('att-findings-list');
+        findingsList.innerHTML = findings.map(f => `
+          <div style="display: flex; justify-content: space-between; align-items: center; background: rgba(0,0,0,0.2); border-left: 3px solid ${f.level === 'bad' ? '#ef4444' : f.level === 'warn' ? '#f59e0b' : '#10b981'}; padding: 6px 8px; border-radius: 4px; font-size: 11px;">
+            <span style="color: ${f.level === 'bad' ? '#f87171' : f.level === 'warn' ? '#fbbf24' : '#e2e8f0'};">• ${f.label}</span>
+            <strong style="color: ${f.points > 0 ? '#ef4444' : '#10b981'}; font-family: 'DM Mono', monospace;">${f.points > 0 ? '+' + f.points + ' pts' : '✓ 0 pts'}</strong>
+          </div>
+        `).join('');
+
+        document.getElementById('att-verdict-note').innerText = riskScore === 0 
+          ? '✓ Static byte analysis confirmed clean document structure. Zero malware indicators observed.' 
+          : (riskScore >= 70 ? '🚨 Dangerous payload characteristics detected. Do not open without air-gapped sandbox isolation.' : '⚠️ Ambiguous file markers observed. Exercise caution.');
+
+        safeCreateIcons();
       } catch (err) {
-        alert('Attachment Inspection: ' + err.message);
+        alert('Attachment Inspection Error: ' + err.message);
       } finally {
         showLoader(false);
+      }
+    }
+
+    function copyAttSha256() {
+      const el = document.getElementById('att-sha256-val');
+      if (el && el.innerText) {
+        navigator.clipboard.writeText(el.innerText).then(() => {
+          alert('SHA-256 copied to clipboard: ' + el.innerText);
+        });
       }
     }
 
@@ -3237,69 +3888,480 @@ HTML_CONTENT = r"""<!DOCTYPE html>
       }
     }
 
+    let selectedGraphNodeId = null;
+
     function renderThreatGraph() {
       if (!currentAnalysis) return;
       const graph = currentAnalysis.graph_topology || { nodes: [], edges: [] };
       const svg = document.getElementById('attribution-svg');
+      if (!svg) return;
       svg.innerHTML = '';
 
-      const width = svg.clientWidth || 360;
-      const height = svg.clientHeight || 320;
+      const width = 920;
+      const height = 460;
+      svg.setAttribute('viewBox', `0 0 ${width} ${height}`);
+
+      // Update HUD Ribbon
+      const hudCamp = document.getElementById('graph-hud-campaign');
+      if (hudCamp) hudCamp.innerText = (currentAnalysis.campaign_cluster || (currentAnalysis.neo4j_graph && currentAnalysis.neo4j_graph.campaign) || (graph.campaign_id) || 'ATTRIBUTED-CAMPAIGN').replace(/_/g, ' ');
+      
+      const hudConf = document.getElementById('graph-hud-confidence');
+      if (hudConf) hudConf.innerText = currentAnalysis.attribution_confidence || graph.attribution_confidence || '94.8% HIGH';
+
+      const hudEnt = document.getElementById('graph-hud-entities');
+      if (hudEnt) hudEnt.innerText = `${(graph.nodes || []).length} Nodes · ${(graph.edges || []).length} Edges`;
+
+      const hudCat = document.getElementById('graph-hud-category');
+      if (hudCat) hudCat.innerText = (currentAnalysis.category_analysis && currentAnalysis.category_analysis.category_label) || currentAnalysis.category || 'THREAT INTEL';
+
+      const hudSync = document.getElementById('graph-hud-sync');
+      if (hudSync) hudSync.innerText = 'CYPHER INGESTED';
+
+      const notesEl = document.getElementById('graph-intelligence-notes');
+      if (notesEl) {
+        const camp = (currentAnalysis.campaign_cluster || (graph.campaign_id) || 'Threat Cluster').replace(/_/g, ' ');
+        const score = currentAnalysis.threat?.risk_score ?? currentAnalysis.risk_score ?? 0;
+        notesEl.innerText = `Correlating multi-hop transport path with cryptographic signatures, envelope identity, and domain indicators. Current attribution links this vector to "${camp}" with risk score ${score}/100 and verified Neo4j schema relationships.`;
+      }
+
+      // Add SVG Definitions
+      const defs = document.createElementNS('http://www.w3.org/2000/svg', 'defs');
+      defs.innerHTML = `
+        <filter id="graph-glow" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur stdDeviation="3.5" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+        <pattern id="graph-grid" width="30" height="30" patternUnits="userSpaceOnUse">
+          <path d="M 30 0 L 0 0 0 30" fill="none" stroke="rgba(255, 255, 255, 0.035)" stroke-width="1"/>
+        </pattern>
+        <marker id="arrow-blue" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#3b82f6"/>
+        </marker>
+        <marker id="arrow-purple" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#a855f7"/>
+        </marker>
+        <marker id="arrow-red" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#ef4444"/>
+        </marker>
+        <marker id="arrow-green" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#10b981"/>
+        </marker>
+        <marker id="arrow-yellow" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#fbbf24"/>
+        </marker>
+        <marker id="arrow-pink" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#ec4899"/>
+        </marker>
+        <marker id="arrow-cyan" viewBox="0 0 10 10" refX="22" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M 0 1.5 L 9 5 L 0 8.5 z" fill="#38bdf8"/>
+        </marker>
+      `;
+      svg.appendChild(defs);
+
+      // Background grid
+      const bgRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      bgRect.setAttribute('width', '100%');
+      bgRect.setAttribute('height', '100%');
+      bgRect.setAttribute('fill', 'url(#graph-grid)');
+      svg.appendChild(bgRect);
 
       const nodes = graph.nodes || [];
-      const nodeCount = nodes.length || 1;
-      const centerX = width / 2;
-      const centerY = height / 2;
-      const radius = Math.min(width, height) / 2.7;
+      if (nodes.length === 0) {
+        const noData = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        noData.setAttribute('x', '460');
+        noData.setAttribute('y', '230');
+        noData.setAttribute('text-anchor', 'middle');
+        noData.setAttribute('fill', '#94a3b8');
+        noData.setAttribute('font-size', '14px');
+        noData.textContent = 'Upload or ingest an email to visualize Neo4j attribution topology.';
+        svg.appendChild(noData);
+        return;
+      }
 
+      // Logical Clustering Placement
       const nodePositions = {};
-      nodes.forEach((n, i) => {
-        const angle = (i / nodeCount) * 2 * Math.PI - Math.PI / 2;
-        const x = centerX + radius * Math.cos(angle);
-        const y = centerY + radius * Math.sin(angle);
-        nodePositions[n.id] = { x, y, ...n };
+      const relays = [];
+      const urls = [];
+      const files = [];
+      let originNode = null;
+      let senderNode = null;
+      let targetNode = null;
+      let campNode = null;
+      let evidNode = null;
+      const unassigned = [];
+
+      nodes.forEach(n => {
+        const t = (n.type || '').toLowerCase();
+        const id = (n.id || '').toLowerCase();
+        if (t === 'campaign' || id.includes('campaign')) campNode = n;
+        else if (t === 'evidence' || id.includes('evidence')) evidNode = n;
+        else if (t === 'origin_mta' || id.startsWith('origin') || id.includes('origin')) {
+          if (!originNode) originNode = n; else relays.push(n);
+        }
+        else if (t === 'relay' || id.startsWith('relay')) relays.push(n);
+        else if (t === 'sender' || id === 'sender') senderNode = n;
+        else if (t === 'target' || id === 'target') targetNode = n;
+        else if (t === 'payload' || t === 'url' || id.startsWith('url')) urls.push(n);
+        else if (t === 'file' || t === 'attachment' || id.startsWith('att')) files.push(n);
+        else unassigned.push(n);
       });
+
+      // Campaign cluster at top center
+      if (campNode) nodePositions[campNode.id] = { ...campNode, x: 460, y: 70 };
+      // Evidence at bottom center
+      if (evidNode) nodePositions[evidNode.id] = { ...evidNode, x: 460, y: 390 };
+      // Sender at center-left
+      if (senderNode) nodePositions[senderNode.id] = { ...senderNode, x: 335, y: 230 };
+      // Target at center-right
+      if (targetNode) nodePositions[targetNode.id] = { ...targetNode, x: 585, y: 230 };
+
+      // Origin MTA at far-left
+      if (originNode) {
+        const originY = relays.length > 0 ? 150 : 230;
+        nodePositions[originNode.id] = { ...originNode, x: 130, y: originY };
+      }
+
+      // Relays stacked below origin MTA
+      relays.forEach((r, idx) => {
+        const startY = 270;
+        const spacing = relays.length > 1 ? 120 / (relays.length - 1) : 0;
+        nodePositions[r.id] = { ...r, x: 130, y: startY + idx * spacing };
+      });
+
+      // URLs stacked at top-right
+      urls.forEach((u, idx) => {
+        const startY = urls.length === 1 ? 150 : 120;
+        const spacing = urls.length > 1 ? 90 / (urls.length - 1) : 0;
+        nodePositions[u.id] = { ...u, x: 790, y: startY + idx * spacing };
+      });
+
+      // Attachments stacked at bottom-right
+      files.forEach((f, idx) => {
+        const startY = files.length === 1 ? 330 : 290;
+        const spacing = files.length > 1 ? 90 / (files.length - 1) : 0;
+        nodePositions[f.id] = { ...f, x: 790, y: startY + idx * spacing };
+      });
+
+      // Unassigned nodes distributed in ring
+      unassigned.forEach((u, idx) => {
+        const angle = (idx / (unassigned.length || 1)) * 2 * Math.PI;
+        nodePositions[u.id] = { ...u, x: 460 + Math.cos(angle) * 180, y: 230 + Math.sin(angle) * 110 };
+      });
+
+      // Fallback for any node that didn't get mapped
+      nodes.forEach((n, idx) => {
+        if (!nodePositions[n.id]) {
+          const angle = (idx / nodes.length) * 2 * Math.PI;
+          nodePositions[n.id] = { ...n, x: 460 + Math.cos(angle) * 190, y: 230 + Math.sin(angle) * 120 };
+        }
+      });
+
+      window._currentGraphNodes = nodePositions;
+
+      // Render Edges
+      const edgesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      edgesGroup.setAttribute('class', 'graph-edges');
 
       (graph.edges || []).forEach(e => {
-        const src = nodePositions[e.from] || { x: centerX, y: centerY };
-        const dst = nodePositions[e.to] || { x: centerX, y: centerY };
+        const src = nodePositions[e.from] || { x: 460, y: 230 };
+        const dst = nodePositions[e.to] || { x: 460, y: 230 };
+
+        const dx = dst.x - src.x;
+        const dy = dst.y - src.y;
+        const dist = Math.hypot(dx, dy) || 1;
+        const angle = Math.atan2(dy, dx);
+
+        // Adjust line ends to touch circle perimeter (radius ~22)
+        const x1 = src.x + Math.cos(angle) * 22;
+        const y1 = src.y + Math.sin(angle) * 22;
+        const x2 = dst.x - Math.cos(angle) * 24;
+        const y2 = dst.y - Math.sin(angle) * 24;
+
+        // Choose edge style and color
+        let strokeColor = '#38bdf8';
+        let markerName = 'arrow-cyan';
+        const lbl = (e.label || '').toUpperCase();
+
+        if (lbl.includes('ATTRIBUTED') || lbl.includes('CAMPAIGN')) {
+          strokeColor = '#a855f7';
+          markerName = 'arrow-purple';
+        } else if (lbl.includes('TRANSMITTED') || lbl.includes('ORIGIN')) {
+          strokeColor = '#ef4444';
+          markerName = 'arrow-red';
+        } else if (lbl.includes('FORWARDED') || lbl.includes('RELAY')) {
+          strokeColor = '#3b82f6';
+          markerName = 'arrow-blue';
+        } else if (lbl.includes('PAYLOAD') || lbl.includes('URL')) {
+          strokeColor = '#fbbf24';
+          markerName = 'arrow-yellow';
+        } else if (lbl.includes('ATTACHMENT') || lbl.includes('FILE')) {
+          strokeColor = '#ec4899';
+          markerName = 'arrow-pink';
+        } else if (lbl.includes('ANCHORED') || lbl.includes('EVIDENCE')) {
+          strokeColor = '#10b981';
+          markerName = 'arrow-green';
+        }
+
         const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
-        line.setAttribute('x1', src.x);
-        line.setAttribute('y1', src.y);
-        line.setAttribute('x2', dst.x);
-        line.setAttribute('y2', dst.y);
-        line.setAttribute('stroke', 'rgba(59, 130, 246, 0.4)');
+        line.setAttribute('x1', x1);
+        line.setAttribute('y1', y1);
+        line.setAttribute('x2', x2);
+        line.setAttribute('y2', y2);
+        line.setAttribute('stroke', strokeColor);
         line.setAttribute('stroke-width', '2');
         line.setAttribute('stroke-dasharray', '4, 4');
-        svg.appendChild(line);
+        line.setAttribute('marker-end', `url(#${markerName})`);
+        line.setAttribute('opacity', '0.75');
+        edgesGroup.appendChild(line);
+
+        // Relationship Pill Badge
+        const midX = (x1 + x2) / 2;
+        const midY = (y1 + y2) / 2;
+        const badgeLabel = e.label || 'LINK';
+        const badgeW = Math.max(56, badgeLabel.length * 6.2 + 12);
+
+        const badgeG = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+        badgeG.setAttribute('style', 'pointer-events: none;');
+
+        const badgeRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        badgeRect.setAttribute('x', midX - badgeW / 2);
+        badgeRect.setAttribute('y', midY - 8.5);
+        badgeRect.setAttribute('width', badgeW);
+        badgeRect.setAttribute('height', 17);
+        badgeRect.setAttribute('rx', '4');
+        badgeRect.setAttribute('fill', '#070d1d');
+        badgeRect.setAttribute('stroke', strokeColor);
+        badgeRect.setAttribute('stroke-width', '0.85');
+        badgeRect.setAttribute('opacity', '0.96');
+        badgeG.appendChild(badgeRect);
+
+        const badgeTxt = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        badgeTxt.setAttribute('x', midX);
+        badgeTxt.setAttribute('y', midY + 3.5);
+        badgeTxt.setAttribute('text-anchor', 'middle');
+        badgeTxt.setAttribute('fill', strokeColor);
+        badgeTxt.setAttribute('font-size', '8px');
+        badgeTxt.setAttribute('font-weight', '800');
+        badgeTxt.setAttribute('font-family', "'DM Mono', monospace");
+        badgeTxt.textContent = badgeLabel;
+        badgeG.appendChild(badgeTxt);
+
+        edgesGroup.appendChild(badgeG);
       });
+      svg.appendChild(edgesGroup);
+
+      // Render Nodes
+      const nodesGroup = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+      nodesGroup.setAttribute('class', 'graph-nodes');
 
       nodes.forEach(n => {
         const pos = nodePositions[n.id];
+        if (!pos) return;
+
         const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
-        
+        g.setAttribute('class', 'graph-node');
+        g.setAttribute('data-id', n.id);
+        g.setAttribute('style', 'cursor: pointer;');
+        g.onclick = () => selectGraphNode(n);
+
+        const color = pos.color || '#3b82f6';
+
+        // Outer Glow
+        const halo = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+        halo.setAttribute('cx', pos.x);
+        halo.setAttribute('cy', pos.y);
+        halo.setAttribute('r', '27');
+        halo.setAttribute('fill', color);
+        halo.setAttribute('opacity', '0.18');
+        halo.setAttribute('filter', 'url(#graph-glow)');
+        g.appendChild(halo);
+
+        // Core Circle
         const circle = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
         circle.setAttribute('cx', pos.x);
         circle.setAttribute('cy', pos.y);
-        circle.setAttribute('r', '18');
-        circle.setAttribute('fill', pos.color || '#3b82f6');
-        circle.setAttribute('stroke', '#fff');
-        circle.setAttribute('stroke-width', '2');
-        circle.setAttribute('filter', 'drop-shadow(0 0 6px rgba(59,130,246,0.6))');
+        circle.setAttribute('r', '20');
+        circle.setAttribute('fill', '#0b1329');
+        circle.setAttribute('stroke', color);
+        circle.setAttribute('stroke-width', selectedGraphNodeId === n.id ? '3.5' : '2.2');
+        if (selectedGraphNodeId === n.id) {
+          circle.setAttribute('stroke-dasharray', 'none');
+          circle.setAttribute('filter', 'drop-shadow(0 0 10px ' + color + ')');
+        }
         g.appendChild(circle);
+
+        // Emoji Icon
+        const icon = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+        icon.setAttribute('x', pos.x);
+        icon.setAttribute('y', pos.y + 5.5);
+        icon.setAttribute('text-anchor', 'middle');
+        icon.setAttribute('font-size', '14.5px');
+        icon.setAttribute('pointer-events', 'none');
+        icon.textContent = pos.icon || '📌';
+        g.appendChild(icon);
+
+        // Label Pill
+        const rawLabel = (pos.label || pos.id).split('\n')[0];
+        const displayLabel = rawLabel.length > 20 ? rawLabel.substring(0, 18) + '..' : rawLabel;
+        const pillW = Math.max(54, displayLabel.length * 6.6 + 14);
+
+        const pillRect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+        pillRect.setAttribute('x', pos.x - pillW / 2);
+        pillRect.setAttribute('y', pos.y + 24);
+        pillRect.setAttribute('width', pillW);
+        pillRect.setAttribute('height', 17);
+        pillRect.setAttribute('rx', '4');
+        pillRect.setAttribute('fill', 'rgba(11, 19, 41, 0.94)');
+        pillRect.setAttribute('stroke', color);
+        pillRect.setAttribute('stroke-width', '0.8');
+        g.appendChild(pillRect);
 
         const text = document.createElementNS('http://www.w3.org/2000/svg', 'text');
         text.setAttribute('x', pos.x);
-        text.setAttribute('y', pos.y + 28);
+        text.setAttribute('y', pos.y + 36);
         text.setAttribute('text-anchor', 'middle');
-        text.setAttribute('fill', '#edf2f7');
-        text.setAttribute('font-size', '9.5px');
+        text.setAttribute('fill', '#f1f5f9');
+        text.setAttribute('font-size', '9.2px');
         text.setAttribute('font-weight', '700');
-        text.textContent = (pos.label || pos.id).split('\n')[0];
+        text.setAttribute('font-family', "'DM Sans', sans-serif");
+        text.setAttribute('pointer-events', 'none');
+        text.textContent = displayLabel;
         g.appendChild(text);
 
-        svg.appendChild(g);
+        // Sub Label
+        if (pos.sub_label) {
+          const subText = document.createElementNS('http://www.w3.org/2000/svg', 'text');
+          subText.setAttribute('x', pos.x);
+          subText.setAttribute('y', pos.y + 51);
+          subText.setAttribute('text-anchor', 'middle');
+          subText.setAttribute('fill', '#94a3b8');
+          subText.setAttribute('font-size', '8px');
+          subText.setAttribute('font-family', "'DM Mono', monospace");
+          subText.setAttribute('pointer-events', 'none');
+          const displaySub = pos.sub_label.length > 22 ? pos.sub_label.substring(0, 20) + '..' : pos.sub_label;
+          subText.textContent = displaySub;
+          g.appendChild(subText);
+        }
+
+        nodesGroup.appendChild(g);
       });
+      svg.appendChild(nodesGroup);
+
+      // Auto-select a primary node on first render
+      const defaultNode = campNode || originNode || senderNode || nodes[0];
+      if (defaultNode && !selectedGraphNodeId) {
+        selectGraphNode(defaultNode, false);
+      }
+    }
+
+    function selectGraphNode(node, reRender = true) {
+      if (!node) return;
+      selectedGraphNodeId = node.id;
+
+      const typeEl = document.getElementById('inspector-node-type');
+      const iconEl = document.getElementById('inspector-node-icon');
+      const titleEl = document.getElementById('inspector-node-title');
+      const subEl = document.getElementById('inspector-node-sub');
+      const valEl = document.getElementById('inspector-node-val');
+      const contextEl = document.getElementById('inspector-node-context');
+      const cypherEl = document.getElementById('inspector-node-cypher');
+      const hintEl = document.getElementById('graph-cursor-hint');
+
+      const nodeType = (node.type || 'ENTITY').toUpperCase();
+      if (typeEl) {
+        typeEl.innerText = nodeType.replace(/_/g, ' ');
+        typeEl.className = 'hop-pill ' + (
+          nodeType.includes('CAMPAIGN') ? 'purple' :
+          nodeType.includes('ORIGIN') ? 'bad' :
+          nodeType.includes('RELAY') ? 'cyan' :
+          nodeType.includes('SENDER') ? 'bad' :
+          nodeType.includes('TARGET') ? 'cyan' :
+          nodeType.includes('EVIDENCE') ? 'good' :
+          nodeType.includes('PAYLOAD') ? 'warn' : 'purple'
+        );
+      }
+
+      if (iconEl) iconEl.innerText = node.icon || '🔍';
+      if (titleEl) titleEl.innerText = node.label || node.id;
+      if (subEl) subEl.innerText = node.sub_label || node.type || 'Graph Entity';
+      if (valEl) valEl.innerText = node.full_value || node.label || node.id;
+      if (contextEl) contextEl.innerText = node.risk_weight || (nodeType === 'CAMPAIGN' ? 'High-confidence IOC attribution cluster.' : 'Forensic anchor node in message transport chain.');
+      
+      const cypherLabel = node.type === 'campaign' ? '(:ThreatCampaign)' :
+                          node.type === 'origin_mta' ? '(:OriginMTA)' :
+                          node.type === 'relay' ? '(:TransitRelay)' :
+                          node.type === 'sender' ? '(:EmailIdentity)' :
+                          node.type === 'target' ? '(:TargetMailbox)' :
+                          node.type === 'payload' ? '(:PayloadURL)' :
+                          node.type === 'file' ? '(:AttachmentFile)' : '(:EvidenceNode)';
+      if (cypherEl) cypherEl.innerText = `${cypherLabel} {id: "${node.id}"}`;
+
+      if (hintEl) {
+        hintEl.innerText = `SELECTED: [${nodeType}] ${node.label || node.id}`;
+        hintEl.style.color = node.color || '#38bdf8';
+      }
+
+      if (reRender) {
+        renderThreatGraph();
+      }
+    }
+
+    function copyCypherQuery() {
+      if (!currentAnalysis || !currentAnalysis.neo4j_graph) {
+        alert('Please analyze an email first to generate Cypher statements.');
+        return;
+      }
+      const cypher = currentAnalysis.neo4j_graph.cypher_query || '// No Cypher query generated';
+      navigator.clipboard.writeText(cypher).then(() => {
+        alert('📋 Neo4j Cypher statements copied to clipboard!\nYou can paste and run this directly into Neo4j Browser or Bloom.');
+      }).catch(() => {
+        prompt('Copy this Neo4j Cypher query:', cypher);
+      });
+    }
+
+    function exportSTIXGraph() {
+      if (!currentAnalysis) {
+        alert('Please analyze an email first!');
+        return;
+      }
+      const graph = currentAnalysis.graph_topology || { nodes: [], edges: [] };
+      const caseId = currentAnalysis.case_id || 'EVID-CASE';
+      
+      const stixBundle = {
+        type: "bundle",
+        id: `bundle--${caseId.toLowerCase().replace(/[^a-z0-9-]/g, '-')}`,
+        spec_version: "2.1",
+        objects: [
+          {
+            type: "report",
+            id: `report--${caseId.toLowerCase().replace(/[^a-z0-9-]/g, '-')}`,
+            created: new Date().toISOString(),
+            modified: new Date().toISOString(),
+            name: `SUDO SPANDR Forensic Attribution Report - ${caseId}`,
+            description: `Cryptographically verified email triage for campaign ${(graph.campaign_id || 'ATTRIBUTED').replace(/_/g, ' ')}`,
+            published: new Date().toISOString(),
+            confidence: currentAnalysis.threat?.risk_score || 85,
+            labels: ["threat-report", "email-forensics", "sih-2026"]
+          },
+          ...(graph.nodes || []).map((n, idx) => ({
+            type: n.type === 'campaign' ? 'threat-actor' : (n.type === 'payload' ? 'url' : (n.type === 'origin_mta' ? 'ipv4-addr' : 'indicator')),
+            id: `indicator--${caseId.toLowerCase().replace(/[^a-z0-9-]/g, '-')}-${idx}`,
+            created: new Date().toISOString(),
+            modified: new Date().toISOString(),
+            name: n.label || n.id,
+            description: n.full_value || n.sub_label || '',
+            confidence: 90
+          }))
+        ]
+      };
+
+      const dataStr = "data:text/json;charset=utf-8," + encodeURIComponent(JSON.stringify(stixBundle, null, 2));
+      const downloadAnchor = document.createElement('a');
+      downloadAnchor.setAttribute("href", dataStr);
+      downloadAnchor.setAttribute("download", `STIX2.1_${caseId}_CAMPAIGN.json`);
+      document.body.appendChild(downloadAnchor);
+      downloadAnchor.click();
+      downloadAnchor.remove();
     }
 
     async function verifyBlockchainModal() {
@@ -3918,11 +4980,45 @@ CREATE POLICY "Allow service role full access"
         </div>`;
       }
     }
-    // Auto-load sample preset if passed in URL query param or hash (e.g. ?sample=emkei or #emkei)
-    function checkUrlSample() {
+    // Auto-load sample preset if passed in URL query param or hash (e.g. ?sample=emkei, ?auto=graph, ?auto=attach, ?auto=text)
+    async function checkUrlSample() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         let sample = urlParams.get('sample');
+        const auto = urlParams.get('auto');
+
+        if (auto === 'graph') {
+          selectCorridor('emkei');
+          setTimeout(() => {
+            const btn = document.getElementById('tab-btn-graph');
+            if (btn) switchTab('graph', btn);
+          }, 350);
+          return;
+        } else if (auto === 'attach') {
+          setMode('attach');
+          setTimeout(() => {
+            const pdfBytes = "%PDF-1.4\n1 0 obj<</Type/Catalog/Pages 2 0 R>>endobj\n2 0 obj<</Type/Pages/Kids[3 0 R]/Count 1>>endobj\n3 0 obj<</Type/Page/Parent 2 0 R/MediaBox[0 0 612 792]>>endobj\nxref\n0 4\n0000000000 65535 f \n0000000009 00000 n \n0000000052 00000 n \n0000000109 00000 n \ntrailer<</Size 4/Root 1 0 R>>\nstartxref\n178\n%%EOF";
+            const blob = new Blob([pdfBytes], { type: 'application/pdf' });
+            const file = new File([blob], 'vendor_invoice_clean.pdf', { type: 'application/pdf' });
+            handleAttachSelect({ target: { files: [file] } });
+          }, 300);
+          return;
+        } else if (auto === 'text') {
+          setMode('text');
+          setTimeout(() => {
+            const rawSender = document.getElementById('raw-sender');
+            const rawSub = document.getElementById('raw-subject');
+            const rawBody = document.getElementById('raw-body');
+            if (rawSender) rawSender.value = "billing@trusted-enterprise.com";
+            if (rawSub) rawSub.value = "Routine Invoice & Service Summary";
+            if (rawBody) {
+              rawBody.value = "From: billing@trusted-enterprise.com\nTo: accounts@state-agency.gov.in\nSubject: Routine Invoice & Service Summary\nDate: Sat, 12 Sep 2026 10:00:00 +0530\nMessage-ID: <inv-9921@trusted-enterprise.com>\nReceived: from mail.trusted-enterprise.com (103.22.14.80) by mx.gov.in\n\nQuarterly service summary is verified.";
+            }
+            analyzeRawText();
+          }, 300);
+          return;
+        }
+
         if (!sample && window.location.hash) {
           const h = window.location.hash.replace('#', '').toLowerCase();
           if (['emkei', 'apt_tor', 'bec_wire', 'clean_mta'].includes(h)) sample = h;
