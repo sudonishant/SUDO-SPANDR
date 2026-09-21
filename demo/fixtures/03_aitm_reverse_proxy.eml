@@ -1,0 +1,13 @@
+From: "Microsoft 365 Admin Center" <admin@login.microsoftonline-portal.cc>
+To: "Executive Director" <exec@company.org>
+Subject: ACTION REQUIRED: Your Microsoft 365 Session Token Has Expired
+Date: Mon, 21 Sep 2026 06:10:00 +0000
+Message-ID: <session.aitm.9981@microsoftonline-portal.cc>
+Return-Path: <bounce@microsoftonline-portal.cc>
+Received: from proxy01.reverse-aitm.net (193.142.146.33) by mx.company.org with ESMTP; Mon, 21 Sep 2026 06:10:08 +0000
+Authentication-Results: mx.company.org; spf=fail; dkim=fail; dmarc=fail
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<p>Your session cookie has timed out due to conditional access enforcement.</p>
+<p><a href="https://auth-portal.evilginx-login.xyz/sess?id=8823">Re-authenticate Session Here</a></p>

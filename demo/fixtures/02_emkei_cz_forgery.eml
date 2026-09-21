@@ -1,0 +1,14 @@
+From: "Google Security" <no-reply@accounts.google.com>
+To: "Target User" <victim@corporate.com>
+Subject: Security Alert: Unauthorized sign-in attempt detected
+Date: Mon, 21 Sep 2026 05:20:00 +0000
+Message-ID: <123456.forged@emkei.cz>
+Return-Path: <nobody@emkei.cz>
+X-Mailer: Emkei's Fake Mailer v1.0
+Received: from emkei.cz (109.123.219.162) by mx.google.com with ESMTP; Mon, 21 Sep 2026 05:20:05 +0000
+Authentication-Results: mx.google.com; spf=fail (emkei.cz does not designate 109.123.219.162); dkim=none; dmarc=fail action=reject
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Someone attempted to sign in to your Google Account from an unknown browser in Moscow, Russia.
+Verify your password immediately: http://google-security-verify.ru/login
