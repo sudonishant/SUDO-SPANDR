@@ -2,6 +2,10 @@
 ### Advanced Multi-Vector Email Forensics, Geodesic Trajectory Radar, Threat Attribution Graph & Air-Gapped Sandbox
 **Smart India Hackathon (SIH) 2026 | Problem Statement #26106**
 
+🌐 **Live Deployments:** [sudospandrsce.vercel.app](https://sudospandrsce.vercel.app) · [cybersquadsce.vercel.app](https://cybersquadsce.vercel.app)  
+⛓️ **Smart Contract:** [Polygon Amoy Testnet Notary (0x71C3...26106)](https://amoy.polygonscan.com/address/0x71C3b7D19623e1F854890C36688B73eF7d4026106)  
+📜 **Demo Kit:** [demo/DEMO_SCRIPT_4MIN.md](demo/DEMO_SCRIPT_4MIN.md) · [demo/JUDGE_QA.md](demo/JUDGE_QA.md)
+
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg)
@@ -272,7 +276,13 @@ docker run -p 8000:8000 -p 6080:6080 sentinelmail-sih26106
 
 The repository contains rigorous test suites validating security, scoring accuracy, and forensic integrity:
 
-### 1. Run Backend API Smoke Tests
+### 1. Run Comprehensive Feature Test Suite
+```bash
+python3 backend/test_all_new_features.py
+```
+*Validates RFC IP classification, cryptographic SPF/DKIM/DMARC engine, MITRE ATT&CK Navigator generation, Indic 8-language threat scanning, DPDP Act PII redaction, Polygon Amoy blockchain notary, and Postfix milter simulator.*
+
+### 2. Run Backend API Smoke Tests
 ```bash
 python3 backend/api_smoke_test.py
 ```
@@ -286,17 +296,22 @@ python3 backend/security_test.py
 
 ---
 
-## 🌐 API Endpoint Reference
+## 🌐 API Endpoint Reference (100% Zero 404 Parity)
 
-| Method | Endpoint | Description |
-|---|---|---|
-| `POST` | `/api/v1/analyze` | Full `.EML` / `.MSG` email analysis & multi-vector triage |
-| `POST` | `/api/v1/attachment` | Dedicated static byte disassembly & container-aware entropy |
-| `POST` | `/api/v1/sandbox/detonate` | Safe URL inspection, DOM redirect tracing & security headers |
-| `GET` | `/api/v1/blockchain/verify/{tx_hash}` | Cryptographic verification of on-chain Section 65B record |
-| `GET` | `/api/v1/export/cypher/{case_id}` | Export Neo4j Cypher statements for case attribution |
-| `GET` | `/api/v1/supabase/schema` | Retrieve Supabase PostgreSQL forensic schema & RLS policies |
-| `GET` | `/api/v1/sandbox/preview-frame` | Isolated sanitized preview frame for web detonation |
+| Method | Endpoint | Description | Engine / RFC Standard |
+|---|---|---|---|
+| `GET` | `/api/v1/health` | System health, problem statement ID, and diagnostic telemetry | Core Health Service |
+| `POST` | `/api/v1/analyze-eml` | Primary RFC 5322 stream intake, forensic dossier, & multi-vector triage | RFC 5322 / RFC 6376 / RFC 7208 |
+| `POST` | `/api/v1/analyze` | Backward-compatible alias for full `.EML` / `.MSG` forensic analysis | RFC 5322 Triage |
+| `POST` | `/api/gateway-milter-check` | Postfix Milter SMTP daemon endpoint returning `550 5.7.1` socket rejections | RFC 5321 SMTP DATA Filter |
+| `GET` | `/api/v1/mitre/navigator-layer` | Export case-correlated MITRE ATT&CK Enterprise Navigator v5.1 layer JSON | MITRE ATT&CK Enterprise v16 |
+| `POST` | `/api/v1/analyze-batch` | High-throughput campaign batch clustering & targeted spearphishing detection | Unsupervised Cluster Triage |
+| `POST` | `/api/v1/redact-pii` | Automatic Aadhaar (Verhoeff), PAN, Phone, and UPI PII redaction | DPDP Act 2023 / Sec 43A IT Act |
+| `GET` | `/api/v1/blockchain/verify/{tx_hash}` | Cryptographic verification of on-chain Section 65B notarized digest | Polygon Amoy (Chain ID 80002) |
+| `POST` | `/api/v1/attachment` | Dedicated static byte disassembly & container-aware entropy | Magic-Byte Container Analysis |
+| `POST` | `/api/v1/sandbox/detonate` | Safe URL inspection, DOM redirect tracing & security headers | Sandboxed Chromium Inspector |
+| `GET` | `/api/v1/export/cypher/{case_id}` | Export Neo4j Cypher statements for entity graph attribution | STIX 2.1 Graph Mapping |
+| `GET` | `/api/v1/supabase/schema` | Retrieve Supabase PostgreSQL forensic schema & RLS policies | ISO/IEC 27037 Evidence Vault |
 
 ---
 
