@@ -5,44 +5,8 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
-      "source": "/api/v1/health",
-      "destination": "/api/v1/health"
-    },
-    {
-      "source": "/api/v1/analyze-eml",
-      "destination": "/api/v1/analyze-eml"
-    },
-    {
-      "source": "/api/v1/analyze",
-      "destination": "/api/v1/analyze"
-    },
-    {
-      "source": "/api/v1/analyze-batch",
-      "destination": "/api/v1/analyze-batch"
-    },
-    {
-      "source": "/api/gateway-milter-check",
-      "destination": "/api/gateway-milter-check"
-    },
-    {
-      "source": "/api/v1/gateway-milter-check",
-      "destination": "/api/v1/gateway-milter-check"
-    },
-    {
-      "source": "/api/v1/mitre/navigator-layer",
-      "destination": "/api/v1/mitre/navigator-layer"
-    },
-    {
-      "source": "/api/v1/blockchain/verify/(.*)",
-      "destination": "/api/v1/blockchain/verify?tx_hash=$1"
-    },
-    {
-      "source": "/api/v1/blockchain/verify",
-      "destination": "/api/v1/blockchain/verify"
-    },
-    {
-      "source": "/api/v1/supabase/schema",
-      "destination": "/api/v1/supabase/schema"
+      "source": "/api/v1/blockchain/verify/:tx_hash",
+      "destination": "/api/v1/blockchain/verify/[tx_hash]"
     },
     {
       "source": "/((?!api/).*)",
