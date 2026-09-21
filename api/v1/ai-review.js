@@ -21,8 +21,10 @@ const REQUEST_TIMEOUT_MS = 25_000;
 const TOTAL_ROUTE_TIMEOUT_MS = 35_000;
 const MAX_MODEL_ATTEMPTS = 2;
 
-function response(body, status = 200) {
-  return new Response(JSON.stringify(body), { status, headers: { 'content-type': 'application/json; charset=utf-8', 'cache-control': 'no-store' } });
+function sendJson(res, body, status = 200) {
+  res.setHeader('Content-Type', 'application/json; charset=utf-8');
+  res.setHeader('Cache-Control', 'no-store');
+  return res.status(status).json(body);
 }
 
 function isFreeModel(model) {
@@ -175,18 +177,23 @@ async function requestModel({ upstream, apiKey, model, safeEvidence, timeoutMs }
   return compatibility.ok ? compatibility : { ...compatibility, error: `${first.error} Compatibility JSON retry: ${compatibility.error}` };
 }
 
-export async function POST(request) {
-  if (request.method !== 'POST') return response({ status: 'method_not_allowed', message: 'Use POST for an AI review request.' }, 405);
+export default async function handler(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return sendJson(res, { status: 'method_not_allowed', message: 'Use POST for an AI review request.' }, 405);
   const apiKey = process.env.OPENROUTER_API_KEY?.trim();
-  if (!apiKey) return response({ status: 'not_configured', message: 'OPENROUTER_API_KEY is not configured in Vercel. Deterministic triage remains available.' });
+  if (!apiKey) return sendJson(res, { status: 'not_configured', message: 'OPENROUTER_API_KEY is not configured in Vercel. Deterministic triage remains available.' });
 
   let evidence;
   try {
-    const input = await request.json();
+    const input = req.body || {};
     if (!input || typeof input !== 'object' || Array.isArray(input) || (input.evidence != null && (typeof input.evidence !== 'object' || Array.isArray(input.evidence)))) throw new Error('invalid evidence');
     evidence = input.evidence || {};
   } catch {
-    return response({ status: 'invalid_request', message: 'Expected a JSON body with an evidence object.' }, 400);
+    return sendJson(res, { status: 'invalid_request', message: 'Expected a JSON body with an evidence object.' }, 400);
   }
 
   const safeEvidence = {
@@ -213,7 +220,7 @@ export async function POST(request) {
     attemptedModels.push(model);
     try {
       const result = await requestModel({ upstream, apiKey, model, safeEvidence, timeoutMs: Math.min(REQUEST_TIMEOUT_MS, remainingMs) });
-      if (result.ok) return response({ status: 'available', provider: 'OpenRouter', model, routing: model === FREE_PRIMARY ? 'free-model-primary' : model === FREE_ROUTER ? 'free-model-router' : 'free-model-fallback', result: result.parsed, note: 'AI second opinion only; deterministic evidence and human review remain authoritative.' });
+      if (result.ok) return sendJson(res, { status: 'available', provider: 'OpenRouter', model, routing: model === FREE_PRIMARY ? 'free-model-primary' : model === FREE_ROUTER ? 'free-model-router' : 'free-model-fallback', result: result.parsed, note: 'AI second opinion only; deterministic evidence and human review remain authoritative.' });
       lastError = result;
       if (!retryable(result.status)) break;
     } catch (error) {
@@ -222,7 +229,8 @@ export async function POST(request) {
   }
 
   const fallback = deterministicExplanation(safeEvidence);
-  if (lastError?.status === 429) return response({ status: 'rate_limited', provider: 'OpenRouter', message: 'Free OpenRouter models are temporarily rate-limited. No AI verdict was generated; deterministic triage remains available.', retry_after: lastError.retryAfter || null, fallback, fallback_note: 'The explanation below is deterministic and not an AI response.' }, 429);
+  if (lastError?.status === 429) return sendJson(res, { status: 'rate_limited', provider: 'OpenRouter', message: 'Free OpenRouter models are temporarily rate-limited. No AI verdict was generated; deterministic triage remains available.', retry_after: lastError.retryAfter || null, fallback, fallback_note: 'The explanation below is deterministic and not an AI response.' }, 429);
   const providerError = String(lastError?.error || 'provider error').replace(/[.]+$/, '');
-  return response({ status: 'upstream_error', provider: 'OpenRouter', message: `Free-model AI review unavailable: ${providerError}. No AI verdict was generated.`, attempted_models: attemptedModels, fallback, fallback_note: 'The explanation below is deterministic and not an AI response.' }, 502);
+  return sendJson(res, { status: 'upstream_error', provider: 'OpenRouter', message: `Free-model AI review unavailable: ${providerError}. No AI verdict was generated.`, attempted_models: attemptedModels, fallback, fallback_note: 'The explanation below is deterministic and not an AI response.' }, 502);
 }
+
