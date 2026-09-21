@@ -69,16 +69,25 @@ async function lookup(ip) {
   }
 }
 
-export async function POST(request) {
-  if (request.method !== 'POST') return response({ status: 'method_not_allowed', message: 'Use POST with public header IPs.' }, 405);
+export default async function handler(req, res) {
+  res.setHeader('Content-Type', 'application/json');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', '*');
+  res.setHeader('Cache-Control', 'no-store');
+
+  if (req.method === 'OPTIONS') return res.status(200).end();
+  if (req.method !== 'POST') return res.status(405).json({ status: 'method_not_allowed', message: 'Use POST with public header IPs.' });
+
   let ips;
   try {
-    const input = await request.json();
+    const input = req.body || {};
     ips = Array.isArray(input?.ips) ? [...new Set(input.ips.map((ip) => String(ip).trim()).filter(isPublicIpv4))].slice(0, 5) : [];
   } catch {
-    return response({ status: 'invalid_request', message: 'Expected a JSON body with an ips array.' }, 400);
+    return res.status(400).json({ status: 'invalid_request', message: 'Expected a JSON body with an ips array.' });
   }
-  if (!ips.length) return response({ status: 'no_public_ips', results: [], message: 'No public IPv4 address from submitted email headers was available for lookup.' });
+  if (!ips.length) return res.status(200).json({ status: 'no_public_ips', results: [], message: 'No public IPv4 address from submitted email headers was available for lookup.' });
   const results = await Promise.all(ips.map(lookup));
-  return response({ status: 'available', results, note: 'RDAP registration context is approximate metadata, not exact geolocation or sender attribution.' });
+  return res.status(200).json({ status: 'available', results, note: 'RDAP registration context is approximate metadata, not exact geolocation or sender attribution.' });
 }
+
