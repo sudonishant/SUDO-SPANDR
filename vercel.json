@@ -7,8 +7,16 @@
   "cleanUrls": true,
   "rewrites": [
     {
+      "source": "/api/gateway-milter-check",
+      "destination": "/api/v1/gateway-milter-check"
+    },
+    {
+      "source": "/api/v1/analyze",
+      "destination": "/api/v1/analyze-eml"
+    },
+    {
       "source": "/api/v1/blockchain/verify/:tx_hash",
-      "destination": "/api/v1/blockchain/verify/[tx_hash]"
+      "destination": "/api/v1/blockchain/verify?tx_hash=:tx_hash"
     },
     {
       "source": "/api/:path*",
