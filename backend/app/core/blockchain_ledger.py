@@ -54,19 +54,19 @@ def notarize_evidence_on_chain(evidence_id: str, sha256_digest: str, origin_ip: 
     return {
         "network": NETWORK_NAME,
         "chain_id": POLYGON_AMOY_CHAIN_ID,
-        "smart_contract_address": POLYGON_AMOY_CONTRACT,
-        "contract_verified": True,
+        "smart_contract_address": "contracts/EvidenceNotary.sol (Amoy Ready)",
+        "contract_verified": False,
+        "mode": "PROTOTYPE_NOTARY_ADAPTER",
         "block_number": block_number,
         "transaction_hash": tx_hash,
         "merkle_root": merkle_root,
         "anchored_timestamp_utc": timestamp_utc,
-        "consensus_mechanism": "Proof-of-Stake (Polygon Amoy L2) / Consortium PoA Notary",
-        "immutability_status": "CONFIRMED & SEALED ON-CHAIN",
+        "consensus_mechanism": "Cryptographic SHA-256 Merkle Proof / EVM Notary Adapter",
+        "immutability_status": "PROTOTYPE_MERKLE_PROOF_GENERATED",
         "evidence_id": evidence_id,
         "sha256_sealed": sha256_digest,
-        "tamper_proof_verification": "VALID (Zero Hash Drift Detected)",
-        "polygonscan_tx_url": f"{EXPLORER_BASE_URL}/tx/{tx_hash}",
-        "polygonscan_contract_url": f"{EXPLORER_BASE_URL}/address/{POLYGON_AMOY_CONTRACT}",
+        "tamper_proof_verification": "VALID (Zero Hash Drift Detected in Merkle Tree)",
+        "note": "Design prototype notary adapter; local Merkle tree proof generated. Live testnet deployment requires funded wallet.",
         "legal_admissibility": "Admissible under Section 65B Indian Evidence Act / Section 63 BSA 2023"
     }
 

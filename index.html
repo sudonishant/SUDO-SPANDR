@@ -1013,6 +1013,15 @@
 </head>
 <body>
 
+  <!-- Verification Capability Banner (Loud Degraded Notice) -->
+  <div id="degraded-verification-banner" style="display: none; background: #7f1d1d; border-bottom: 1px solid #dc2626; color: #fecaca; font-size: 11.5px; padding: 7px 16px; align-items: center; justify-content: space-between; z-index: 1000; position: relative;">
+    <div style="display: flex; align-items: center; gap: 8px;">
+      <span style="font-size: 14px;">⚠️</span>
+      <span id="degraded-banner-text"><strong>Forensic Notice:</strong> Verification degraded — DNS/crypto libraries missing; cryptographic signatures and SPF mechanisms cannot be confirmed via DNS.</span>
+    </div>
+    <span style="font-family: monospace; font-size: 10px; background: rgba(0,0,0,0.3); padding: 2px 8px; border-radius: 4px; color: #fed7aa;" id="degraded-banner-cmd">pip install dnspython cryptography maxminddb</span>
+  </div>
+
   <!-- Top Bar -->
   <header class="topbar">
     <div class="brand">
@@ -1461,7 +1470,7 @@
               <span style="font-weight: 600; color: #cbd5e1; font-size: 11px;">Consortium Network</span>
               <div style="font-size: 9px; color: var(--text-muted);">सरकारी फॉरेंसिक नोड्स द्वारा अधिकृत नेटवर्क (PoA)</div>
             </div>
-            <strong style="color: #60a5fa; font-size: 11px; text-align: right;">National Cyber Forensic Consortium</strong>
+            <strong style="color: #60a5fa; font-size: 11px; text-align: right;">Forensic Ledger PoA Notary</strong>
           </div>
 
           <div class="key-val" style="align-items: flex-start; padding: 5px 0;">
@@ -2179,7 +2188,7 @@
           <table class="dossier-table">
             <tr>
               <th style="width: 24%;">Consortium Blockchain</th>
-              <td style="width: 26%;">National Cyber Crime Consortium Ledger (PoA)</td>
+              <td style="width: 26%;">Consortium Ledger (PoA Prototype / ISO 27037)</td>
               <th style="width: 24%;">Block Height</th>
               <td style="width: 26%;" id="dossier-bc-block" class="mono font-bold" style="color: #15803d;"></td>
             </tr>
@@ -3276,7 +3285,7 @@
         },
         blockchain_notary: {
           status: 'SEALED_AND_NOTARIZED_ON_CHAIN',
-          ledger_network: 'National Cyber Crime Consortium Ledger (ISO 27037)',
+          ledger_network: 'Polygon Amoy / Local Merkle Notary (ISO 27037)',
           smart_contract: '0x71C3b7D19623e1F854890C36688B73eF7d4026106',
           block_height: '#19,846,630',
           transaction_hash: txHash,
@@ -3949,10 +3958,32 @@
 
       // Auth Checks
       const auth = data.dns_auth || {};
-      document.getElementById('auth-spf').innerHTML = auth.spf === 'PASS' || auth.spf === 'REPORTED PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--danger)">' + (auth.spf || 'FAIL / NONE') + '</span>';
-      document.getElementById('auth-dkim').innerHTML = auth.dkim === 'PASS' || auth.dkim === 'REPORTED PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--danger)">' + (auth.dkim || 'FAIL / NONE') + '</span>';
-      document.getElementById('auth-dmarc').innerHTML = auth.dmarc === 'PASS' || auth.dmarc === 'REPORTED PASS' ? '<span style="color: var(--success)">PASS</span>' : '<span style="color: var(--warning)">' + (auth.dmarc || 'NONE / QUARANTINE') + '</span>';
-      document.getElementById('auth-align').innerHTML = '<span style="color: var(--success)">Verified RFC Alignment</span>';
+      const spfText = String(auth.spf || 'NONE');
+      const dkimText = String(auth.dkim || 'NONE');
+      const dmarcText = String(auth.dmarc || 'NONE');
+      
+      document.getElementById('auth-spf').innerHTML = (spfText.includes('PASS') || spfText === 'REPORTED PASS') 
+        ? '<span style="color: var(--success)">PASS</span>' 
+        : (spfText.includes('UNVERIFIED') || spfText.includes('TEMPERROR') || spfText.includes('SOFTFAIL'))
+          ? '<span style="color: var(--warning)">' + spfText + '</span>'
+          : '<span style="color: var(--danger)">' + spfText + '</span>';
+
+      document.getElementById('auth-dkim').innerHTML = (dkimText.includes('PASS') || dkimText === 'REPORTED PASS')
+        ? '<span style="color: var(--success)">PASS</span>'
+        : (dkimText.includes('UNVERIFIED') || dkimText.includes('TEMPERROR') || dkimText.includes('NOT SIGNED'))
+          ? '<span style="color: var(--warning)">' + dkimText + '</span>'
+          : '<span style="color: var(--danger)">' + dkimText + '</span>';
+
+      document.getElementById('auth-dmarc').innerHTML = (dmarcText.includes('PASS') || dmarcText === 'REPORTED PASS')
+        ? '<span style="color: var(--success)">PASS</span>'
+        : (dmarcText.includes('UNVERIFIED') || dmarcText.includes('BEST EFFORT'))
+          ? '<span style="color: var(--warning)">' + dmarcText + '</span>'
+          : '<span style="color: var(--danger)">' + dmarcText + '</span>';
+
+      const alignStatus = String(auth.spf_alignment || auth.alignment || (dmarcText.includes('PASS') ? 'Aligned' : 'Unverified / Misaligned'));
+      document.getElementById('auth-align').innerHTML = alignStatus.toLowerCase().includes('aligned') && !alignStatus.toLowerCase().includes('misaligned') && !alignStatus.toLowerCase().includes('unverified')
+        ? '<span style="color: var(--success)">RFC 7489 Aligned</span>'
+        : '<span style="color: var(--warning)">' + alignStatus + '</span>';
       document.getElementById('auth-msgid').innerHTML = '<span style="color: var(--success)">RFC 5322 Compliant</span>';
 
       // URLs List
@@ -7109,7 +7140,7 @@ Integrity Seal: Certified Immutable & Court Admissible`;
       const vendors = [
         { name: 'Spamhaus Zen', status: isMalicious ? 'LISTED' : 'CLEAN', category: 'SBL / CSS / DBL Blocklist', evidence: isMalicious ? 'Origin IP present in Spamhaus Zen blocklist' : 'No blocklist records identified' },
         { name: 'Google Safe Browsing', status: isMalicious ? 'MALICIOUS' : 'CLEAN', category: 'Social Engineering', evidence: isMalicious ? 'Flagged deceptive phishing infrastructure' : 'Verified clean domain' },
-        { name: 'VirusTotal Consensus', status: isMalicious ? '14/72 ENGINES' : '0/72 CLEAN', category: 'Multi-Engine Verdict', evidence: isMalicious ? '14 security vendors flagged as malicious/phishing' : 'Zero engines flagged threats' },
+        { name: 'Multi-Vendor Threat Consensus', status: isMalicious ? '14/72 ENGINES' : '0/72 CLEAN', category: 'Multi-Engine Verdict', evidence: isMalicious ? '14 security vendors flagged as malicious/phishing' : 'Zero engines flagged threats' },
         { name: 'AbuseIPDB', status: isMalicious ? '100% ABUSE' : '0% CLEAN', category: 'Crowdsourced Threat Intel', evidence: isMalicious ? '9,412 malicious reports filed by SOC analysts' : 'No abuse reports on file' },
         { name: 'Cisco Talos Intelligence', status: isMalicious ? 'POOR' : 'FAVORABLE', category: 'Global Web & Email Reputation', evidence: isMalicious ? 'Sender classified under High-Volume Spam & BEC' : 'Standard enterprise reputation' },
         { name: 'Barracuda Central (BRBL)', status: isMalicious ? 'BLACKLISTED' : 'CLEAN', category: 'Real-Time Reputation System', evidence: isMalicious ? 'Listed on Barracuda Reputation Block List' : 'Clean sender rating' },
@@ -7298,7 +7329,46 @@ Integrity Seal: Certified Immutable & Court Admissible`;
     });
 
     // Auto-load sample preset if passed in URL query param or hash (e.g. ?sample=emkei, ?auto=graph, ?auto=attach, ?auto=text)
-    async function checkUrlSample() {
+    async     async function checkBackendHealth() {
+      try {
+        const res = await fetch('/api/v1/health');
+        if (!res.ok) return;
+        const h = await res.json();
+        const banner = document.getElementById('degraded-verification-banner');
+        const text = document.getElementById('degraded-banner-text');
+        const cmd = document.getElementById('degraded-banner-cmd');
+        if (!banner) return;
+        
+        if (h.status === 'degraded' || (h.verification_capability && (!h.verification_capability.spf?.real || !h.verification_capability.dkim?.real))) {
+          banner.style.display = 'flex';
+          const reasons = [];
+          if (h.verification_capability?.spf && !h.verification_capability.spf.real) reasons.push('SPF unverified (' + (h.verification_capability.spf.degraded_reason || 'DNS missing') + ')');
+          if (h.verification_capability?.dkim && !h.verification_capability.dkim.real) reasons.push('DKIM unverified (' + (h.verification_capability.dkim.degraded_reason || 'crypto missing') + ')');
+          if (h.verification_capability?.geoip && !h.verification_capability.geoip.real) reasons.push('GeoLite2 MMDB missing');
+          
+          if (text) {
+            text.innerHTML = '<strong>Forensic Notice:</strong> Verification degraded — ' + (reasons.join('; ') || 'Dependencies missing; results are offline fixtures, not live DNS/crypto proofs.');
+          }
+          if (cmd && h.mode === 'production_edge_serverless') {
+            cmd.textContent = 'Edge Mode: Connect Python FastAPI backend for live DNS/RSA proofs';
+          }
+        } else if (h.status === 'online') {
+          banner.style.display = 'none';
+        }
+      } catch (err) {
+        // Backend offline or running in standalone static mode
+        const banner = document.getElementById('degraded-verification-banner');
+        if (banner) {
+          banner.style.display = 'flex';
+          const text = document.getElementById('degraded-banner-text');
+          if (text) text.innerHTML = '<strong>Client-Only Mode:</strong> Python backend offline. Results are evaluated via browser heuristics without live cryptographic DNS proofs.';
+          const cmd = document.getElementById('degraded-banner-cmd');
+          if (cmd) cmd.textContent = 'uvicorn app.main:app --port 8000';
+        }
+      }
+    }
+
+    function checkUrlSample() {
       try {
         const urlParams = new URLSearchParams(window.location.search);
         let sample = urlParams.get('sample');
@@ -7351,6 +7421,7 @@ Integrity Seal: Certified Immutable & Court Admissible`;
       window.addEventListener('DOMContentLoaded', checkUrlSample);
     } else {
       checkUrlSample();
+      checkBackendHealth();
     }
 
   </script>
