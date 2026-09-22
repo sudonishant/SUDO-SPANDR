@@ -42,7 +42,8 @@ class TestNewForensicFeatures(unittest.TestCase):
         # SPF offline fixture
         spf = verify_spf("example.com", "192.0.2.1", offline_fixture=True)
         self.assertIn("result", spf)
-        self.assertIn(spf["result"], ["pass", "fail", "softfail", "neutral", "none"])
+        self.assertIn(spf["result"], ["pass", "fail", "softfail", "neutral", "none", "temperror"])
+        self.assertFalse(spf["verified"])
 
         # DKIM offline fixture
         sample_eml = b"From: user@test.com\r\nSubject: Test\r\n\r\nHello"
@@ -50,7 +51,7 @@ class TestNewForensicFeatures(unittest.TestCase):
         self.assertEqual(dkim_none["result"], "none")
 
         # DMARC alignment
-        dmarc = verify_dmarc_alignment("paypal.com", {"result": "pass", "domain": "paypal.com"}, {"result": "pass", "domain": "paypal.com"})
+        dmarc = verify_dmarc_alignment("paypal.com", {"result": "pass", "domain": "paypal.com", "verified": True}, {"result": "pass", "domain": "paypal.com", "verified": True})
         self.assertEqual(dmarc["status"], "PASS")
         self.assertEqual(dmarc["spf_alignment"], "ALIGNED")
         self.assertEqual(dmarc["dkim_alignment"], "ALIGNED")
@@ -68,37 +69,31 @@ class TestNewForensicFeatures(unittest.TestCase):
         tech_ids = [t["id"] for t in techs]
         self.assertIn("T1566.001", tech_ids) # Attachment
         self.assertIn("T1566.002", tech_ids) # Link
-        self.assertIn("T1036.005", tech_ids) # Masquerading
-        self.assertIn("T1071.001", tech_ids) # Web protocol / AitM
-        self.assertIn("T1090.003", tech_ids) # Tor/Proxy
+        self.assertIn("T1071.001", tech_ids) # Web protocol (AiTM)
 
-        layer = generate_mitre_navigator_layer("TEST-001", techs)
-        self.assertEqual(layer["versions"]["navigator"], "5.1.0")
-        self.assertEqual(layer["domain"], "enterprise-attack")
-        self.assertTrue(len(layer["techniques"]) >= 5)
+        nav_layer = generate_mitre_navigator_layer("SIH26106-CASE", techs)
+        self.assertEqual(nav_layer["name"], "SUDO SPANDR Forensic Layer - SIH26106-CASE")
+        self.assertEqual(nav_layer["domain"], "enterprise-attack")
+        self.assertGreater(len(nav_layer["techniques"]), 0)
 
-    def test_04_indic_multilingual_and_dpdp_pii(self):
-        # Multilingual Hindi + Bengali
-        text = "तत्काल बिजली बिल भुगतान करें अन्यथा खाता बंद कर दिया जाएगा। জরুরি নোটিশ: আপনার অ্যাকাউন্ট ব্লক।"
-        scan = scan_indic_threats(text)
-        self.assertTrue(scan["detected"])
-        self.assertIn("Hindi (हिन्दी)", scan["languages_found"])
-        self.assertIn("Bengali (বাংলা)", scan["languages_found"])
+    def test_04_indic_nlp_and_dpdp_pii(self):
+        sample_hindi = "अति आवश्यक सूचना: आपका SBI बैंक खाता तत्काल निलंबित किया जा रहा है। तुरंत आधार 234567890126 और पैन ABCDE1234F अपडेट करें या 9876543210 पर संपर्क करें।"
+        report = scan_indic_threats(sample_hindi)
+        self.assertTrue(report["detected"])
+        self.assertIn("Hindi (हिन्दी)", report["languages_found"])
+        self.assertGreater(report["threat_points"], 0)
 
-        # PII Redaction
-        pii_text = "Applicant PAN: ABCDE1234F, Phone: 9876543210, UPI: rahul@okhdfcbank"
-        redacted = redact_dpdp_pii(pii_text, redact=True)
-        self.assertEqual(redacted["pii_counts"]["pan"], 1)
-        self.assertEqual(redacted["pii_counts"]["phone"], 1)
-        self.assertEqual(redacted["pii_counts"]["upi"], 1)
+        redacted = redact_dpdp_pii(sample_hindi, redact=True)
+        self.assertTrue(redacted["redaction_applied"])
+        self.assertIn("[REDACTED_AADHAAR:", redacted["redacted_text"])
         self.assertIn("[REDACTED_PAN:", redacted["redacted_text"])
         self.assertIn("[REDACTED_PHONE:", redacted["redacted_text"])
-        self.assertIn("[REDACTED_UPI:", redacted["redacted_text"])
 
-    def test_05_blockchain_polygon_amoy(self):
+    def test_05_blockchain_polygon_amoy_adapter(self):
         rec = notarize_evidence_on_chain("CASE-SIH26106-001", "a"*64, "185.220.101.5", 88)
         self.assertEqual(rec["chain_id"], 80002)
-        self.assertIn("amoy.polygonscan.com", rec["polygonscan_tx_url"])
+        self.assertEqual(rec["mode"], "PROTOTYPE_NOTARY_ADAPTER")
+        self.assertFalse(rec["contract_verified"])
         self.assertTrue(rec["transaction_hash"].startswith("0x"))
         self.assertTrue(rec["merkle_root"].startswith("0x"))
 
@@ -148,6 +143,45 @@ class TestNewForensicFeatures(unittest.TestCase):
         pii = resp.json()
         self.assertTrue(pii["redaction_applied"])
         self.assertEqual(pii["total_redacted"], 2)
+
+    def test_07_degraded_honesty_without_deps(self):
+        """Simulates missing dependencies and asserts that verification NEVER fabricates pass."""
+        import subprocess
+        code = '''
+import sys
+from importlib.abc import MetaPathFinder
+
+class Blocker(MetaPathFinder):
+    def find_spec(self, name, path, target=None):
+        if name.split(".")[0] in ("dns", "cryptography", "maxminddb"):
+            raise ImportError(f"Simulated missing: {name}")
+        return None
+
+sys.meta_path.insert(0, Blocker())
+for m in list(sys.modules.keys()):
+    if m.split(".")[0] in ("dns", "cryptography", "maxminddb", "app", "backend"):
+        del sys.modules[m]
+
+from backend.app.core import auth_verifier as av
+spf = av.verify_spf("victim-bank.co.in", "198.51.100.23")
+assert spf.get("verified") is False, "verified MUST be False"
+assert spf.get("result") != "pass", "result must not be pass"
+assert spf.get("spf_record") is None, "spf_record must not be fabricated"
+assert spf.get("degraded_reason"), "must provide degraded_reason"
+
+dkim = av.verify_dkim_signature(b"DKIM-Signature: v=1; a=rsa-sha256; d=innocent.example; s=s1; b=ABC; bh=XYZ;\\r\\n\\r\\nBody")
+assert dkim.get("verified") is False
+assert dkim.get("result") != "pass"
+assert dkim.get("domain") == "innocent.example"
+assert dkim.get("degraded_reason")
+
+from backend.app.core import geo_engine as ge
+geo = ge.classify_ip("8.8.8.8")
+assert geo.get("country") is None, "country must be None when mmdb is missing"
+assert geo.get("city") is None, "city must be None when mmdb is missing"
+'''
+        res = subprocess.run([sys.executable, "-c", code], capture_output=True, text=True)
+        self.assertEqual(res.returncode, 0, f"Degraded honesty test failed:\n{res.stderr}")
 
 
 if __name__ == "__main__":

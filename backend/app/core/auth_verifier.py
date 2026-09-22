@@ -42,19 +42,28 @@ def verify_spf(envelope_from_domain: str, sender_ip: str, offline_fixture: bool 
     """
     Real SPF Verification (RFC 7208).
     Queries DNS for TXT records starting with v=spf1 and evaluates mechanisms.
+    If dependencies or DNS are missing, clearly reports verified=False with degraded_reason.
+    Never invents or fabricates a passing SPF record.
     """
     if offline_fixture or not DNS_AVAILABLE:
-        # High-fidelity offline fallback
+        degraded_msg = (
+            "dnspython not installed — no DNS query was made, so no SPF record was "
+            "actually retrieved. pip install dnspython to enable real verification."
+            if not DNS_AVAILABLE else
+            "offline fixture mode — result is a fixture demonstration, not a DNS verification"
+        )
         is_spoof = sender_ip == "101.99.94.155" or envelope_from_domain in ("gmail.com", "gov.in")
         return {
-            "result": "fail" if is_spoof else "pass",
-            "mechanism": "-all" if is_spoof else "ip4",
-            "spf_record": "v=spf1 redirect=_spf.google.com" if "gmail" in envelope_from_domain else "v=spf1 ip4:103.27.234.0/24 -all",
+            "result": "fail" if is_spoof else "temperror",
+            "mechanism": "-all" if is_spoof else None,
+            "spf_record": None,
             "matched_ip": sender_ip,
             "domain": envelope_from_domain,
-            "mode": "OFFLINE_CACHED_FIXTURE",
-            "verified": True,
-            "explanation": "Sender IP is not authorized in target domain DNS SPF policy" if is_spoof else "Sender IP matches authorized CIDR"
+            "mode": "OFFLINE_FIXTURE" if offline_fixture else "UNAVAILABLE_DEPS",
+            "verified": False,
+            "method": "OFFLINE_FIXTURE" if offline_fixture else "UNAVAILABLE_DEPS",
+            "degraded_reason": degraded_msg,
+            "explanation": degraded_msg
         }
 
     try:
@@ -75,7 +84,8 @@ def verify_spf(envelope_from_domain: str, sender_ip: str, offline_fixture: bool 
                 "detail": f"No SPF record published for {envelope_from_domain}",
                 "domain": envelope_from_domain,
                 "mode": "LIVE_DNS",
-                "verified": False
+                "verified": False,
+                "degraded_reason": f"Target domain {envelope_from_domain} has no v=spf1 DNS TXT record"
             }
 
         mechs = record.split()[1:]
@@ -137,7 +147,8 @@ def verify_spf(envelope_from_domain: str, sender_ip: str, offline_fixture: bool 
             "detail": f"DNS query failure: {str(e)}",
             "domain": envelope_from_domain,
             "mode": "FALLBACK_EVALUATION",
-            "verified": False
+            "verified": False,
+            "degraded_reason": f"DNS resolution failed: {str(e)}"
         }
 
 
@@ -146,6 +157,7 @@ def verify_dkim_signature(raw_eml_bytes: bytes, offline_fixture: bool = False) -
     Real DKIM Verification (RFC 6376).
     Extracts DKIM-Signature header, queries DNS selector public key,
     and performs RSA-SHA256 signature verification.
+    Parses header tags on ALL paths, but only claims verified=True when crypto actually succeeds.
     """
     raw_text = raw_eml_bytes.decode('utf-8', errors='ignore')
     match = re.search(r"DKIM-Signature:\s*([^\r\n]+(?:\r?\n[ \t]+[^\r\n]+)*)", raw_text, re.IGNORECASE)
@@ -180,18 +192,27 @@ def verify_dkim_signature(raw_eml_bytes: bytes, offline_fixture: bool = False) -
         }
 
     if offline_fixture or not DNS_AVAILABLE or not CRYPTO_AVAILABLE:
-        # Offline verified model
-        is_forged = "emkei.cz" in raw_text.lower() or "mail.gmail.com" in raw_text.lower()
+        reasons = []
+        if not DNS_AVAILABLE:
+            reasons.append("dnspython missing (cannot resolve selector DNS)")
+        if not CRYPTO_AVAILABLE:
+            reasons.append("cryptography missing (cannot verify RSA signature)")
+        if offline_fixture:
+            reasons.append("offline fixture mode enabled")
+        degraded_str = "; ".join(reasons)
+
         return {
-            "result": "fail" if is_forged else "pass",
+            "result": "temperror",
             "domain": d,
             "selector": s,
             "algorithm": a,
-            "body_hash_match": not is_forged,
-            "crypto_status": "SIGNATURE_HASH_MISMATCH" if is_forged else "RSA_VERIFIED",
-            "mode": "OFFLINE_CACHED_VERIFIER",
-            "verified": True,
-            "explanation": "Header modification or sender forgery detected in transit" if is_forged else "Cryptographic RSA signature matches public key selector"
+            "body_hash_match": None,
+            "crypto_status": "UNVERIFIED_DEGRADED",
+            "mode": "OFFLINE_FIXTURE" if offline_fixture else "UNAVAILABLE_DEPS",
+            "verified": False,
+            "method": "OFFLINE_FIXTURE" if offline_fixture else "UNAVAILABLE_DEPS",
+            "degraded_reason": degraded_str,
+            "explanation": f"DKIM tags parsed (d={d}, s={s}, a={a}), but cryptographic verification was not performed: {degraded_str}."
         }
 
     try:
@@ -208,7 +229,10 @@ def verify_dkim_signature(raw_eml_bytes: bytes, offline_fixture: bool = False) -
                 "result": "fail",
                 "reason": "PUBKEY_MISSING",
                 "detail": f"No public key p= found in DNS {selector_query}",
-                "verified": False
+                "domain": d,
+                "selector": s,
+                "verified": False,
+                "degraded_reason": f"No public key p= found in DNS {selector_query}"
             }
 
         pub_b64 = p_match.group(1)
@@ -236,7 +260,8 @@ def verify_dkim_signature(raw_eml_bytes: bytes, offline_fixture: bool = False) -
             "domain": d,
             "selector": s,
             "mode": "LIVE_DNS_EVALUATION",
-            "verified": False
+            "verified": False,
+            "degraded_reason": f"DNS/Crypto evaluation error: {str(e)}"
         }
 
 
@@ -244,18 +269,36 @@ def verify_dmarc_alignment(from_domain: str, spf_res: Dict[str, Any], dkim_res: 
     """
     Real RFC 7489 DMARC Alignment Verification.
     Validates domain alignment between header From: and authenticated SPF/DKIM domains.
+    If underlying SPF and DKIM were degraded/unverified, alignment explicitly reports unverified status.
     """
     from_org = _extract_org_domain(from_domain)
     spf_dom = _extract_org_domain(spf_res.get("domain", ""))
     dkim_dom = _extract_org_domain(dkim_res.get("domain", ""))
 
-    spf_pass = spf_res.get("result") == "pass"
-    dkim_pass = dkim_res.get("result") == "pass"
+    spf_verified = bool(spf_res.get("verified"))
+    dkim_verified = bool(dkim_res.get("verified"))
+
+    spf_pass = spf_res.get("result") == "pass" and spf_verified
+    dkim_pass = dkim_res.get("result") == "pass" and dkim_verified
 
     spf_aligned = spf_pass and (from_org == spf_dom)
     dkim_aligned = dkim_pass and (from_org == dkim_dom)
 
     alignment_pass = spf_aligned or dkim_aligned
+    both_degraded = (not spf_verified) and (not dkim_verified)
+
+    if both_degraded:
+        return {
+            "status": "UNVERIFIED",
+            "spf_alignment": "UNVERIFIED (SPF degraded)",
+            "dkim_alignment": "UNVERIFIED (DKIM degraded)",
+            "from_domain": from_domain,
+            "from_org_domain": from_org,
+            "evaluated_policy": "UNAVAILABLE_DEPS",
+            "verified": False,
+            "degraded_reason": "Neither SPF nor DKIM could be cryptographically verified via DNS",
+            "explanation": "DMARC alignment cannot be asserted because underlying SPF and DKIM evaluations are in degraded unverified mode."
+        }
 
     return {
         "status": "PASS" if alignment_pass else "FAIL",
@@ -263,7 +306,8 @@ def verify_dmarc_alignment(from_domain: str, spf_res: Dict[str, Any], dkim_res: 
         "dkim_alignment": "ALIGNED" if dkim_aligned else ("MISALIGNED" if dkim_pass else "FAILED_DKIM"),
         "from_domain": from_domain,
         "from_org_domain": from_org,
-        "evaluated_policy": "BEST_EFFORT_FALLBACK",
+        "evaluated_policy": "LIVE_RFC7489_EVALUATION",
+        "verified": True,
         "heurisic_details": {
             "dns_reject_published": False,
             "envelope_verified": spf_pass,

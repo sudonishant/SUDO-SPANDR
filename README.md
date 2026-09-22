@@ -3,7 +3,7 @@
 **Smart India Hackathon (SIH) 2026 | Problem Statement #26106**
 
 🌐 **Live Deployments:** [sudospandrsce.vercel.app](https://sudospandrsce.vercel.app) · [cybersquadsce.vercel.app](https://cybersquadsce.vercel.app)  
-⛓️ **Smart Contract:** [Polygon Amoy Testnet Notary (0x71C3...26106)](https://amoy.polygonscan.com/address/0x71C3b7D19623e1F854890C36688B73eF7d4026106)  
+⛓️ **Evidence Notary Adapter:** [contracts/EvidenceNotary.sol](contracts/EvidenceNotary.sol) · SHA-256 Merkle Proofs (ISO/IEC 27037)  
 📜 **Demo Kit:** [demo/DEMO_SCRIPT_4MIN.md](demo/DEMO_SCRIPT_4MIN.md) · [demo/JUDGE_QA.md](demo/JUDGE_QA.md)
 
 ![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)
@@ -169,9 +169,9 @@ To make digital evidence admissible in Indian courts (under Section 65B of the I
 
 1. **Cryptographic SHA-256 Evidence Hashing**:
    - The entire raw payload is hashed at the instant of ingestion to generate an immutable SHA-256 fingerprint.
-2. **Consortium Blockchain Notarization Ledger**:
-   - Anchored to the National Cyber Crime Consortium Ledger on smart contract `0x71C3b7D19623e1F854890C36688B73eF7d4026106`.
-   - Records block height (`#19,846,630`), transaction hash, and Merkle root proof, guaranteeing **Zero Hash Drift**.
+2. **Cryptographic Merkle Root Evidence Ledger**:
+   - Anchors raw evidence digests into a deterministic SHA-256 Merkle Tree root, guaranteeing **Zero Hash Drift**.
+   - Blockchain notary smart contract (`contracts/EvidenceNotary.sol`) is prepared for EVM/Polygon Amoy deployment; local verifiable Merkle proof generation is active by default.
 3. **Section 65B Admissibility Certificate**:
    - Generates a court-ready forensic certificate verifying lawful extraction, non-tampering, hash matching, and tool validation under ISO/IEC 27037 digital forensic standards.
 

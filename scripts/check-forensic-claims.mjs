@@ -12,6 +12,8 @@ const activeFiles = [
   'backend/app/core/parser_engine.py',
   'backend/app/core/openrouter_client.py',
   'backend/app/core/threat_rules.py',
+  'backend/app/static_index.py',
+  'index.html',
   'api/v1/ai-review.js',
   'api/v1/ip-context.js',
 ];

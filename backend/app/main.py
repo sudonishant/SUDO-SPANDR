@@ -34,11 +34,13 @@ from app.core.supabase_engine import sync_to_supabase, SUPABASE_SCHEMA_SQL, get_
 from app.core.web_sandbox_engine import inspect_url_dom_and_headers
 from app.static_index import HTML_CONTENT
 try:
-    from app.core.auth_verifier import verify_spf, verify_dkim_signature, verify_dmarc_alignment
+    from app.core.auth_verifier import verify_spf, verify_dkim_signature, verify_dmarc_alignment, DNS_AVAILABLE, CRYPTO_AVAILABLE
+    from app.core.geo_engine import classify_ip, _get_maxmind_readers
     from app.core.mitre_engine import analyze_mitre_techniques, generate_mitre_navigator_layer
     from app.core.indic_nlp_engine import scan_indic_threats, redact_dpdp_pii
 except ImportError:
-    from backend.app.core.auth_verifier import verify_spf, verify_dkim_signature, verify_dmarc_alignment
+    from backend.app.core.auth_verifier import verify_spf, verify_dkim_signature, verify_dmarc_alignment, DNS_AVAILABLE, CRYPTO_AVAILABLE
+    from backend.app.core.geo_engine import classify_ip, _get_maxmind_readers
     from backend.app.core.mitre_engine import analyze_mitre_techniques, generate_mitre_navigator_layer
     from backend.app.core.indic_nlp_engine import scan_indic_threats, redact_dpdp_pii
 
@@ -572,7 +574,33 @@ def read_root():
 
 @app.get("/api/v1/health")
 def api_health() -> Dict[str, Any]:
-    return {"status": "online", "system": settings.PROJECT_NAME, "problem_statement": settings.PROBLEM_STATEMENT, "analysis_mode": "truthful deterministic triage", "fake_results": False}
+    city_reader, asn_reader = _get_maxmind_readers()
+    capabilities = {
+        "spf": {
+            "real": DNS_AVAILABLE,
+            "provider": "dnspython (RFC 7208 live DNS TXT mechanism evaluator)" if DNS_AVAILABLE else None,
+            "degraded_reason": None if DNS_AVAILABLE else "dnspython missing — SPF verification degraded"
+        },
+        "dkim": {
+            "real": bool(DNS_AVAILABLE and CRYPTO_AVAILABLE),
+            "provider": "dnspython + cryptography (RFC 6376 live RSA-SHA256 signature verifier)" if (DNS_AVAILABLE and CRYPTO_AVAILABLE) else None,
+            "degraded_reason": None if (DNS_AVAILABLE and CRYPTO_AVAILABLE) else "cryptography or dnspython missing — DKIM verification degraded"
+        },
+        "geoip": {
+            "real": city_reader is not None,
+            "provider": "MaxMind GeoLite2-City local MMDB reader" if city_reader is not None else None,
+            "degraded_reason": None if city_reader is not None else "GeoLite2-City.mmdb not found at data/GeoLite2-City.mmdb — refusing to invent fake cities/countries"
+        }
+    }
+    all_real = all(c["real"] for c in capabilities.values())
+    return {
+        "status": "online" if all_real else "degraded",
+        "system": settings.PROJECT_NAME,
+        "problem_statement": settings.PROBLEM_STATEMENT,
+        "analysis_mode": "truthful deterministic triage",
+        "verification_capability": capabilities,
+        "fake_results": False
+    }
 
 
 @app.post(f"{settings.API_V1_STR}/analyze-raw")
