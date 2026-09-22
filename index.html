@@ -7329,7 +7329,7 @@ Integrity Seal: Certified Immutable & Court Admissible`;
     });
 
     // Auto-load sample preset if passed in URL query param or hash (e.g. ?sample=emkei, ?auto=graph, ?auto=attach, ?auto=text)
-    async     async function checkBackendHealth() {
+    async function checkBackendHealth() {
       try {
         const res = await fetch('/api/v1/health');
         if (!res.ok) return;
