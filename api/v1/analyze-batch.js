@@ -1,4 +1,4 @@
-export default function handler(req, res) {
+export default async function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
   res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
@@ -8,35 +8,42 @@ export default function handler(req, res) {
     return res.status(200).end();
   }
 
-  return res.status(200).json({
-    status: 'BATCH_TRIAGE_COMPLETED',
-    total_processed: 5,
-    campaign_clusters: [
-      {
-        campaign_id: 'CAMP-EMKEI-PRAGUE-26106',
-        attribution_name: 'Threat Actor Cluster: APT-SPOOF-CZ',
-        incident_count: 3,
-        shared_indicators: {
-          origin_subnet: '101.99.94.0/24',
-          sender_mailer: 'mailer.emkei.cz',
-          shared_attachment_sha256: '92b11a7c88210fe291b9442018247190',
-          shared_upi_handle: 'target-support@okhdfcbank'
-        },
-        confidence: 'HIGH (94%)',
-        recommended_action: 'Deploy edge firewall rule blocking 101.99.94.0/24 and sinkhole domain.'
-      },
-      {
-        campaign_id: 'CAMP-CRED-HARVEST-26107',
-        attribution_name: 'Credential Harvesting Infrastructure',
-        incident_count: 2,
-        shared_indicators: {
-          payload_domain: 'google-security-verify.cz',
-          asn: 'AS28753 (LeaseWeb Europe)'
-        },
-        confidence: 'MODERATE (78%)',
-        recommended_action: 'Submit domain to Google Safe Browsing and CERT-In.'
-      }
-    ],
+  if (req.method !== 'POST') {
+    return res.status(405).json({
+      error: 'method_not_allowed',
+      detail: 'POST required with JSON body containing emails array or EML content array.'
+    });
+  }
+
+  // If FastAPI backend is deployed, proxy the batch request
+  const backendOrigin = process.env.BACKEND_ORIGIN;
+  if (backendOrigin) {
+    try {
+      const upstream = await fetch(`${backendOrigin}/api/v1/analyze-batch`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(req.body)
+      });
+      const data = await upstream.json();
+      return res.status(upstream.status).json(data);
+    } catch (err) {
+      return res.status(502).json({
+        error: 'backend_unreachable',
+        detail: `FastAPI backend at ${backendOrigin} did not respond: ${err.message}`,
+        fallback: 'Submit individual emails via the main UI for client-side triage.'
+      });
+    }
+  }
+
+  // No backend configured — honest degraded response
+  const emails = req.body?.emails || req.body?.eml_contents || [];
+  return res.status(503).json({
+    error: 'backend_not_configured',
+    status: 'BATCH_ANALYSIS_UNAVAILABLE',
+    detail: 'Batch campaign clustering and cross-correlation require the Python FastAPI backend with full NLP, DKIM/SPF verification, and GeoIP engines. Edge serverless functions cannot perform real batch analysis.',
+    submitted_count: Array.isArray(emails) ? emails.length : 0,
+    fallback_available: 'client_side_parser',
+    note: 'Deploy the FastAPI backend (see render.yaml) and set BACKEND_ORIGIN env var to enable real batch processing.',
     timestamp: new Date().toISOString()
   });
 };
