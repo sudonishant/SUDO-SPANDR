@@ -8,6 +8,7 @@ export default function handler(req, res) {
     return res.status(200).end();
   }
 
+  const startMs = Date.now();
   const raw = typeof req.body === 'string' ? req.body : JSON.stringify(req.body || {});
   const lower = raw.toLowerCase();
 
@@ -28,15 +29,18 @@ export default function handler(req, res) {
     smtpReply = '250 2.0.0 Message accepted with [SUSPICIOUS SPAM] subject tag';
   }
 
+  const elapsedMs = Date.now() - startMs;
+
   return res.status(200).json({
     engine: 'SUDO SPANDR Postfix/Sendmail Milter Daemon',
+    mode: 'edge_heuristic',
     threat_score: score,
     policy_action: policy,
     postfix_code: postfixCode,
     smtp_reply: smtpReply,
     quarantine_mailbox: policy === 'REJECT' ? 'quarantine@security.gov.in' : null,
-    evaluation_latency_ms: 18.4,
-    statutory_admissibility: 'Sec 65B IEA / Sec 63 BSA Certified',
+    evaluation_latency_ms: elapsedMs,
+    note: 'Edge-only keyword heuristic scoring. Full RFC 6376 DKIM + RFC 7208 SPF + DMARC alignment verification requires Python FastAPI backend.',
     timestamp: new Date().toISOString()
   });
 };

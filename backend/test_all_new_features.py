@@ -4,8 +4,11 @@ import sys
 import unittest
 
 # Ensure both workspace root and backend directory are in sys.path
-sys.path.insert(0, "/home/nee/Documents/sih email/cybersquad-web-master/backend")
-sys.path.insert(0, "/home/nee/Documents/sih email/cybersquad-web-master")
+from pathlib import Path
+_backend_dir = str(Path(__file__).resolve().parent)
+_project_root = str(Path(__file__).resolve().parent.parent)
+sys.path.insert(0, _backend_dir)
+sys.path.insert(0, _project_root)
 
 from fastapi.testclient import TestClient
 

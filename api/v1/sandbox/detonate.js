@@ -1,7 +1,7 @@
 export default async function handler(req, res) {
-  res.setHeader('Access-Control-Allow-Credentials', true);
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
   res.setHeader('Access-Control-Allow-Origin', '*');
-  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,PATCH,DELETE,POST,PUT');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,OPTIONS,POST');
   res.setHeader('Access-Control-Allow-Headers', 'X-CSRF-Token, X-Requested-With, Accept, Accept-Version, Content-Length, Content-MD5, Content-Type, Date, X-Api-Version');
 
   if (req.method === 'OPTIONS') {
@@ -17,7 +17,12 @@ export default async function handler(req, res) {
   }
 
   url = url.trim();
-  if (!url) url = 'https://example.com';
+  if (!url) {
+    return res.status(400).json({
+      error: 'missing_url',
+      detail: 'Provide a URL to detonate in the sandbox.'
+    });
+  }
 
   const isSearch = !url.startsWith('http://') && !url.startsWith('https://') && (!url.includes('.') || url.includes(' '));
   if (isSearch) {
@@ -33,25 +38,38 @@ export default async function handler(req, res) {
     hostname = url;
   }
 
-  const isPhishKw = /login|signin|auth|password|bank|verify|secure|update|account/i.test(url);
-  const riskScore = isPhishKw ? 78.0 : 25.0;
+  // Edge-only heuristic: URL keyword pattern matching (no real HTTP fetch or DNS)
+  const phishPatterns = /login|signin|auth|password|bank|verify|secure|update|account|credential|paypal|microsoft|apple/i;
+  const suspiciousPatterns = /bit\.ly|tinyurl|goo\.gl|rb\.gy|t\.co|is\.gd|shorturl/i;
+  const isPhishKw = phishPatterns.test(url);
+  const isSuspiciousShortener = suspiciousPatterns.test(hostname);
+
+  let riskScore = 15;
+  const flags = [];
+  if (isPhishKw) { riskScore += 45; flags.push('URL contains credential-harvesting keywords'); }
+  if (isSuspiciousShortener) { riskScore += 30; flags.push('URL uses link shortener (obfuscation)'); }
+  if (url.includes('@')) { riskScore += 20; flags.push('URL contains @ symbol (redirect trick)'); }
+  if ((url.match(/\./g) || []).length > 4) { riskScore += 15; flags.push('Excessive subdomains'); }
+
+  riskScore = Math.min(riskScore, 100);
 
   return res.status(200).json({
-    status: "DETONATED_SUCCESSFULLY",
+    status: 'EDGE_HEURISTIC_ANALYSIS',
+    mode: 'URL_PATTERN_ONLY',
     url: url,
     hostname: hostname,
-    resolved_ip: "104.21.48.204 (Cloudflare/Edge)",
-    http_status: 200,
-    page_title: `In-App Detonator: ${hostname}`,
-    threat_verdict: isPhishKw ? "🚨 HIGH RISK: Deceptive Credential Harvesting Pattern" : "SAFE IN-APP DETONATION RUNTIME",
+    resolved_ip: null,
+    dns_resolved: false,
+    http_fetched: false,
     risk_score: riskScore,
-    password_inputs_count: isPhishKw ? 1 : 0,
-    forms_count: isPhishKw ? 1 : 0,
-    security_headers: {
-      strict_transport_security: "max-age=31536000; includeSubDomains",
-      content_security_policy: "STRICT_SANDBOX_ENFORCED",
-      x_frame_options: "SAMEORIGIN (Safe Proxy)"
-    },
-    sanitized_html: `<h3>Sandboxed: ${url}</h3>`
+    heuristic_flags: flags,
+    threat_verdict: riskScore >= 60
+      ? '⚠️ SUSPICIOUS: URL pattern matches credential-harvesting indicators'
+      : riskScore >= 30
+        ? '🟡 MODERATE: Some suspicious URL characteristics detected'
+        : '🟢 LOW RISK: No obvious phishing URL patterns detected',
+    note: 'This is edge-only URL pattern analysis. No real HTTP fetch, DNS resolution, DOM inspection, or screenshot capture was performed. For full air-gapped Chromium detonation with DOM analysis, form detection, and screenshot capture, deploy the Docker sandbox container (see docker-compose.yml).',
+    preview_available: `/api/v1/sandbox/preview-frame?url=${encodeURIComponent(url)}`,
+    timestamp: new Date().toISOString()
   });
 }
