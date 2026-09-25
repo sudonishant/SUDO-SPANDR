@@ -8,7 +8,8 @@ pragma solidity ^0.8.20;
  *      under Section 65B Indian Evidence Act / Bharatiya Sakshya Adhiniyam (BSA) 2023.
  */
 contract EvidenceNotary {
-    address public immutable authority;
+    address public authority;
+    address public pendingAuthority;
 
     struct EvidenceRecord {
         bytes32 evidenceHash;
@@ -29,12 +30,16 @@ contract EvidenceNotary {
         uint256 timestamp,
         address indexed notarizedBy
     );
+    event AuthorityTransferInitiated(address indexed currentAuthority, address indexed pendingAuthority);
+    event AuthorityTransferred(address indexed previousAuthority, address indexed newAuthority);
 
     error EvidenceAlreadyRegistered(bytes32 evidenceHash);
     error InvalidEvidenceHash();
+    error UnauthorizedCaller();
+    error ZeroAddressNotAllowed();
 
     modifier onlyAuthority() {
-        require(msg.sender == authority, "Not authorized notary authority");
+        if (msg.sender != authority) revert UnauthorizedCaller();
         _;
     }
 
@@ -43,7 +48,28 @@ contract EvidenceNotary {
     }
 
     /**
+     * @notice Initiates two-step authority transfer.
+     */
+    function transferAuthority(address newAuthority) external onlyAuthority {
+        if (newAuthority == address(0)) revert ZeroAddressNotAllowed();
+        pendingAuthority = newAuthority;
+        emit AuthorityTransferInitiated(authority, newAuthority);
+    }
+
+    /**
+     * @notice Completes two-step authority transfer.
+     */
+    function acceptAuthority() external {
+        if (msg.sender != pendingAuthority) revert UnauthorizedCaller();
+        address previous = authority;
+        authority = pendingAuthority;
+        pendingAuthority = address(0);
+        emit AuthorityTransferred(previous, authority);
+    }
+
+    /**
      * @notice Registers a forensic evidence hash permanently on-chain.
+     * @dev Restricted strictly to the designated authority/investigator wallet.
      * @param evidenceHash SHA-256 digest of original EML / MSG file payload.
      * @param caseId Unique forensic case identifier (e.g. CS-26106-XXXX).
      * @param originIp Resolved originating SMTP relay IP address.
@@ -54,7 +80,7 @@ contract EvidenceNotary {
         string calldata caseId,
         string calldata originIp,
         uint8 threatScore
-    ) external returns (bool) {
+    ) external onlyAuthority returns (bool) {
         if (evidenceHash == bytes32(0)) revert InvalidEvidenceHash();
         if (records[evidenceHash].timestamp != 0) revert EvidenceAlreadyRegistered(evidenceHash);
 

@@ -31,7 +31,7 @@ from app.core.nlp_forensic_engine import analyze_body_paragraphs
 from app.core.openrouter_client import request_ai_second_opinion
 from app.core.parser_engine import parse_eml_stream
 from app.core.supabase_engine import sync_to_supabase, SUPABASE_SCHEMA_SQL, get_supabase_config
-from app.core.web_sandbox_engine import inspect_url_dom_and_headers
+from app.core.web_sandbox_engine import inspect_url_dom_and_headers, is_safe_public_destination
 from app.static_index import HTML_CONTENT
 try:
     from app.core.auth_verifier import verify_spf, verify_dkim_signature, verify_dmarc_alignment, DNS_AVAILABLE, CRYPTO_AVAILABLE
@@ -76,11 +76,11 @@ class AIReviewRequest(BaseModel):
 
 
 class SandboxNavigateRequest(BaseModel):
-    url: str = Field(default="https://duckduckgo.com")
+    url: str = Field(default="https://duckduckgo.com", max_length=2048)
 
 
 class ClipboardRequest(BaseModel):
-    text: str = Field(default="")
+    text: str = Field(default="", max_length=50_000)
 
 
 def _url_items(text: str) -> List[Dict[str, Any]]:
@@ -772,13 +772,27 @@ async def sandbox_navigate(req: SandboxNavigateRequest) -> Dict[str, Any]:
         target = "https://duckduckgo.com"
     if not target.startswith("http://") and not target.startswith("https://"):
         target = f"https://{target}"
-    
+
+    # Enforce air-gap SSRF defense: block private networks (RFC 1918), loopback, cloud metadata
+    is_safe, reason, resolved_ip = is_safe_public_destination(target)
+    if not is_safe:
+        raise HTTPException(
+            status_code=400,
+            detail=f"Air-gap egress violation: {reason}. Detonation sandbox blocks RFC 1918, loopback, and metadata destinations."
+        )
+
     try:
         subprocess.Popen(
-            ["chromium", "--no-sandbox", "--user-data-dir=/tmp/vnc_chromium", "--disable-gpu", "--disable-dev-shm-usage", "--window-size=1280,720", "--window-position=0,0", "--start-maximized", target],
+            ["chromium", "--user-data-dir=/tmp/vnc_chromium", "--disable-gpu", "--disable-dev-shm-usage", "--window-size=1280,720", "--window-position=0,0", "--start-maximized", target],
             env={**dict(os.environ), "DISPLAY": ":99"}
         )
-        return {"status": "success", "navigated_url": target, "display": ":99"}
+        return {
+            "status": "success",
+            "navigated_url": target,
+            "resolved_ip": resolved_ip,
+            "air_gap_policy": "STRICT_PUBLIC_DESTINATION_VERIFIED",
+            "display": ":99"
+        }
     except Exception as e:
         return {"status": "error", "message": str(e), "navigated_url": target}
 
