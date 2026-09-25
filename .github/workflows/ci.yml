@@ -49,3 +49,10 @@ jobs:
         run: |
           npm ci || npm install
           npm run build
+
+      - name: Verify Build Artifacts
+        run: |
+          test -f dist/index.html
+          test -d dist/assets
+          test -d dist/api
+          echo "Production distribution verified successfully."

@@ -115,37 +115,84 @@ MERGE (evidence)-[:SUBMITTED_AS_PROOF_OF]->(campaign)
     }
 
 
-def _async_neo4j_sync(query: str, parameters: Dict[str, Any]):
-    """Executes Neo4j ingestion in a fast background worker using parameterized execution."""
+import logging
+
+logger = logging.getLogger("sudo_spandr.neo4j")
+
+# Global thread-safe sync state registry for auditability
+_SYNC_REGISTRY: Dict[str, Dict[str, Any]] = {}
+_REGISTRY_LOCK = threading.Lock()
+
+
+def get_sync_status(case_id: str) -> Optional[Dict[str, Any]]:
+    """Returns current asynchronous sync status for an investigated case."""
+    with _REGISTRY_LOCK:
+        return _SYNC_REGISTRY.get(case_id)
+
+
+def _async_neo4j_sync(case_id: str, query: str, parameters: Dict[str, Any]):
+    """Executes Neo4j ingestion in a background worker with explicit logging and status tracking."""
     if not (NEO4J_URI and NEO4J_USER and NEO4J_PASSWORD):
+        with _REGISTRY_LOCK:
+            _SYNC_REGISTRY[case_id] = {
+                "status": "CONFIG_PENDING",
+                "message": "Neo4j Aura credentials not configured in environment.",
+                "timestamp": time.time()
+            }
         return
+
     try:
         from neo4j import GraphDatabase
         driver = GraphDatabase.driver(
             NEO4J_URI,
             auth=(NEO4J_USER, NEO4J_PASSWORD),
-            connection_timeout=3.0,
-            max_connection_lifetime=10.0
+            connection_timeout=5.0,
+            max_connection_lifetime=15.0
         )
         with driver.session() as session:
             session.run(query, parameters)
         driver.close()
-    except Exception:
-        pass
+        with _REGISTRY_LOCK:
+            _SYNC_REGISTRY[case_id] = {
+                "status": "SYNC_COMPLETED",
+                "message": "Graph nodes successfully projected to Neo4j instance.",
+                "instance_id": NEO4J_USER,
+                "timestamp": time.time()
+            }
+        logger.info(f"Neo4j sync completed successfully for case {case_id}")
+    except Exception as exc:
+        logger.warning(f"Neo4j background sync failed for case {case_id}: {exc}")
+        with _REGISTRY_LOCK:
+            _SYNC_REGISTRY[case_id] = {
+                "status": "SYNC_FAILED",
+                "error": str(exc),
+                "timestamp": time.time()
+            }
 
 
 def sync_to_neo4j_instance(case_data: Dict[str, Any]) -> Dict[str, Any]:
     cypher_bundle = generate_cypher_statements(case_data)
+    case_id = case_data.get("case_id", "ANON_CASE")
+
     if cypher_bundle.get("has_credentials"):
+        with _REGISTRY_LOCK:
+            _SYNC_REGISTRY[case_id] = {
+                "status": "SYNC_QUEUED",
+                "message": "Asynchronous sync scheduled for execution.",
+                "timestamp": time.time()
+            }
+
         # Launch parameterized background sync thread
         thread = threading.Thread(
             target=_async_neo4j_sync,
-            args=(cypher_bundle["query_template"], cypher_bundle["parameters"]),
+            args=(case_id, cypher_bundle["query_template"], cypher_bundle["parameters"]),
             daemon=True
         )
         thread.start()
-        cypher_bundle["neo4j_status"] = "LIVE_SYNCED_TO_NEO4J_AURA"
+        cypher_bundle["neo4j_status"] = "SYNC_QUEUED"
+        cypher_bundle["job_id"] = f"job-neo4j-{case_id}"
         cypher_bundle["instance_id"] = NEO4J_USER
+        cypher_bundle["note"] = "Background graph projection queued; real driver completion is recorded in async registry."
     else:
         cypher_bundle["neo4j_status"] = "CONFIG_PENDING"
         cypher_bundle["note"] = "Neo4j credentials not configured in environment; running in safe local mode."

@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite --config vite.config.mjs",
-    "build": "mkdir -p dist && cp -r index.html assets api dist/ 2>/dev/null || true",
+    "build": "mkdir -p dist && cp -r index.html assets api dist/ && test -f dist/index.html",
     "lint": "node scripts/check-forensic-claims.mjs",
     "preview": "vite preview",
     "deploy": "npx wrangler pages deploy dist"

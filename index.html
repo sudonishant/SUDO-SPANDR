@@ -1475,10 +1475,10 @@
 
           <div class="key-val" style="align-items: flex-start; padding: 5px 0;">
             <div>
-              <span style="font-weight: 600; color: #cbd5e1; font-size: 11px;">Evidence Entry # (Block Height)</span>
-              <div style="font-size: 9px; color: var(--text-muted);">क्रिप्टोग्राफिक लेजर में सबूत क्रम संख्या (एंट्री नंबर)</div>
+              <span style="font-weight: 600; color: #cbd5e1; font-size: 11px;">Evidence Custody Status</span>
+              <div style="font-size: 9px; color: var(--text-muted);">क्रिप्टोग्राफिक साक्ष्य स्थिति (Merkle Notary)</div>
             </div>
-            <strong id="bc-block-num" class="mono" style="color: #34d399; font-size: 11px;">#19,846,630</strong>
+            <strong id="bc-block-num" class="mono" style="color: #34d399; font-size: 11px;">Local Pre-Anchor</strong>
           </div>
 
           <div class="key-val" style="align-items: flex-start; padding: 5px 0;">
@@ -1494,7 +1494,7 @@
               <span style="font-weight: 600; color: #cbd5e1; font-size: 11px;">Master Integrity Proof (Merkle Root)</span>
               <div style="font-size: 9px; color: var(--text-muted);">0% छेड़छाड़ गारंटी का गणितीय प्रमाण (हैश रूट)</div>
             </div>
-            <strong id="bc-merkle-root" class="mono" style="font-size: 9px; color: #c084fc; text-align: right;">0x8439f3...ffee</strong>
+            <strong id="bc-merkle-root" class="mono" style="font-size: 9px; color: #c084fc; text-align: right;">0xMerkleRoot...</strong>
           </div>
 
           <div class="key-val" style="align-items: flex-start; padding: 5px 0;">
@@ -1502,7 +1502,7 @@
               <span style="font-weight: 600; color: #cbd5e1; font-size: 11px;">Smart Contract (ऑटो-कस्टडी)</span>
               <div style="font-size: 9px; color: var(--text-muted);">Sec-65B स्वचालित कस्टडी सत्यापन अनुबंध</div>
             </div>
-            <strong class="mono" style="font-size: 9px; color: #94a3b8; text-align: right;">0x71C3...26106</strong>
+            <strong class="mono" style="font-size: 9px; color: #94a3b8; text-align: right;">EvidenceNotary.sol</strong>
           </div>
 
           <div style="margin-top: 8px; display: flex; justify-content: space-between; align-items: center; background: rgba(16, 185, 129, 0.08); padding: 6px 10px; border-radius: 6px; border: 1px solid rgba(16, 185, 129, 0.2);">
@@ -3284,10 +3284,10 @@
           preservation: 'Cryptographically anchored via Consortium SHA-256 Merkle proof.'
         },
         blockchain_notary: {
-          status: 'SEALED_AND_NOTARIZED_ON_CHAIN',
-          ledger_network: 'Polygon Amoy / Local Merkle Notary (ISO 27037)',
-          smart_contract: '0x71C3b7D19623e1F854890C36688B73eF7d4026106',
-          block_height: '#19,846,630',
+          status: 'PROTOTYPE_MERKLE_PROOF_GENERATED',
+          ledger_network: 'Local Merkle Notary / Polygon Amoy Ready (Chain 80002)',
+          smart_contract: 'contracts/EvidenceNotary.sol (Amoy Ready)',
+          block_height: 'Local Pre-Anchor',
           transaction_hash: txHash,
           merkle_root: merkleRoot
         },
@@ -4006,7 +4006,7 @@
 
       // Blockchain & DB Population
       const bc = data.blockchain_notary || {};
-      document.getElementById('bc-block-num').innerText = '#' + (bc.block_number || '19,846,630');
+      document.getElementById('bc-block-num').innerText = bc.block_number ? ('#' + bc.block_number) : (bc.block_height || 'Local Pre-Anchor');
       document.getElementById('bc-tx-hash').innerText = bc.transaction_hash || '0x7f8a9...';
       document.getElementById('bc-merkle-root').innerText = bc.merkle_root || '0x4a7c...';
 
@@ -4039,7 +4039,7 @@
       document.getElementById('dossier-origin').innerText = originStr;
       document.getElementById('dossier-campaign').innerText = data.graph_topology?.campaign_id || "CAMP-SUSPECT-ALPHA";
       
-      document.getElementById('dossier-bc-block').innerText = '#' + (bc.block_number || '19,846,630');
+      document.getElementById('dossier-bc-block').innerText = bc.block_number ? ('#' + bc.block_number) : (bc.block_height || 'Local Pre-Anchor');
       document.getElementById('dossier-bc-tx').innerText = bc.transaction_hash || '0x7f8a9...';
       document.getElementById('dossier-bc-merkle').innerText = bc.merkle_root || '0x4a7c...';
 

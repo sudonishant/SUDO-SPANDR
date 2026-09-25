@@ -61,6 +61,9 @@ const forbidden = [
   // Additional anti-fabrication markers
   'SEALED_ON_CHAIN',
   '0x88439F3eC7160330D1671E0a03e76d0eFC0fFEE1',
+  '0x71C3b7D19623e1F854890C36688B73eF7d4026106',
+  '0x8439f3ec7160330d1671e0a03e76d0efc0ffee',
+  'LIVE_SYNCED_TO_NEO4J_AURA',
   'Section 65B(4) Certified',
   'APT-SPOOF-CZ',
   'BATCH_TRIAGE_COMPLETED',
