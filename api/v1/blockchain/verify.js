@@ -1,3 +1,5 @@
+import crypto from 'crypto';
+
 export default function handler(req, res) {
   res.setHeader('Content-Type', 'application/json');
   res.setHeader('Access-Control-Allow-Origin', '*');
@@ -11,7 +13,6 @@ export default function handler(req, res) {
   const txHash = req.query.tx_hash || req.query.hash || (req.url.split('/').pop().split('?')[0]) || 'none';
 
   // Generate a deterministic local Merkle proof from the tx hash
-  const crypto = require('crypto');
   const localHash = crypto.createHash('sha256').update(txHash + ':sudospandr:sih26106').digest('hex');
 
   return res.status(200).json({
