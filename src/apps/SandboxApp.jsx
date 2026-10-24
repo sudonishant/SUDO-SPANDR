@@ -1,12 +1,13 @@
 import React from 'react';
 import {
-  Activity, AlertTriangle, CheckCircle2, Cpu, Globe, Loader2, Lock, Power, RotateCw,
+  Activity, AlertTriangle, CheckCircle2, Cpu, Crosshair, Globe, Loader2, Lock, Power, RotateCw,
   ShieldAlert, TerminalSquare, Wifi, WifiOff, X,
 } from 'lucide-react';
 import { staticUrlChecks } from '../lib/urlChecks';
 
 const GUEST_APPS = {
   browser: { title: 'Chromium · air-gapped', short: 'Chromium', icon: Globe, x: 33, y: 5, w: 61, h: 63 },
+  lab: { title: 'CyberLab · analysis toolbox', short: 'CyberLab', icon: Crosshair, x: 2, y: 5, w: 48, h: 43 },
   monitor: { title: 'System Monitor', short: 'Monitor', icon: Activity, x: 57, y: 20, w: 40, h: 52 },
   terminal: { title: 'guest@spandr-sbx:~', short: 'Terminal', icon: TerminalSquare, x: 2, y: 50, w: 47, h: 43 },
 };
@@ -87,15 +88,15 @@ export default function SandboxApp() {
   const [booted, setBooted] = React.useState(false);
   const [openApps, setOpenApps] = React.useState(() => (
     window.innerWidth < 780
-      ? { browser: true, monitor: false, terminal: false }
-      : { browser: true, monitor: false, terminal: true }
+      ? { browser: true, monitor: false, terminal: false, lab: false }
+      : { browser: true, monitor: false, terminal: true, lab: false }
   ));
   const [pos, setPos] = React.useState(() => {
     const initial = {};
     Object.entries(GUEST_APPS).forEach(([id, app]) => { initial[id] = { x: app.x, y: app.y }; });
     return initial;
   });
-  const [zOrder, setZOrder] = React.useState({ browser: 2, terminal: 3, monitor: 1 });
+  const [zOrder, setZOrder] = React.useState({ browser: 2, terminal: 3, monitor: 1, lab: 0 });
   const [activeGuest, setActiveGuest] = React.useState('browser');
   const [startOpen, setStartOpen] = React.useState(false);
   const [termLines, setTermLines] = React.useState([
@@ -103,6 +104,16 @@ export default function SandboxApp() {
   ]);
   const [termValue, setTermValue] = React.useState('');
   const termInput = React.useRef(null);
+
+  /* cyberlab toolbox state */
+  const [labTab, setLabTab] = React.useState('scan');
+  const [labInput, setLabInput] = React.useState('');
+  const [labMode, setLabMode] = React.useState('quick');
+  const [labAction, setLabAction] = React.useState('dig');
+  const [labFile, setLabFile] = React.useState(null);
+  const [labBusy, setLabBusy] = React.useState(false);
+  const [labOut, setLabOut] = React.useState('');
+  const labToolboxRef = React.useRef(null);
 
   const res = useResources(state === 'loading' || state === 'done');
 
@@ -243,6 +254,78 @@ export default function SandboxApp() {
     }
   };
 
+  /* ------------------------------------------------------------- cyberlab */
+
+  const labCall = React.useCallback(async (path, body) => {
+    const base = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+    const isForm = body instanceof FormData;
+    const response = await fetch(`${base}/api/v1/sandbox/lab/${path}`, {
+      method: 'POST',
+      headers: isForm ? {} : { 'Content-Type': 'application/json' },
+      body: isForm ? body : JSON.stringify(body),
+    });
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
+    return response.json();
+  }, []);
+
+  const runLab = React.useCallback(async (kind) => {
+    setLabBusy(true);
+    setLabOut(`running ${kind} analysis…`);
+    setTermLines((lines) => [...lines, { tone: 'prompt', text: `$ cyberlab ${kind} ${labInput || ''}`.trim() }]);
+    try {
+      let payload;
+      let text;
+      if (kind === 'scan') {
+        payload = await labCall('portscan', { target: labInput.trim(), mode: labMode });
+        const open = payload.open || [];
+        text = `engine  ${payload.engine || 'n/a'}\ntarget  ${payload.target}\n\n` +
+          (payload.error ? `error   ${payload.error}\n` : '') +
+          (open.length
+            ? open.map((p) => `${String(p.port).padEnd(6)}${p.proto || 'tcp'}  open   ${(p.service || '').padEnd(10)}${p.product || ''} ${p.version || ''}`.trimEnd()).join('\n')
+            : '(no open ports reported)') +
+          `\n\n${payload.raw || ''}`;
+      } else if (kind === 'recon') {
+        payload = await labCall('recon', { target: labInput.trim(), action: labAction });
+        text = `engine  ${payload.engine || 'n/a'}\naction  ${payload.action}\ntarget  ${payload.target}` +
+          (payload.resolved_ip ? `\nip      ${payload.resolved_ip}` : '') +
+          `\n\n${payload.output || payload.error || '(no output)'}`;
+      } else if (kind === 'hash') {
+        payload = await labCall('hashcrack', { hash: labInput.trim() });
+        text = `types   ${(payload.identify || []).map((t) => t.type).join(', ') || 'unknown'}\n` +
+          (payload.cracked
+            ? `CRACKED password: ${payload.password}\nengine  ${payload.engine}`
+            : `not cracked · ${payload.message || ''}\nengine  ${payload.engine || 'n/a'}`);
+      } else if (kind === 'web') {
+        payload = await labCall('webanalyze', { url: labInput.trim(), deep: true });
+        text = payload.error
+          ? `error   ${payload.error}`
+          : `status  ${payload.status}\nengine  ${payload.engine}\n\n` +
+            (payload.checks || []).map((c) => `[${c.ok ? ' pass ' : c.severity.padEnd(5)}] ${c.name}: ${c.detail}`).join('\n') +
+            (payload.paths?.length ? `\n\npaths\n${payload.paths.map((p) => ` ${p.status}  ${p.path}  ${p.size}B`).join('\n')}` : '') +
+            (payload.flags?.length ? `\n\nflags\n${payload.flags.join('\n')}` : '');
+      } else if (kind === 'pcap') {
+        if (!labFile) throw new Error('choose a .pcap file first');
+        const form = new FormData();
+        form.append('file', labFile);
+        payload = await labCall('pcap', form);
+        text = `engine  ${payload.engine || 'n/a'}\nfile    ${payload.name} · ${payload.size} bytes\n\n` +
+          `dns\n${payload.dns || '(none)'}\n\nhttp\n${payload.http || '(none)'}\n\n` +
+          `credentials\n${payload.credentials || '(none)'}\n\nconversations\n${payload.conversations || '(none)'}\n\n` +
+          `flags\n${(payload.flags || []).join('\n') || '(none)'}`;
+      }
+      setLabOut(text);
+      setTermLines((lines) => [...lines, { tone: 'ok', text: `${kind} analysis complete · see CyberLab window` }]);
+      return payload;
+    } catch (error) {
+      const message = error?.message || 'unreachable';
+      setLabOut(`cyberlab engine unavailable (${message})\nthe toolbox needs the backend API — static guest tools still work.`);
+      setTermLines((lines) => [...lines, { tone: 'bad', text: `cyberlab engine unavailable (${message})` }]);
+      return null;
+    } finally {
+      setLabBusy(false);
+    }
+  }, [labAction, labCall, labFile, labInput, labMode, setTermLines]);
+
   const reboot = () => {
     setStartOpen(false);
     setBooted(false);
@@ -263,7 +346,8 @@ export default function SandboxApp() {
 
     switch (name) {
       case 'help':
-        print('help · neofetch · ifconfig · ps · netstat · open <browser|monitor|terminal> · detonate <url> · render · clear · reboot');
+        print('guest: help · neofetch · ifconfig · ps · netstat · open <browser|lab|monitor|terminal> · detonate <url> · render · clear · reboot');
+        print('cyberlab: nmap <host> · ping|dig|whois|traceroute <host> · hashid <hash> · crack <hash> · webchk <url> · toolbox');
         break;
       case 'neofetch':
         print('spandr-sbx-01 · Debian 12 · kernel 6.8.0-hardened · chromium 131 · 1280x720 · egress BLOCKED', 'dim');
@@ -289,6 +373,57 @@ export default function SandboxApp() {
         break;
       case 'render':
         renderSnapshot();
+        break;
+      case 'toolbox':
+        labCall('toolbox').then((t) => {
+          print(`guest image ${t.guest_image} · private targets ${t.private_targets_allowed ? 'ALLOWED (lab mode)' : 'blocked'}`, 'dim');
+          Object.entries(t.tools || {}).forEach(([name, info]) => {
+            print(`  ${name.padEnd(11)} ${info.available ? 'real binary ✓' : 'builtin engine'}`, info.available ? 'ok' : 'dim');
+          });
+        }).catch((error) => print(`toolbox unavailable (${error?.message || 'error'})`, 'bad'));
+        break;
+      case 'nmap':
+        if (!arg) { print('usage: nmap <host>', 'bad'); break; }
+        setLabInput(arg); setLabMode('quick'); setLabTab('scan'); openGuest('lab');
+        labCall('portscan', { target: arg, mode: 'quick' }).then((r) => {
+          if (r.error) { print(r.error, 'bad'); return; }
+          (r.open || []).forEach((p) => print(`${String(p.port).padEnd(6)}${p.proto} open  ${p.service || ''} ${p.product || ''}`.trimEnd(), 'ok'));
+          if (!(r.open || []).length) print('no open ports in quick scan', 'dim');
+          print(`engine: ${r.engine || 'n/a'}`, 'dim');
+        }).catch((error) => print(`scan failed (${error?.message || 'error'})`, 'bad'));
+        break;
+      case 'ping':
+      case 'dig':
+      case 'whois':
+      case 'traceroute':
+        if (!arg) { print(`usage: ${name} <host>`, 'bad'); break; }
+        setLabInput(arg); setLabAction(name); setLabTab('recon'); openGuest('lab');
+        labCall('recon', { target: arg, action: name }).then((r) => {
+          if (r.error) { print(r.error, 'bad'); return; }
+          (r.output || '').split('\n').slice(0, 14).forEach((line) => print(line, 'dim'));
+          print(`engine: ${r.engine || 'n/a'}`, 'ok');
+        }).catch((error) => print(`recon failed (${error?.message || 'error'})`, 'bad'));
+        break;
+      case 'hashid':
+      case 'crack':
+        if (!arg) { print(`usage: ${name} <hash>`, 'bad'); break; }
+        setLabInput(arg); setLabTab('hash'); openGuest('lab');
+        labCall('hashcrack', { hash: arg }).then((r) => {
+          const types = (r.identify || []).map((t) => t.type).join(', ');
+          print(`hash type: ${types || 'unknown'}`, 'dim');
+          if (r.cracked) print(`CRACKED → ${r.password}  (${r.engine})`, 'ok');
+          else print(`not cracked · ${r.message || ''}`, 'bad');
+        }).catch((error) => print(`hash engine failed (${error?.message || 'error'})`, 'bad'));
+        break;
+      case 'webchk':
+        if (!arg) { print('usage: webchk <url>', 'bad'); break; }
+        setLabInput(arg); setLabTab('web'); openGuest('lab');
+        labCall('webanalyze', { url: arg, deep: true }).then((r) => {
+          if (r.error) { print(r.error, 'bad'); return; }
+          print(`status ${r.status} · ${r.engine}`, 'ok');
+          (r.checks || []).forEach((c) => print(`[${c.ok ? 'pass' : c.severity}] ${c.name}: ${c.detail}`, c.ok ? 'dim' : 'bad'));
+          if (r.flags?.length) r.flags.forEach((f) => print(`FLAG ${f}`, 'ok'));
+        }).catch((error) => print(`web analysis failed (${error?.message || 'error'})`, 'bad'));
         break;
       case 'clear':
         setTermLines([]);
@@ -387,6 +522,79 @@ export default function SandboxApp() {
       );
     }
 
+    if (id === 'lab') {
+      return (
+        <div className="gwin__lab">
+          <div className="gwin__lab-tabs">
+            {[['scan', 'Port Scan'], ['recon', 'Recon'], ['hash', 'Hash'], ['web', 'Web'], ['pcap', 'PCAP']].map(([key, label]) => (
+              <button
+                type="button"
+                key={key}
+                className={`gwin__lab-tab ${labTab === key ? 'is-on' : ''}`}
+                onClick={() => setLabTab(key)}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <div className="gwin__lab-form">
+            {labTab === 'recon' && (
+              <select value={labAction} onChange={(event) => setLabAction(event.target.value)} aria-label="Recon action">
+                <option value="dig">dig (DNS)</option>
+                <option value="ping">ping</option>
+                <option value="whois">whois</option>
+                <option value="traceroute">traceroute</option>
+                <option value="headers">http headers</option>
+              </select>
+            )}
+            {labTab === 'scan' && (
+              <select value={labMode} onChange={(event) => setLabMode(event.target.value)} aria-label="Scan mode">
+                <option value="quick">quick · top 20</option>
+                <option value="standard">standard · top 100</option>
+                <option value="full">full · 1-2000</option>
+              </select>
+            )}
+            {labTab === 'pcap' ? (
+              <input
+                type="file"
+                accept=".pcap,.pcapng,.cap"
+                onChange={(event) => setLabFile(event.target.files?.[0] || null)}
+                aria-label="PCAP capture"
+              />
+            ) : (
+              <input
+                value={labInput}
+                onChange={(event) => setLabInput(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') runLab(labTab); }}
+                placeholder={
+                  labTab === 'hash' ? 'e.g. 5f4dcc3b5aa765d61d8327deb882cf99'
+                    : labTab === 'web' ? 'https://suspicious-link.example/login'
+                      : 'target host or IP'}
+                spellCheck="false"
+                aria-label="CyberLab target"
+              />
+            )}
+            <button type="button" className="btn btn--primary btn--xs" disabled={labBusy} onClick={() => runLab(labTab)}>
+              {labBusy ? <Loader2 size={10} className="spin" /> : <Crosshair size={10} />}
+              {labBusy ? 'Running' : 'Run'}
+            </button>
+            <button
+              type="button"
+              className="btn btn--xs"
+              onClick={() => labCall('toolbox').then((t) => {
+                const rows = Object.entries(t.tools || {})
+                  .map(([name, info]) => `${name.padEnd(11)} ${info.available ? 'real binary ✓' : 'builtin engine'}`);
+                setLabOut(`guest image  ${t.guest_image}\nprivate targets  ${t.private_targets_allowed ? 'ALLOWED (lab mode)' : 'blocked'}\n\n${rows.join('\n')}`);
+              }).catch((error) => setLabOut(`toolbox unavailable (${error?.message || 'error'})`))}
+            >
+              Toolbox
+            </button>
+          </div>
+          <pre className="gwin__lab-out">{labOut || 'CyberLab toolbox · real analysis tools inside the guest\nnmap · whois · dig · traceroute · ping · tshark · john · binwalk · exiftool · whatweb · sqlmap · hydra\n\npick a tool above — or use the guest terminal:\n  nmap <host>   ·  crack <hash>  ·  webchk <url>  ·  toolbox'}</pre>
+        </div>
+      );
+    }
+
     return (
       <div className="gwin__term" onClick={() => termInput.current?.focus()}>
         <div className="gwin__term-out">
@@ -430,7 +638,7 @@ export default function SandboxApp() {
         >
           <div className="vm__screen-bg" />
 
-          {openApps.browser || openApps.monitor || openApps.terminal ? null : (
+          {openApps.browser || openApps.monitor || openApps.terminal || openApps.lab ? null : (
             <div className="vm__hint">Open an app from the taskbar</div>
           )}
 

@@ -619,3 +619,16 @@
 .vm__meter b { text-align: right; color: var(--ink-dim); font-weight: 500; }
 .vm__meter-bar { height: 3px; border-radius: 999px; background: rgba(255, 255, 255, 0.1); overflow: hidden; }
 .vm__meter-bar i { display: block; height: 100%; border-radius: 999px; background: linear-gradient(90deg, #7ee2a8, #38d17a); transition: width 0.6s ease; }
+
+/* ---- CyberLab analysis toolbox (sandbox guest) ---- */
+.gwin__lab { display: flex; flex-direction: column; height: 100%; min-height: 0; background: #08080a; font-family: var(--font-mono); font-size: 8.5px; }
+.gwin__lab-tabs { display: flex; gap: 4px; padding: 6px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.08); }
+.gwin__lab-tab { height: 18px; padding: 0 8px; border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 5px; background: rgba(255, 255, 255, 0.05); color: var(--ink-faint); font-family: var(--font-mono); font-size: 8px; letter-spacing: 0.06em; text-transform: uppercase; cursor: pointer; }
+.gwin__lab-tab.is-on { background: rgba(255, 151, 163, 0.16); border-color: rgba(255, 151, 163, 0.5); color: #fff; }
+.gwin__lab-tab:hover { color: #fff; }
+.gwin__lab-form { display: flex; flex-wrap: wrap; align-items: center; gap: 5px; padding: 7px 8px; border-bottom: 1px solid rgba(255, 255, 255, 0.06); }
+.gwin__lab-form input:not([type="file"]), .gwin__lab-form select { flex: 1 1 120px; min-width: 0; height: 20px; padding: 0 7px; background: rgba(255, 255, 255, 0.06); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 5px; color: #fff; font-family: var(--font-mono); font-size: 8.5px; outline: none; }
+.gwin__lab-form input:focus, .gwin__lab-form select:focus { border-color: rgba(255, 151, 163, 0.55); }
+.gwin__lab-form select option { background: #12121a; }
+.gwin__lab-form input[type="file"] { flex: 2 1 150px; color: var(--ink-faint); font-family: var(--font-mono); font-size: 8px; }
+.gwin__lab-out { flex: 1 1 auto; min-height: 0; margin: 0; padding: 8px; overflow: auto; color: rgba(255, 255, 255, 0.72); background: #08080a; white-space: pre-wrap; word-break: break-word; line-height: 1.6; scrollbar-width: thin; }
