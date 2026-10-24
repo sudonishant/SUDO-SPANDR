@@ -350,6 +350,13 @@ export default function SandboxApp() {
     return lines.join('\n');
   };
 
+  const fileToB64 = (file) => new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result).split(',')[1] || '');
+    reader.onerror = () => reject(new Error('could not read file'));
+    reader.readAsDataURL(file);
+  });
+
   const runLab = React.useCallback(async (kind) => {
     setLabBusy(true);
     setLabOut(`running ${kind} analysis…`);
@@ -358,16 +365,19 @@ export default function SandboxApp() {
       let payload;
       let text;
       if (kind === 'auto') {
-        const form = new FormData();
-        if (labFile) form.append('file', labFile);
-        if (labUrls.trim()) form.append('urls', labUrls.trim());
-        payload = await labCall('auto-triage', form);
+        const body = { urls: labUrls.split(/[\s,]+/).filter(Boolean) };
+        if (labFile) {
+          const b64 = await fileToB64(labFile);
+          const isEml = /\.(eml|msg)$/i.test(labFile.name);
+          if (isEml) body.eml_b64 = b64;
+          else body.files = [{ filename: labFile.name, file_b64: b64 }];
+        }
+        payload = await labCall('auto-triage', body);
         text = fmtTriageReport(payload);
       } else if (kind === 'attach') {
         if (!labFile) throw new Error('choose an attachment first');
-        const form = new FormData();
-        form.append('file', labFile);
-        payload = await labCall('attachment', form);
+        const b64 = await fileToB64(labFile);
+        payload = await labCall('attachment', { filename: labFile.name, file_b64: b64 });
         text = fmtAttachmentReport(payload);
       } else if (kind === 'link') {
         if (!labInput.trim()) throw new Error('enter a URL first');
@@ -375,9 +385,8 @@ export default function SandboxApp() {
         text = payload.error ? `error   ${payload.error}` : fmtLinkReport(payload);
       } else if (kind === 'pcap') {
         if (!labFile) throw new Error('choose a .pcap file first');
-        const form = new FormData();
-        form.append('file', labFile);
-        payload = await labCall('pcap', form);
+        const b64 = await fileToB64(labFile);
+        payload = await labCall('pcap', { filename: labFile.name, file_b64: b64 });
         text = `engine  ${payload.engine || 'n/a'}\nfile    ${payload.name} · ${payload.size} bytes\n\n` +
           `dns\n${payload.dns || '(none)'}\n\nhttp\n${payload.http || '(none)'}\n\n` +
           `credentials\n${payload.credentials || '(none)'}\n\nconversations\n${payload.conversations || '(none)'}\n\n` +

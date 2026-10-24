@@ -7,6 +7,7 @@ or legal admissibility without the required backend services.
 from __future__ import annotations
 
 import asyncio
+import base64
 import hashlib
 import json
 import os
@@ -16,7 +17,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Form, HTTPException, Request, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -1067,22 +1068,43 @@ def lab_webanalyze(req: LabWebRequest) -> Dict[str, Any]:
 
 
 @app.post(f"{settings.API_V1_STR}/sandbox/lab/pcap")
-async def lab_pcap(file: UploadFile = File(...)) -> Dict[str, Any]:
-    data = await file.read()
+async def lab_pcap(request: Request) -> Dict[str, Any]:
+    data, filename = await _lab_read_file(request, "capture.pcap")
+    return cyberlab_engine.pcap_analyze(data, filename=filename)
+
+
+async def _lab_read_file(request: Request, default_name: str) -> tuple:
+    """Accept multipart form-data OR JSON {filename, file_b64} (edge-compatible)."""
+    ctype = request.headers.get("content-type", "")
+    if ctype.startswith("multipart/form-data"):
+        form = await request.form()
+        upload = form.get("file")
+        if upload is None or not hasattr(upload, "read"):
+            raise HTTPException(status_code=400, detail="missing 'file' in form data")
+        data = await upload.read()
+        filename = getattr(upload, "filename", None) or default_name
+    else:
+        body = await request.json()
+        b64 = body.get("file_b64") or ""
+        try:
+            data = base64.b64decode(b64)
+        except Exception:
+            raise HTTPException(status_code=400, detail="file_b64 is not valid base64")
+        filename = body.get("filename") or default_name
+    if not data:
+        raise HTTPException(status_code=400, detail="empty file")
     if len(data) > 50 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="capture too large (50 MB max)")
-    return cyberlab_engine.pcap_analyze(data, filename=file.filename or "capture.pcap")
+        raise HTTPException(status_code=400, detail="file too large (50 MB max)")
+    return data, filename
 
 
 # --- Email Threat Lab: attachment & link analysis with automation -------------
 
 @app.post(f"{settings.API_V1_STR}/sandbox/lab/attachment")
-async def lab_attachment(file: UploadFile = File(...)) -> Dict[str, Any]:
+async def lab_attachment(request: Request) -> Dict[str, Any]:
     """Deep static analysis of one email attachment (carver + strings + format dives)."""
-    data = await file.read()
-    if len(data) > 50 * 1024 * 1024:
-        raise HTTPException(status_code=400, detail="file too large (50 MB max)")
-    return cyberlab_engine.attachment_lab(data, file.filename or "attachment.bin")
+    data, filename = await _lab_read_file(request, "attachment.bin")
+    return cyberlab_engine.attachment_lab(data, filename)
 
 
 @app.post(f"{settings.API_V1_STR}/sandbox/lab/url")
@@ -1092,30 +1114,44 @@ def lab_url(req: LabWebRequest) -> Dict[str, Any]:
 
 
 @app.post(f"{settings.API_V1_STR}/sandbox/lab/auto-triage")
-async def lab_auto_triage(
-    file: Optional[UploadFile] = File(None),
-    urls: Optional[str] = Form(None),
-) -> Dict[str, Any]:
-    """One-click automated pipeline: .eml or raw file -> attachments + links -> full triage."""
+async def lab_auto_triage(request: Request) -> Dict[str, Any]:
+    """One-click automated pipeline: .eml or raw file -> attachments + links -> full triage.
+    Accepts multipart (file + urls form field) OR JSON {eml_b64|eml_text, files[], urls[]}."""
     eml_bytes = None
     files: List[Any] = []
-    raw = b""
-    if file is not None:
-        raw = await file.read()
-        if len(raw) > 50 * 1024 * 1024:
-            raise HTTPException(status_code=400, detail="file too large (50 MB max)")
-        name = (file.filename or "").lower()
-        if name.endswith(".eml") or name.endswith(".msg") or raw[:5].lower().startswith(b"from "):
-            eml_bytes = raw
-        else:
-            files.append((file.filename or "attachment.bin", raw))
     url_list: List[str] = []
-    if urls:
-        try:
-            parsed_urls = json.loads(urls) if urls.strip().startswith("[") else [u for u in re.split(r"[\s,]+", urls) if u]
-            url_list = [str(u) for u in parsed_urls if str(u).strip()][:20]
-        except Exception:
-            url_list = [u for u in re.split(r"[\s,]+", urls) if u][:20]
+    ctype = request.headers.get("content-type", "")
+    if ctype.startswith("multipart/form-data"):
+        form = await request.form()
+        upload = form.get("file")
+        if upload is not None and hasattr(upload, "read"):
+            raw = await upload.read()
+            if len(raw) > 50 * 1024 * 1024:
+                raise HTTPException(status_code=400, detail="file too large (50 MB max)")
+            name = (getattr(upload, "filename", "") or "").lower()
+            if name.endswith(".eml") or name.endswith(".msg") or raw[:5].lower().startswith(b"from "):
+                eml_bytes = raw
+            else:
+                files.append((getattr(upload, "filename", None) or "attachment.bin", raw))
+        urls_field = form.get("urls")
+        if urls_field:
+            try:
+                parsed_urls = json.loads(urls_field) if str(urls_field).strip().startswith("[") else re.split(r"[\s,]+", str(urls_field))
+                url_list = [str(u) for u in parsed_urls if str(u).strip()][:20]
+            except Exception:
+                url_list = [u for u in re.split(r"[\s,]+", str(urls_field)) if u][:20]
+    else:
+        body = await request.json()
+        if body.get("eml_b64"):
+            eml_bytes = base64.b64decode(body["eml_b64"])
+        elif body.get("eml_text"):
+            eml_bytes = body["eml_text"].encode("utf-8", "replace")
+        for f in body.get("files") or []:
+            try:
+                files.append((f.get("filename") or "attachment.bin", base64.b64decode(f.get("file_b64") or "")))
+            except Exception:
+                continue
+        url_list = [str(u).strip() for u in (body.get("urls") or []) if str(u).strip()][:20]
     if not eml_bytes and not files and not url_list:
         raise HTTPException(status_code=400, detail="provide an .eml, an attachment, or at least one URL")
     return cyberlab_engine.auto_triage(eml_bytes=eml_bytes, files=files, urls=url_list)
