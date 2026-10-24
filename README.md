@@ -409,20 +409,43 @@ python3 backend/security_test.py
 
 ---
 
-## 🖥️ Workspace UI map (React app in `src/`)
+## 🖥️ Desktop shell UI map (React app in `src/`)
+
+### The desktop
+
+![SUDO SPANDR desktop](docs/ui/desktop.jpg)
+
+![Sandbox VM window](docs/ui/sandbox.jpg)
+
+![Report window](docs/ui/report.jpg)
+
+The document itself never scrolls: windows, the dock and the menu bar live inside a fixed viewport,
+and only each window body scrolls. Drag a title bar to move a window, drag the bottom-right corner
+to resize, double-click a title bar to maximise, and right-click the wallpaper for a context menu.
+
+
+The front-end is a fixed-viewport desktop, not a scrolling page: a boot overlay, a menu bar with
+dropdowns and a clock, desktop file tiles, draggable / resizable windows, and a dock. The document
+never scrolls — only window bodies do. On screens under 780 px the shell switches to a single
+full-screen app at a time, phone-style.
 
 | Surface | Where | What it calls |
 |---|---|---|
-| Intake (`.eml`, `.msg`, pasted headers, attachment) | `#workspace` | Browser parsers only — no upload |
-| Static URL checks + detonation telemetry | `#sandbox` | `POST /api/v1/sandbox/detonate` (falls back to browser checks only) |
-| Isolated preview frame | `#sandbox` | `GET /api/v1/sandbox/preview-frame` |
-| Report tabs (Overview, Headers, Auth, Relay, URLs, Files) | `#workspace` | Browser result object |
-| MITRE tab | report `/ MITRE` | `GET /api/v1/mitre/navigator-layer` — labelled as a reference layer when the API is unreachable |
-| Dossier tab | report `/ Dossier` | Browser result + locally generated containment drafts (iptables, Cisco, FortiGate, DNS sinkhole, Suricata) |
+| Boot + session lock / restart | `src/App.jsx`, `src/os/Window.jsx` | Local state only |
+| Desktop file tiles (`.eml`, `.pdf`, `.json`, `.md`) | `src/App.jsx` → `FilesApp` | Opens the matching window |
+| Intake (`.eml`, `.msg`, pasted headers, attachment) | `src/apps/WorkspaceApp.jsx` | Browser parsers only — no upload |
+| Static URL checks + detonation telemetry | `src/apps/SandboxApp.jsx` | `POST /api/v1/sandbox/detonate` (falls back to browser checks only) |
+| Isolated preview frame | `src/apps/SandboxApp.jsx` → “Render” | `GET /api/v1/sandbox/preview-frame` (fetched, then mounted as `srcDoc` with a script-only sandbox) |
+| Report tabs (Overview, Headers, Auth, Relay, URLs, Files) | `src/apps/Report.jsx` | Browser result object |
+| Files explorer + preview pane | `src/apps/FilesApp.jsx` | Static, read-only evidence samples |
+| Terminal (`help`, `status`, `ls`, `open <app>`, `analyze`) | `src/apps/TerminalApp.jsx` | Shell commands open real windows |
+| MITRE window | `src/apps/CaseApps.jsx` | `GET /api/v1/mitre/navigator-layer` — labelled as a reference layer when the API is unreachable |
+| Dossier window | `src/apps/CaseApps.jsx` | Browser result + locally generated containment drafts (iptables, Cisco, FortiGate, DNS sinkhole, Suricata) |
 | AI second opinion | Overview panel, toolbar | `POST /api/v1/ai-review` |
 
-Every panel above falls back to an explicit "unavailable / not configured" state rather than
-showing an invented verdict.
+Each app reacts to its own window width through container queries, so a narrow window reflows
+instead of overlapping. Every panel above falls back to an explicit "unavailable / not configured"
+state rather than showing an invented verdict.
 
 ---
 

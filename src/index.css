@@ -1,2 +1,3 @@
-@import './styles/base.css';
+@import './styles/_fonts.css';
+@import './styles/os.css';
 @import './styles/app.css';
