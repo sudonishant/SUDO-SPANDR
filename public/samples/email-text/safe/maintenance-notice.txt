@@ -1,0 +1,12 @@
+Subject: Monthly IT maintenance notice - October
+From: "IT Helpdesk" <newsletter@trusted-enterprise.com>
+
+Hello team,
+
+This is the routine monthly maintenance notice. Servers will restart on
+Sunday between 02:00 and 04:00 IST. No action is required from your side.
+
+For questions, reply to this message or call extension 2211.
+
+Regards,
+IT Helpdesk
