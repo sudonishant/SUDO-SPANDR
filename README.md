@@ -205,7 +205,9 @@ Every identified anomaly is mapped to standardized MITRE ATT&CK enterprise tacti
 
 ```
 cybersquad-web-master/
-├── index.html                   # Single-Page Forensic Application (HTML5 / Tailwind / SVG / JS)
+├── index.html                   # Vite entry shell for the React workspace
+├── src/                         # React workspace (App.jsx, styles/, components/, store/, lib/)
+├── legacy/legacy-app.html       # Previous single-file UI, kept for reference only
 ├── README.md                    # Comprehensive System Documentation
 ├── backend/
 │   ├── api_smoke_test.py        # Automated test suite for API endpoints, carver, & scoring
@@ -214,7 +216,7 @@ cybersquad-web-master/
 │   ├── requirements.txt         # Python dependencies (FastAPI, Uvicorn, Requests, etc.)
 │   ├── app/
 │   │   ├── main.py              # Core FastAPI application & REST endpoint router
-│   │   ├── static_index.py      # Synchronized static asset server
+│   │   ├── static_index.py      # Embedded legacy UI fallback (dist/ wins when built)
 │   │   └── core/
 │   │       ├── parser_engine.py      # RFC 5322 MIME stream parser, hop extractor & decoder
 │   │       ├── auth_verifier.py      # Real RFC 7208 SPF, RFC 6376 DKIM RSA-SHA256 & RFC 7489 DMARC
@@ -258,12 +260,33 @@ cybersquad-web-master/
    python3 -m uvicorn backend.app.main:app --host 127.0.0.1 --port 8000 --reload
    ```
 
-4. **Access the Forensic Dashboard**:
+4. **Build the React workspace** (the FastAPI root route serves `dist/index.html` when present):
+   ```bash
+   npm install
+   npm run build
+   ```
+
+5. **Access the Forensic Dashboard**:
    Open your web browser and navigate to:
    ```
    http://127.0.0.1:8000
    ```
-   *(Or simply open `index.html` directly in any web browser for full offline client-side triage mode).*
+
+### 2b. UI-only development (Vite dev server)
+
+```bash
+npm install
+npm run dev        # http://localhost:5173 — /api/* proxied to http://127.0.0.1:8000
+npm run lint       # fabricated-claim audit (fails on invented verdicts)
+npm run build      # production bundle in dist/
+```
+
+`npm run dev` is the fastest way to work on the interface: intake, result tabs and report panels
+run entirely in the browser, and any endpoint call falls back to an honest "unavailable" state
+when the FastAPI backend is not running.
+
+> The previous single-file dashboard is preserved at `legacy/legacy-app.html` for reference only.
+> It is no longer the served entry point.
 
 ---
 
@@ -405,6 +428,6 @@ python3 backend/security_test.py
 | 🧪 **Detonation Sandbox** | Air-Gapped Chromium Container, noVNC Desktop, SSRF Defense | `Dockerfile.sandbox`, `web_sandbox_engine.py` |
 | 🛰️ **Telecom & Geodesics** | RFC-Aware Geodesic Radar, MaxMind MMDB, Tor/VPN Detection | `geo_engine.py`, `ip-context.js` |
 | ⛓️ **Attribution & Ledger** | MITRE ATT&CK Navigator, Polygon Amoy Smart Contract, STIX 2.1 | `contracts/EvidenceNotary.sol`, `mitre_engine.py` |
-| 💻 **Frontend & Dossier** | Bilingual UI, Section 65B Report Generator, Live Triage Radar | `index.html`, `demo/` |
+| 💻 **Frontend & Dossier** | React workspace UI, evidence intake, dossier export | `src/`, `index.html` |
 
 Developed for **Smart India Hackathon (SIH) 2026** to empower Indian Law Enforcement, CERT-In, and National Cyber Defence infrastructure.

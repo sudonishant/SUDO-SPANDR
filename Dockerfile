@@ -3,6 +3,16 @@
 # SIH 2026 Problem Statement #26106
 # ==============================================================================
 
+# ---- Stage 1: build the React workspace (Vite) ------------------------------
+FROM node:20-alpine AS workspace
+WORKDIR /build
+COPY package.json package-lock.json ./
+RUN npm ci --no-audit --no-fund || npm install --no-audit --no-fund
+COPY index.html vite.config.mjs ./
+COPY src ./src
+RUN npm run build
+
+# ---- Stage 2: Python runtime (FastAPI + noVNC sandbox) ----------------------
 FROM python:3.11-slim
 
 ENV DEBIAN_FRONTEND=noninteractive \
@@ -41,8 +51,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 COPY backend/requirements.txt requirements.txt
 RUN pip install --no-cache-dir -r requirements.txt websockify uvicorn
 
-# Copy application source files
+# Copy application source files, then the built workspace bundle from stage 1
 COPY . ${APP_DIR}/
+COPY --from=workspace /build/dist ${APP_DIR}/dist
 
 # Create non-root user for Hugging Face security guidelines (UID 1000)
 RUN useradd -m -u 1000 appuser && \
