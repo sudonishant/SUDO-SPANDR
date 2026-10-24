@@ -4,6 +4,45 @@ import {
   ShieldAlert, TerminalSquare, Wifi, WifiOff, X,
 } from 'lucide-react';
 import { staticUrlChecks } from '../lib/urlChecks';
+import {
+  analyzeStandaloneAttachment, parseEmlFile, parseMsgFile, buildEmailAnalysis,
+} from '../lib/forensics';
+import { nlpScore } from '../lib/nlp';
+
+/* bundled sample corpus — fetched on demand by the guest terminal */
+const SAMPLE_FILES = {
+  'sample-phishing.eml': '/samples/sample-phishing.eml',
+  'sample-credential.eml': '/samples/sample-credential.eml',
+  'sample-safe.eml': '/samples/sample-safe.eml',
+  'sample-phishing.msg': '/samples/sample-phishing.msg',
+  'sample-safe.msg': '/samples/sample-safe.msg',
+  'bec-wire-transfer.txt': '/samples/email-text/risk/bec-wire-transfer.txt',
+  'otp-credential-scam.txt': '/samples/email-text/risk/otp-credential-scam.txt',
+  'extortion-sextortion.txt': '/samples/email-text/risk/extortion-sextortion.txt',
+  'maintenance-notice.txt': '/samples/email-text/safe/maintenance-notice.txt',
+  'meeting-invite.txt': '/samples/email-text/safe/meeting-invite.txt',
+  'quarterly-report.txt': '/samples/email-text/safe/quarterly-report.txt',
+  'invoice.pdf.exe': '/samples/attachments/invoice.pdf.exe',
+  'macro-invoice.doc': '/samples/attachments/macro-invoice.doc',
+  'order-details.js': '/samples/attachments/order-details.js',
+  'order-sheet.html': '/samples/attachments/order-sheet.html',
+  'clean-summary.txt': '/samples/attachments/clean-summary.txt',
+};
+
+async function fetchSample(name) {
+  const path = SAMPLE_FILES[name] || (name.startsWith('/samples/') ? name : null);
+  if (!path) return null;
+  const resp = await fetch(path);
+  if (!resp.ok) return null;
+  const blob = await resp.blob();
+  return new File([blob], name.split('/').pop(), { type: blob.type || 'application/octet-stream' });
+}
+
+async function sha256HexOfFile(file) {
+  const buf = await file.arrayBuffer();
+  const digest = await crypto.subtle.digest('SHA-256', buf);
+  return [...new Uint8Array(digest)].map((b) => b.toString(16).padStart(2, '0')).join('');
+}
 
 const GUEST_APPS = {
   browser: { title: 'Chromium · air-gapped', short: 'Chromium', icon: Globe, x: 33, y: 5, w: 61, h: 63 },
@@ -25,6 +64,94 @@ const BOOT_LINES = [
 
 function stamp(date = new Date()) {
   return date.toLocaleTimeString('en-GB', { hour12: false });
+}
+
+/*
+ * Real PC window — streams the REAL Debian/Chromium desktop from the
+ * air-gapped container over noVNC when the VM endpoint is reachable.
+ * When the stream is offline (e.g. production without the docker sandbox),
+ * it boots the local analysis VM fallback so the window is always usable.
+ */
+function RealPcWindow({ openGuest }) {
+  const [state, setState] = React.useState('probing'); // probing | online | offline
+  const [bootStep, setBootStep] = React.useState(0);
+
+  const probe = React.useCallback(() => {
+    setState('probing');
+    try {
+      const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/novnc/websockify`);
+      const timer = setTimeout(() => { try { ws.close(); } catch (e) {} setState('offline'); }, 2500);
+      ws.onopen = () => { clearTimeout(timer); setState('online'); try { ws.close(); } catch (e) {} };
+      ws.onerror = () => { clearTimeout(timer); setState('offline'); };
+    } catch {
+      setState('offline');
+    }
+  }, []);
+
+  React.useEffect(() => { probe(); }, [probe]);
+
+  React.useEffect(() => {
+    if (state !== 'offline') return undefined;
+    setBootStep(0);
+    const timers = [1, 2, 3, 4].map((i) => setTimeout(() => setBootStep(i), i * 550));
+    return () => timers.forEach(clearTimeout);
+  }, [state]);
+
+  if (state === 'probing') {
+    return (
+      <div className="gwin__splash">
+        <Loader2 size={22} className="spin" style={{ color: '#7ee2a8' }} />
+        <strong>Connecting to real VM stream…</strong>
+        <p>probing wss://…/novnc/websockify for the air-gapped desktop container</p>
+      </div>
+    );
+  }
+
+  if (state === 'online') {
+    return (
+      <div className="gwin__realpc">
+        <div className="gwin__realpc-note">
+          <MonitorPlay size={12} />
+          <span>Real virtual computer — actual Debian desktop + Chromium + analysis tools over noVNC (TryHackMe-style attack box).</span>
+        </div>
+        <iframe
+          title="Real PC desktop (noVNC)"
+          className="gwin__realpc-frame"
+          src="/novnc/vnc.html?autoconnect=true&resize=scale&path=novnc/websockify&view_only=0"
+          sandbox="allow-scripts allow-same-origin"
+        />
+      </div>
+    );
+  }
+
+  return (
+    <div className="gwin__realpc">
+      <div className="gwin__realpc-note">
+        <WifiOff size={12} />
+        <span>
+          VM stream offline — the noVNC desktop container (<code>docker compose up isolated-sandbox</code>) is not
+          reachable from this deployment. Booting the <b>local analysis VM</b> instead — same tools, real engines, runs in this tab.
+        </span>
+      </div>
+      <div className="gwin__realpc-boot">
+        {[
+          'spandr-pc uefi · booting kernel 6.8.0-hardened …',
+          'mounting /evidence (read-only) · egress policy DROP',
+          'starting analysis services: forensic engine · NLP lanes · threat lab',
+          'local VM ready — real tools available in Terminal & Threat Lab',
+        ].slice(0, bootStep + 1).map((line) => (
+          <div key={line} className="gwin__bootline"><CheckCircle2 size={11} /> {line}</div>
+        ))}
+      </div>
+      <div className="gwin__realpc-actions">
+        <button type="button" className="btn btn--primary btn--xs" disabled={bootStep < 3} onClick={() => { openGuest('terminal'); openGuest('lab'); }}>
+          <TerminalSquare size={11} /> Open Terminal + Threat Lab
+        </button>
+        <button type="button" className="btn btn--xs" onClick={() => openGuest('monitor')}><Activity size={11} /> System Monitor</button>
+        <button type="button" className="btn btn--xs" onClick={probe}><RotateCw size={11} /> Retry VM stream</button>
+      </div>
+    </div>
+  );
 }
 
 function useGuestClock() {
@@ -426,9 +553,89 @@ export default function SandboxApp() {
 
     switch (name) {
       case 'help':
-        print('guest: help · neofetch · ifconfig · ps · netstat · open <browser|lab|monitor|terminal> · detonate <url> · render · clear · reboot');
+        print('guest: help · neofetch · ifconfig · ps · netstat · open <browser|lab|monitor|terminal|realpc> · detonate <url> · render · clear · reboot');
         print('threat lab: triage · link <url> · webchk <url> · hashid <hash> · crack <hash> · nmap <host> · dig|ping|whois|traceroute <host> · toolbox');
+        print('evidence tools (real engines over /samples): ls · cat <file> · strings <file> · sha256sum <file> · score <file>');
         break;
+      case 'ls': {
+        print(Object.keys(SAMPLE_FILES).join('  '), 'dim');
+        print('(bundled sample corpus — score/cat/sha256sum/strings work on any name above)', 'dim');
+        break;
+      }
+      case 'cat': {
+        if (!arg) { print('usage: cat <file>', 'bad'); break; }
+        const catName = arg.split('/').pop();
+        fetchSample(catName).then(async (f) => {
+          if (!f) { print(`cat: ${arg}: no such file in /samples`, 'bad'); return; }
+          const text = await f.text();
+          text.split('\n').slice(0, 24).forEach((line) => print(line, 'dim'));
+          if (text.split('\n').length > 24) print(`… (${text.split('\n').length - 24} more lines)`, 'dim');
+        }).catch((error) => print(`cat failed (${error?.message || 'error'})`, 'bad'));
+        break;
+      }
+      case 'strings': {
+        if (!arg) { print('usage: strings <file>', 'bad'); break; }
+        const strName = arg.split('/').pop();
+        fetchSample(strName).then(async (f) => {
+          if (!f) { print(`strings: ${arg}: no such file in /samples`, 'bad'); return; }
+          const bytes = new Uint8Array(await f.arrayBuffer());
+          let run = '';
+          const out = [];
+          bytes.forEach((b) => {
+            if (b >= 32 && b < 127) { run += String.fromCharCode(b); }
+            else { if (run.length >= 4) out.push(run); run = ''; }
+          });
+          if (run.length >= 4) out.push(run);
+          out.slice(0, 30).forEach((s) => print(s, 'dim'));
+          print(`strings: ${out.length} printable runs ≥ 4 chars`, 'ok');
+        }).catch((error) => print(`strings failed (${error?.message || 'error'})`, 'bad'));
+        break;
+      }
+      case 'sha256sum': {
+        if (!arg) { print('usage: sha256sum <file>', 'bad'); break; }
+        const hashName = arg.split('/').pop();
+        fetchSample(hashName).then(async (f) => {
+          if (!f) { print(`sha256sum: ${arg}: no such file in /samples`, 'bad'); return; }
+          const hex = await sha256HexOfFile(f);
+          print(`${hex}  ${f.name}`, 'ok');
+        }).catch((error) => print(`sha256sum failed (${error?.message || 'error'})`, 'bad'));
+        break;
+      }
+      case 'score': {
+        if (!arg) { print('usage: score <file>   (email .eml/.msg, text or attachment)', 'bad'); break; }
+        const scoreName = arg.split('/').pop();
+        fetchSample(scoreName).then(async (f) => {
+          if (!f) { print(`score: ${arg}: no such file in /samples`, 'bad'); return; }
+          print(`analysing ${f.name} …`, 'dim');
+          const lower = f.name.toLowerCase();
+          if (lower.endsWith('.eml') || lower.endsWith('.msg')) {
+            const parsed = lower.endsWith('.msg') ? await parseMsgFile(f) : await parseEmlFile(f);
+            const report = await buildEmailAnalysis(parsed);
+            const ai = nlpScore({ subject: report.parsed?.subject || '', body: report.parsed?.body || '', urls: report.aitm_analysis || [], attachments: report.attachment_analysis || [] });
+            const overall = Math.round((report.threat?.risk_score || 0) * 0.5 + ai.combined * 0.5);
+            print(`subject   ${report.parsed?.subject || '—'}`, 'dim');
+            print(`category  ${report.category_analysis?.category_label || '—'}`, 'dim');
+            print(`structural ${report.threat?.risk_score}/100 · ai ${ai.combined}/100 (kw ${ai.keyword.score} nlp ${ai.nlp.score} sem ${ai.semantic.score})`, 'dim');
+            print(`OVERALL ${overall}/100 — ${report.threat?.status || ''}`, overall >= 70 ? 'bad' : overall >= 40 ? 'warn' : 'ok');
+            (report.threat?.signals || []).slice(0, 5).forEach((s) => print(`  ! ${s.label || s}`, 'warn'));
+            (report.aitm_analysis || []).slice(0, 4).forEach((u) => print(`  link ${u.url || u}`, 'warn'));
+            (report.attachment_analysis || []).slice(0, 4).forEach((a) => print(`  att  ${a.filename} risk ${a.risk_score}`, 'warn'));
+          } else if (/\.txt$|\.html$|\.js$/.test(lower)) {
+            const text = await f.text();
+            const ai = nlpScore({ subject: f.name, body: text });
+            print(`ai lanes  kw ${ai.keyword.score} · nlp ${ai.nlp.score} · sem ${ai.semantic.score}`, 'dim');
+            print(`OVERALL ${ai.combined}/100 — ${ai.verdict}`, ai.combined >= 70 ? 'bad' : ai.combined >= 40 ? 'warn' : 'ok');
+            ai.intents.slice(0, 4).forEach((i) => print(`  intent ${i.label} (${i.confidence}%)`, 'warn'));
+          } else {
+            const report = await analyzeStandaloneAttachment(f);
+            const att = (report.attachment_analysis || [])[0] || {};
+            print(`type ${att.detected_type || '?'} · entropy ${att.entropy} · sha256 ${(att.sha256 || '').slice(0, 16)}…`, 'dim');
+            print(`OVERALL ${att.risk_score}/100 — ${att.risk_level}`, (att.risk_score || 0) >= 70 ? 'bad' : (att.risk_score || 0) >= 40 ? 'warn' : 'ok');
+            (att.findings || []).slice(0, 6).forEach((s) => print(`  ! ${s}`, 'warn'));
+          }
+        }).catch((error) => print(`score failed (${error?.message || 'error'})`, 'bad'));
+        break;
+      }
       case 'neofetch':
         print('spandr-sbx-01 · Debian 12 · kernel 6.8.0-hardened · chromium 131 · 1280x720 · egress BLOCKED', 'dim');
         print('cpu 2 vcpu · ram 2048 MB · disk /evidence ro', 'dim');
@@ -604,24 +811,7 @@ export default function SandboxApp() {
     }
 
     if (id === 'realpc') {
-      return (
-        <div className="gwin__realpc">
-          <div className="gwin__realpc-note">
-            <MonitorPlay size={11} />
-            <span>
-              Real virtual computer — actual Debian desktop + Chromium + analysis tools,
-              streamed from the air-gapped container over noVNC (like a TryHackMe attack box).
-              Start it: <code>docker compose up isolated-sandbox</code> · live preview on port 7860.
-            </span>
-          </div>
-          <iframe
-            title="Real PC desktop (noVNC)"
-            className="gwin__realpc-frame"
-            src="/novnc/vnc.html?autoconnect=true&resize=scale&path=novnc/websockify&view_only=0"
-            sandbox="allow-scripts allow-same-origin"
-          />
-        </div>
-      );
+      return <RealPcWindow openGuest={openGuest} />;
     }
 
     if (id === 'lab') {

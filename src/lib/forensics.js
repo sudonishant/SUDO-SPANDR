@@ -337,6 +337,7 @@ function magicType(bytes) {
   if (b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4e && b[3] === 0x47) return 'PNG image';
   if (b[0] === 0xff && b[1] === 0xd8 && b[2] === 0xff) return 'JPEG image';
   if (b[0] === 0x47 && b[1] === 0x49 && b[2] === 0x46) return 'GIF image';
+  if (b[0] === 0xd0 && b[1] === 0xcf && b[2] === 0x11 && b[3] === 0xe0 && b[4] === 0xa1 && b[5] === 0xb1 && b[6] === 0x1a && b[7] === 0xe1) return 'OLE compound document (CFB)';
   return 'Unknown / not identified by first bytes';
 }
 
@@ -415,8 +416,10 @@ function entropy(bytes) {
   }, 0).toFixed(2));
 }
 
-export async function inspectAttachment({ filename, buffer }) {
-  const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer || new ArrayBuffer(0));
+export async function inspectAttachment({ filename, buffer, content }) {
+  // `content` is an accepted alias for `buffer` (MSG attachment readers return `content`)
+  const source = buffer !== undefined ? buffer : content;
+  const bytes = source instanceof Uint8Array ? source : new Uint8Array(source || new ArrayBuffer(0));
   const ext = extensionOf(filename);
   const type = magicType(bytes);
   const rawText = decodeBytes(bytes.slice(0, Math.min(bytes.length, 2_000_000)));
@@ -424,12 +427,27 @@ export async function inspectAttachment({ filename, buffer }) {
   let riskScore = 0;
   const boundary = formatBoundaryInspection(bytes, type);
   const executableType = /executable/i.test(type);
-  const documentLike = /^(pdf|zip|rar|png|jpeg|gif)$/i.test(ext) || ['PDF', 'ZIP / Office Open XML container', 'RAR archive', 'PNG image', 'JPEG image', 'GIF image'].includes(type);
+  const documentLike = /^(pdf|zip|rar|png|jpeg|gif|doc|docx|xls|xlsx|ppt|pptx|rtf|csv|txt|html|htm)$/i.test(ext) || ['PDF', 'ZIP / Office Open XML container', 'RAR archive', 'PNG image', 'JPEG image', 'GIF image', 'OLE compound document (CFB)'].includes(type);
   if (executableType && documentLike) { findings.push('File extension/content mismatch: executable magic bytes detected for a document/media-looking file.'); riskScore += 80; }
   if (/\.(pdf|docx?|xlsx?|pptx?|txt|jpg|png|zip)\.(exe|scr|bat|cmd|js|vbs|ps1|hta|jar)$/i.test(filename)) { findings.push('Double-extension filename requires review.'); riskScore += 45; }
   if (/[\u202a-\u202e\u2066-\u2069]/.test(filename)) { findings.push('Bidirectional Unicode control character appears in filename.'); riskScore += 45; }
   if (/\/javascript|\/js|\/launch|openaction/i.test(rawText) && /pdf/i.test(ext)) { findings.push('PDF text contains active-content markers; static inspection cannot prove exploitability.'); riskScore += 35; }
   if (/(autoopen|document_open|vbaproject|powershell|wscript\.shell)/i.test(rawText) && /\.(docm?|xlsm?|pptm?|docx|xlsx|pptx)$/i.test(filename)) { findings.push('Office-like content contains macro/script markers; macro execution was not performed.'); riskScore += 35; }
+  if (/\.(js|vbs|ps1|hta|bat|cmd|wsf|jse)$/i.test(filename) || /OLE compound/.test(type)) {
+    if (/(wscript\.shell|powershell|cmd\.exe|activeXObject|eval\(|frombase64string|createobject|autoopen|document_open|vbaproject|msxml2\.xmlhttp)/i.test(rawText)) {
+      findings.push('Script/document contains execution, download or macro-launch markers (static strings only; nothing was executed).');
+      riskScore += 45;
+    }
+  }
+  if (/\.(html?|mht)$/i.test(filename) && /<\s*script/i.test(rawText)) {
+    findings.push('HTML content contains embedded script; possible redirect/drive-by lure.');
+    riskScore += 25;
+    if (/https?:\/\/[^\s"'<>]+/i.test(rawText)) { findings.push('HTML references an external URL from inside the document.'); riskScore += 15; }
+  }
+  if (/powershell.{0,40}(-enc|-encodedcommand)/i.test(rawText)) {
+    findings.push('Encoded PowerShell command pattern observed in strings.');
+    riskScore += 30;
+  }
   if (/\.(zip|rar|7z)$/i.test(ext) && /\.(exe|scr|bat|cmd|js|vbs|ps1)\b/i.test(rawText)) { findings.push('Archive text contains an executable/script filename marker; archive members were not fully unpacked in browser.'); riskScore += 30; }
   if (boundary.trailing_non_whitespace_bytes > 0) {
     findings.push(`Bytes were found after the detected ${type} end marker at offset ${boundary.primary_end_offset}; this is a format-boundary anomaly, not steganography detection or proof of malware.`);
@@ -463,6 +481,35 @@ function parseRawEmail(rawText, filename, sourceMode) {
   return { sourceMode, filename, rawText: normalizedRawText, headers, headerEntries: entries, body: displayBody, sender, recipient, subject, replyTo, ips, urls: extractUrls(`${headerText}\n${body}`), attachments: [] };
 }
 
+/* Carve MIME attachment parts (base64 or text) out of a raw EML body so
+   attachment scoring works on .eml intake, not just the deep-lab engine. */
+function extractMimeAttachments(rawText) {
+  const text = String(rawText || '');
+  const attachments = [];
+  const boundaryMatch = text.match(/boundary="?([^";\r\n]+)"?/i);
+  const parts = boundaryMatch
+    ? text.split(`--${boundaryMatch[1]}`).slice(1)
+    : [text];
+  parts.forEach((part) => {
+    const head = (part.split(/\r?\n\r?\n/)[0] || '');
+    if (!/content-disposition:\s*attachment/i.test(head) && !/filename\*?=/i.test(head)) return;
+    const nameMatch = head.match(/filename\*?="?([^";\r\n]+)"?/i) || head.match(/name="?([^";\r\n]+)"?/i);
+    const filename = clean(nameMatch ? nameMatch[1] : '') || 'unnamed-attachment';
+    const bodyText = part.slice(part.search(/\r?\n\r?\n/) >= 0 ? part.search(/\r?\n\r?\n/) + 2 : 0);
+    let bytes;
+    if (/content-transfer-encoding:\s*base64/i.test(head)) {
+      const b64 = bodyText.replace(/\s+/g, '');
+      const bin = atob(b64);
+      bytes = new Uint8Array(bin.length);
+      for (let i = 0; i < bin.length; i += 1) bytes[i] = bin.charCodeAt(i);
+    } else {
+      bytes = new TextEncoder().encode(bodyText.replace(/\r?\n/g, '\r\n'));
+    }
+    if (bytes.length) attachments.push({ filename, buffer: bytes });
+  });
+  return attachments;
+}
+
 export function parseTextInput({ sender = '', recipient = '', subject = '', body = '' }) {
   const parsed = parseRawEmail(body, 'pasted-text.txt', 'text');
   const looksLikeHeaders = /^\s*(received|from|to|subject|date|message-id|authentication-results):/im.test(body);
@@ -481,6 +528,7 @@ export async function parseEmlFile(file) {
   const buffer = await file.arrayBuffer();
   const rawText = decodeBytes(buffer);
   const parsed = parseRawEmail(rawText, file.name, 'eml');
+  parsed.attachments = extractMimeAttachments(rawText);
   const report = await inspectAttachment({ filename: file.name, buffer });
   return { ...parsed, rawBytes: buffer, rawHash: report.sha256, fileReport: report, input_note: 'RFC-style raw email text parsed locally. Authentication results are reported only, not independently verified.' };
 }
@@ -489,7 +537,14 @@ export async function parseMsgFile(file) {
   const buffer = await file.arrayBuffer();
   try {
     const msgModule = await import('@kenjiuno/msgreader');
-    const MsgReader = msgModule.default || msgModule;
+    // CJS/ESM interop differs between bundlers (vite, esbuild, node) — resolve
+    // every known shape before falling back; a wrong shape here silently zeroed
+    // every .msg score in the past ("MsgReader is not a constructor").
+    const MsgReader = typeof msgModule.default === 'function' ? msgModule.default
+      : typeof msgModule.default?.default === 'function' ? msgModule.default.default
+        : typeof msgModule.MsgReader === 'function' ? msgModule.MsgReader
+          : msgModule.default || msgModule;
+    if (typeof MsgReader !== 'function') throw new Error('MSG reader module did not expose a constructor');
     const reader = new MsgReader(buffer);
     const info = reader.getFileData();
     const headersText = clean(info.headers);
@@ -507,7 +562,24 @@ export async function parseMsgFile(file) {
       }
     });
     const parsed = parseRawEmail(headersText, file.name, 'msg');
-    return { ...parsed, sender, recipient, subject, body: clean(info.body), headers: parsedHeaders.headers, headerEntries: parsedHeaders.entries, attachments, rawBytes: buffer, input_note: 'Outlook MSG container parsed with a dedicated MSG reader. Embedded transport headers are shown when present; browser mode does not re-run DNS/cryptographic verification.' };
+    const bodyText = clean(info.body);
+    // URLs must come from the MESSAGE body too — header-only extraction misses
+    // every phishing link in a .msg and collapses the score toward zero.
+    const merged = {
+      ...parsed,
+      sender,
+      recipient,
+      subject,
+      body: bodyText,
+      headers: parsedHeaders.headers,
+      headerEntries: parsedHeaders.entries,
+      // attachment `content` is the bytes; inspectAttachment accepts the alias
+      attachments: attachments.map((a) => ({ filename: a.filename, buffer: a.content })),
+      urls: extractUrls(`${headersText}\n${subject}\n${bodyText}`),
+      rawBytes: buffer,
+      input_note: 'Outlook MSG container parsed with a dedicated MSG reader. Embedded transport headers are shown when present; browser mode does not re-run DNS/cryptographic verification.',
+    };
+    return merged;
   } catch (error) {
     const report = await inspectAttachment({ filename: file.name, buffer });
     return { sourceMode: 'msg', filename: file.name, rawBytes: buffer, rawHash: report.sha256, sender: '', recipient: '', subject: '', body: '', headers: {}, headerEntries: [], ips: [], urls: [], attachments: [], fileReport: report, parseError: `MSG parsing failed: ${error?.message || 'unknown parser error'}`, input_note: 'This is a binary Outlook MSG file that could not be parsed. No sender, body, route, or attachment claims were invented.' };

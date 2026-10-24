@@ -1,0 +1,41 @@
+Return-Path: <ceo.office@corp-secure-mail.com>
+Received: from mail.corp-secure-mail.com (203.0.113.88)
+	mx.cybercell.gov.in with SMTP id 88b2c1;
+	Sat, 24 Oct 2026 11:42:03 +0530
+Authentication-Results: mx.cybercell.gov.in;
+	spf=fail smtp.mailfrom=corp-secure-mail.com;
+	dkim=none; dmarc=fail action=none
+From: "Managing Director" <ceo.office@corp-secure-mail.com>
+Reply-To: ceo.personal@gmail.com
+To: accounts.team@state-agency.gov.in
+Subject: URGENT: Payment approval needed before 3 PM
+Message-ID: <20261024114203.88b2c1@corp-secure-mail.com>
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="SPANDRBND123"
+
+--SPANDRBND123
+Content-Type: text/plain; charset="utf-8"
+Content-Transfer-Encoding: 7bit
+
+Hello,
+
+Kindly treat this as urgent and confidential. I am in a meeting with the
+auditors and cannot take calls. We need to process a wire transfer to the
+updated bank details attached today before 3 PM.
+
+Open the attachment and enable macros to view the payment sheet. Do not
+inform anyone else about this transaction - it is a confidential acquisition.
+
+Send me the confirmation once done.
+
+Regards,
+Managing Director
+
+--SPANDRBND123
+Content-Type: application/octet-stream; name="payment-sheet.doc"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="payment-sheet.doc"
+
+TVqQAAMAAABmYWtlLWludm9pY2UtZG9jdW1lbnQtZm9yLXNhbXBsZS1vbmx5
+
+--SPANDRBND123--

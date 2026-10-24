@@ -77,7 +77,7 @@ function MobileStatus({ locked }) {
   return (
     <div className="phone__status">
       <span className="phone__time">{now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
-      <span className="phone__brand"><span className="phone__brand-dot" /> SUDO SPANDR</span>
+      <span className="phone__brand"><img src="/logo.jpg" alt="" className="phone__brand-logo" /> SUDO SPANDR</span>
       <span className="phone__status-icons">
         <Lock size={10} />
         <Wifi size={11} />
@@ -254,7 +254,7 @@ function Menubar({ onAction, onOpen, activeTitle, quickOpen, setQuickOpen }) {
             className={`${key === 'spandr' ? 'menu-brand' : 'menu-item'} ${menu === key ? 'is-open' : ''}`}
             onClick={() => setMenu(menu === key ? null : key)}
           >
-            {key === 'spandr' ? <><span className="menu-brand__mark" />SUDO SPANDR</> : value.label}
+            {key === 'spandr' ? <><img src="/logo.jpg" alt="" className="menu-brand__logo" />SUDO SPANDR</> : value.label}
           </button>
           {menu === key && (
             <div className="dropdown" style={{ left: 0, top: 30 }}>
@@ -292,6 +292,7 @@ function DesktopLauncher({ onOpen, onContext }) {
       onContextMenu={(event) => { event.preventDefault(); onContext?.({ x: event.clientX, y: event.clientY }); }}
     >
       <div className="launcher__head">
+        <img src="/logo.jpg" alt="SUDO SPANDR logo" className="launcher__logo" />
         <span className="launcher__eyebrow">SentinelMail · deterministic email forensics</span>
         <h1 className="launcher__title">Welcome to <span>SUDO SPANDR</span></h1>
         <p className="launcher__sub">Pick an app. Evidence is parsed on this machine — nothing is uploaded.</p>
@@ -426,7 +427,7 @@ function BootScreen({ done }) {
   return (
     <div className={`boot ${done ? 'is-done' : ''}`} aria-hidden={done}>
       <div className="boot__inner">
-        <div className="boot__mark" />
+        <img src="/logo.jpg" alt="" className="boot__logo" />
         <div className="boot__name">SUDO SPANDR</div>
         <div className="boot__log">{line}<br />sentinelmail desktop · no telemetry</div>
         <div className="boot__bar"><i /></div>
@@ -599,7 +600,10 @@ export default function App() {
     if (id === 'files') return (
       <FilesApp
         openFile={(file) => {
-          if (file?.kind === 'terminal') open('terminal');
+          if (file?.kind === 'scorer') {
+            const target = file.target === 'attach' ? 'attach' : file.target === 'content' ? 'content' : 'eml';
+            open(target);
+          } else if (file?.kind === 'terminal') open('terminal');
           else if (file?.kind === 'about') open('about');
           else if (file?.kind === 'dossier') open('dossier');
           else open('files');
@@ -660,7 +664,7 @@ export default function App() {
       {locked && (
         <div className="boot" style={{ opacity: 1, visibility: 'visible' }}>
           <div className="boot__inner">
-            <div className="boot__mark" />
+            <img src="/logo.jpg" alt="" className="boot__logo" />
             <div className="boot__name">SESSION LOCKED</div>
             <div className="boot__log">evidence stays in memory only<br />nothing is written to disk</div>
             <button type="button" className="btn btn--primary" onClick={() => setLocked(false)}><Lock size={12} /> Unlock session</button>
