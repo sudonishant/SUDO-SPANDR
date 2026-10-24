@@ -336,6 +336,7 @@ In grand finale nodal centers or forensic crime labs without external internet a
 - **Self-Contained Client Dashboard**: Single-file architecture with offline embedded CSS/JS.
 - **Local MaxMind GeoIP Engine**: Reads local `GeoLite2-City.mmdb` and `GeoLite2-ASN.mmdb` without API calls.
 - **Air-Gapped Sandbox Container**: Fully local Debian Bookworm + Chromium + noVNC + Xvfb stack running on `localhost:7860`.
+- **CyberLab Analysis Toolbox**: TryHackMe-style guest toolset (nmap · whois · dig · traceroute · tshark · john · binwalk · exiftool · whatweb · sqlmap · hydra) with a CyberLab guest window + guest-terminal commands (`nmap`, `crack`, `webchk`, `toolbox`). Real binaries inside the sandbox container; deterministic pure-Python engines elsewhere.
 - **SSRF Hardening**: Automated egress filters strictly quarantine RFC 1918, RFC 3927, and cloud metadata endpoints.
 - **Cached Auth Fixtures**: When DNS is unreachable, auth verifier enters transparent degraded mode refusing to invent fake passes.
 
@@ -404,6 +405,11 @@ python3 backend/security_test.py
 | `POST` | `/api/v1/attachment` | Dedicated static byte disassembly & container-aware entropy | Magic-Byte Container Analysis |
 | `POST` | `/api/v1/sandbox/detonate` | Safe URL inspection, DOM redirect tracing & security headers | Sandboxed Chromium Inspector |
 | `GET` | `/api/v1/sandbox/preview-frame` | Sanitised HTML preview of a detonated target (SSRF-guarded, `frame-ancestors *`) | Sandboxed Chromium Inspector |
+| `POST` | `/api/v1/sandbox/lab/portscan` | CyberLab port scan (real nmap or builtin TCP connect engine) | CyberLab Toolbox |
+| `POST` | `/api/v1/sandbox/lab/recon` | CyberLab DNS/whois/ping/traceroute/header reconnaissance | CyberLab Toolbox |
+| `POST` | `/api/v1/sandbox/lab/hashcrack` | Hash identification + cracking (John the Ripper / builtin engine) | CyberLab Toolbox |
+| `POST` | `/api/v1/sandbox/lab/webanalyze` | Static web inspection: headers, cookies, hidden paths, forms | CyberLab Toolbox |
+| `POST` | `/api/v1/sandbox/lab/pcap` | PCAP dissection (tshark or builtin parser): DNS, HTTP, credentials, flags | CyberLab Toolbox |
 | `GET` | `/api/v1/export/cypher/{case_id}` | Export Neo4j Cypher statements for entity graph attribution | STIX 2.1 Graph Mapping |
 | `GET` | `/api/v1/supabase/schema` | Retrieve Supabase PostgreSQL forensic schema & RLS policies | ISO/IEC 27037 Evidence Vault |
 

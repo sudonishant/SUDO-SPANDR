@@ -10,7 +10,8 @@ ENV DEBIAN_FRONTEND=noninteractive \
     SCREEN_WIDTH=1366 \
     SCREEN_HEIGHT=768 \
     SCREEN_DEPTH=24 \
-    HOME=/home/user
+    HOME=/home/user \
+    CYBERLAB_ALLOW_PRIVATE=1
 
 RUN apt-get update && apt-get install -y --no-install-recommends \
     chromium \
@@ -26,8 +27,29 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     fonts-noto-color-emoji \
     libnss3 \
     procps \
+    xterm \
+    python3 \
+    python3-pip \
+    nmap \
+    whois \
+    dnsutils \
+    traceroute \
+    iputils-ping \
+    netcat-openbsd \
+    tshark \
+    john \
+    binwalk \
+    libimage-exiftool-perl \
+    whatweb \
+    sqlmap \
+    hydra \
+    libcap2-bin \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/*
+
+# CyberLab toolset: live capture + lab-target permissions
+RUN setcap cap_net_raw,cap_net_admin+ep /usr/bin/dumpcap 2>/dev/null || true && \
+    setcap cap_net_raw,cap_net_admin+ep /usr/bin/ping 2>/dev/null || true
 
 RUN useradd -m -u 1000 user && \
     mkdir -p /home/user/.fluxbox /home/user/.config/chromium /var/log/supervisor && \
@@ -35,6 +57,21 @@ RUN useradd -m -u 1000 user && \
 
 RUN echo "session.screen0.toolbar.visible: false" > /home/user/.fluxbox/init && \
     chown -R user:user /home/user/.fluxbox
+
+# CyberLab: wordlist + tool banner for the guest shell (TryHackMe-style lab)
+RUN mkdir -p /opt/cyberlab/wordlists && \
+    printf '%s\n' password 123456 123456789 qwerty password1 admin letmein welcome \
+      monkey dragon iloveyou sunshine princess football abc123 password123 \
+      admin123 pass123 test changeme master passw0rd p@ssw0rd shadow secret \
+      security login 1q2w3e4r qwertyuiop 1qaz2wsx starwars > /opt/cyberlab/wordlists/lab-top.txt && \
+    printf '%s\n' \
+      '# CyberLab guest image — analysis tools:' \
+      '# nmap · whois · dig · traceroute · ping · nc · tshark · john · binwalk' \
+      '# exiftool · whatweb · sqlmap · hydra · xterm' \
+      '# wordlist: /opt/cyberlab/wordlists/lab-top.txt' \
+      '# policy: private/lab targets only when CYBERLAB_ALLOW_PRIVATE=1' \
+      > /opt/cyberlab/README.txt && \
+    chown -R user:user /opt/cyberlab
 
 COPY --chown=user:user <<'CONFIG' /etc/supervisor/conf.d/supervisord.conf
 [supervisord]

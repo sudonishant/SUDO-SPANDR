@@ -32,6 +32,7 @@ from app.core.openrouter_client import request_ai_second_opinion
 from app.core.parser_engine import parse_eml_stream
 from app.core.supabase_engine import sync_to_supabase, SUPABASE_SCHEMA_SQL, get_supabase_config
 from app.core.web_sandbox_engine import inspect_url_dom_and_headers, is_safe_public_destination
+from app.core import cyberlab_engine
 from app.static_index import HTML_CONTENT
 try:
     from app.core.auth_verifier import verify_spf, verify_dkim_signature, verify_dmarc_alignment, DNS_AVAILABLE, CRYPTO_AVAILABLE
@@ -550,6 +551,26 @@ class DetonateUrlRequest(BaseModel):
     url: str
 
 
+class LabPortscanRequest(BaseModel):
+    target: str
+    mode: str = "quick"
+
+
+class LabReconRequest(BaseModel):
+    target: str
+    action: str = "dig"
+
+
+class LabHashRequest(BaseModel):
+    hash: str
+    wordlist: Optional[str] = None
+
+
+class LabWebRequest(BaseModel):
+    url: str
+    deep: bool = False
+
+
 @app.post(f"{settings.API_V1_STR}/sandbox/detonate")
 def sandbox_detonate(req: DetonateUrlRequest) -> Dict[str, Any]:
     return inspect_url_dom_and_headers(req.url)
@@ -817,6 +838,8 @@ async def sandbox_launch_app(app_name: str) -> Dict[str, Any]:
         "pdf": ["atril"],
         "image": ["ristretto"],
         "browser": ["chromium", "--no-sandbox", "--user-data-dir=/tmp/vnc_chromium", "--disable-gpu", "--disable-software-rasterizer", "--disable-dev-shm-usage", "https://www.google.com"],
+        "labshell": ["xterm", "-fa", "monospace", "-fs", "11", "-title", "CyberLab shell", "-e", "bash", "-l"],
+        "xterm": ["xterm", "-fa", "monospace", "-fs", "11"],
     }
     cmd = cmd_map.get(app_name.lower())
     if not cmd:
@@ -1005,6 +1028,45 @@ async def sandbox_restart() -> Dict[str, Any]:
 @app.post(f"{settings.API_V1_STR}/honeypots")
 def create_honeypot(req: HoneypotCreateRequest) -> Dict[str, Any]:
     return {"status": "not_configured", "email": req.email, "message": "Honeypot creation requires an authenticated telemetry backend."}
+
+
+# =============================================================================
+# CyberLab — TryHackMe-style analysis toolbox inside the sandbox
+# =============================================================================
+
+
+@app.get(f"{settings.API_V1_STR}/sandbox/lab/toolbox")
+def lab_toolbox() -> Dict[str, Any]:
+    """Which analysis tools this host actually has (real binaries vs builtin engines)."""
+    return cyberlab_engine.tool_status()
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/portscan")
+def lab_portscan(req: LabPortscanRequest) -> Dict[str, Any]:
+    return cyberlab_engine.port_scan(req.target.strip(), req.mode)
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/recon")
+def lab_recon(req: LabReconRequest) -> Dict[str, Any]:
+    return cyberlab_engine.recon(req.target.strip(), req.action)
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/hashcrack")
+def lab_hashcrack(req: LabHashRequest) -> Dict[str, Any]:
+    return cyberlab_engine.hash_crack(req.hash, req.wordlist)
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/webanalyze")
+def lab_webanalyze(req: LabWebRequest) -> Dict[str, Any]:
+    return cyberlab_engine.web_analyze(req.url, deep=req.deep)
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/pcap")
+async def lab_pcap(file: UploadFile = File(...)) -> Dict[str, Any]:
+    data = await file.read()
+    if len(data) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="capture too large (50 MB max)")
+    return cyberlab_engine.pcap_analyze(data, filename=file.filename or "capture.pcap")
 
 
 @app.websocket("/websockify")
