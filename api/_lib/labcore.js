@@ -427,3 +427,133 @@ export function pcapAnalyze(buf, filename) {
   result.credentials = result.credentials.slice(0, 40).join('\n');
   return result;
 }
+
+/* ===== endpoint handlers (single catch-all function on Vercel) =====
+   Vercel Hobby allows max 12 serverless functions per deployment; every non-underscore
+   file under api/ counts as one. All /api/v1/sandbox/lab/* routes share ONE function
+   (see [[...path]].js). Add new lab routes as handlers here, never as new api/ files. */
+
+/* ---------- /attachment ---------- */
+// POST /api/v1/sandbox/lab/attachment — deep static attachment analysis (edge)
+
+
+
+export async function handleAttachment(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'method_not_allowed', detail: 'POST a file as {filename, file_b64}.' });
+  }
+  const { filename, file_b64: fileB64 } = req.body || {};
+  if (!fileB64) {
+    return res.status(400).json({ error: 'missing_file', detail: 'Provide {filename, file_b64} (base64 file bytes).' });
+  }
+  try {
+    const buf = Buffer.from(fileB64, 'base64');
+    if (!buf.length) throw new Error('empty file');
+    return res.status(200).json(attachmentAnalyze(buf, filename || 'attachment.bin'));
+  } catch (e) {
+    return res.status(400).json({ error: 'analysis_failed', detail: e.message });
+  }
+}
+
+/* ---------- /url ---------- */
+// POST /api/v1/sandbox/lab/url — deep suspicious-link analysis (edge)
+
+
+export async function handleUrl(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+
+  let url = '';
+  if (req.method === 'POST') url = req.body?.url || '';
+  else url = req.query?.url || '';
+  url = (url || '').trim();
+  if (!url) {
+    return res.status(400).json({ error: 'missing_url', detail: 'Provide a URL to analyse.' });
+  }
+  try {
+    return res.status(200).json(await urlAnalyze(url));
+  } catch (e) {
+    return res.status(500).json({ error: 'analysis_failed', detail: e.message });
+  }
+}
+
+/* ---------- /auto-triage ---------- */
+// POST /api/v1/sandbox/lab/auto-triage — one-click automated email evidence triage (edge)
+
+
+
+export async function handleAutoTriage(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'method_not_allowed', detail: 'POST {eml_b64 | files | urls}.' });
+  }
+  const body = req.body || {};
+  const urls = Array.isArray(body.urls) ? body.urls : (typeof body.urls === 'string' ? body.urls.split(/[\s,]+/).filter(Boolean) : []);
+  const files = Array.isArray(body.files) ? body.files : [];
+  if (!body.eml_b64 && !body.eml_text && !files.length && !urls.length) {
+    return res.status(400).json({ error: 'empty_request', detail: 'Provide an .eml, files ({filename, file_b64}), or at least one URL.' });
+  }
+  try {
+    return res.status(200).json(await autoTriage({
+      eml_b64: body.eml_b64,
+      eml_text: body.eml_text,
+      files,
+      urls,
+    }));
+  } catch (e) {
+    return res.status(500).json({ error: 'triage_failed', detail: e.message });
+  }
+}
+
+/* ---------- /pcap ---------- */
+// POST /api/v1/sandbox/lab/pcap — traffic evidence dissection (edge parser)
+
+
+
+export async function handlePcap(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  if (req.method !== 'POST') {
+    return res.status(405).json({ error: 'method_not_allowed', detail: 'POST {filename, file_b64}.' });
+  }
+  const { filename, file_b64: fileB64 } = req.body || {};
+  if (!fileB64) {
+    return res.status(400).json({ error: 'missing_file', detail: 'Provide {filename, file_b64} (base64 pcap bytes).' });
+  }
+  try {
+    return res.status(200).json(pcapAnalyze(Buffer.from(fileB64, 'base64'), filename || 'capture.pcap'));
+  } catch (e) {
+    return res.status(400).json({ error: 'analysis_failed', detail: e.message });
+  }
+}
+
+/* ---------- /toolbox ---------- */
+// GET /api/v1/sandbox/lab/toolbox — which analysis engines this deployment has
+export async function handleToolbox(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET, OPTIONS, POST');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  if (req.method === 'OPTIONS') { res.status(200).end(); return; }
+  return res.status(200).json({
+    guest_image: 'spandr-sbx-cyberlab',
+    private_targets_allowed: process.env.CYBERLAB_ALLOW_PRIVATE === '1',
+    edge: true,
+    tools: {
+      attachment_lab: { binary: 'edge-js', available: true },
+      url_lab: { binary: 'edge-js', available: true },
+      auto_triage: { binary: 'edge-js', available: true },
+      pcap_parser: { binary: 'edge-js', available: true },
+    },
+  });
+}
