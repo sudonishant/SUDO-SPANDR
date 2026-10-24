@@ -1,12 +1,13 @@
 import React from 'react';
 import {
-  Activity, AlertTriangle, CheckCircle2, Cpu, Crosshair, Globe, Loader2, Lock, Power, RotateCw,
+  Activity, AlertTriangle, CheckCircle2, Cpu, Crosshair, Globe, Loader2, Lock, MonitorPlay, Power, RotateCw,
   ShieldAlert, TerminalSquare, Wifi, WifiOff, X,
 } from 'lucide-react';
 import { staticUrlChecks } from '../lib/urlChecks';
 
 const GUEST_APPS = {
   browser: { title: 'Chromium · air-gapped', short: 'Chromium', icon: Globe, x: 33, y: 5, w: 61, h: 63 },
+  realpc: { title: 'Real PC · noVNC desktop (docker)', short: 'Real PC', icon: MonitorPlay, x: 8, y: 8, w: 82, h: 74 },
   lab: { title: 'Threat Lab · attachment & link analysis', short: 'ThreatLab', icon: Crosshair, x: 2, y: 5, w: 48, h: 43 },
   monitor: { title: 'System Monitor', short: 'Monitor', icon: Activity, x: 57, y: 20, w: 40, h: 52 },
   terminal: { title: 'guest@spandr-sbx:~', short: 'Terminal', icon: TerminalSquare, x: 2, y: 50, w: 47, h: 43 },
@@ -88,15 +89,15 @@ export default function SandboxApp() {
   const [booted, setBooted] = React.useState(false);
   const [openApps, setOpenApps] = React.useState(() => (
     window.innerWidth < 780
-      ? { browser: true, monitor: false, terminal: false, lab: false }
-      : { browser: true, monitor: false, terminal: true, lab: false }
+      ? { browser: true, monitor: false, terminal: false, lab: false, realpc: false }
+      : { browser: true, monitor: false, terminal: true, lab: false, realpc: false }
   ));
   const [pos, setPos] = React.useState(() => {
     const initial = {};
     Object.entries(GUEST_APPS).forEach(([id, app]) => { initial[id] = { x: app.x, y: app.y }; });
     return initial;
   });
-  const [zOrder, setZOrder] = React.useState({ browser: 2, terminal: 3, monitor: 1, lab: 0 });
+  const [zOrder, setZOrder] = React.useState({ browser: 2, terminal: 3, monitor: 1, lab: 0, realpc: 0 });
   const [activeGuest, setActiveGuest] = React.useState('browser');
   const [startOpen, setStartOpen] = React.useState(false);
   const [termLines, setTermLines] = React.useState([
@@ -598,6 +599,27 @@ export default function SandboxApp() {
               <span className="gwin__flag ok"><CheckCircle2 size={9} />{local ? 'No structural warning (not a reputation verdict)' : 'No target loaded yet'}</span>
             )}
           </div>
+        </div>
+      );
+    }
+
+    if (id === 'realpc') {
+      return (
+        <div className="gwin__realpc">
+          <div className="gwin__realpc-note">
+            <MonitorPlay size={11} />
+            <span>
+              Real virtual computer — actual Debian desktop + Chromium + analysis tools,
+              streamed from the air-gapped container over noVNC (like a TryHackMe attack box).
+              Start it: <code>docker compose up isolated-sandbox</code> · live preview on port 7860.
+            </span>
+          </div>
+          <iframe
+            title="Real PC desktop (noVNC)"
+            className="gwin__realpc-frame"
+            src="/novnc/vnc.html?autoconnect=true&resize=scale&path=novnc/websockify&view_only=0"
+            sandbox="allow-scripts allow-same-origin"
+          />
         </div>
       );
     }

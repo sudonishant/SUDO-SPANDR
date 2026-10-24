@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
-  BatteryFull, Command, FileCode2, FolderOpen, Github, Info, Lock, Printer, Radar,
-  RotateCcw, Search, Shield, TerminalSquare, Volume2, Wifi,
+  BatteryFull, Command, FileCode2, FileSearch, FileText, FolderOpen, Github, Globe, Info, Lock, Mail,
+  Paperclip, Printer, Radar, RotateCcw, Search, Shield, TerminalSquare, Volume2, Wifi,
 } from 'lucide-react';
 import Window from './os/Window';
 import WorkspaceApp from './apps/WorkspaceApp';
@@ -10,11 +10,29 @@ import FilesApp from './apps/FilesApp';
 import TerminalApp from './apps/TerminalApp';
 import AboutApp from './apps/AboutApp';
 import { MitreApp, DossierApp } from './apps/CaseApps';
+import { EmlScoreApp, ContentLabApp, AttachLabApp } from './apps/ScoreApps';
+import BrowserApp from './apps/BrowserApp';
 import { useForensicStore } from './store/useForensicStore';
 
 const REPO_URL = 'https://github.com/sudonishant/SUDO-SPANDR';
 
 const APPS = {
+  eml: {
+    title: 'EML / MSG Scorer', icon: Mail, accent: 'linear-gradient(160deg,#ff5c7a,#b31527)',
+    w: 860, h: 620, dock: 'linear-gradient(160deg,#ff5c7a,#a3121f)',
+  },
+  content: {
+    title: 'Content Lab', icon: FileText, accent: 'linear-gradient(160deg,#ffb45c,#b3561b)',
+    w: 820, h: 600, dock: 'linear-gradient(160deg,#ffb45c,#a84e14)',
+  },
+  attach: {
+    title: 'Attachment Lab', icon: Paperclip, accent: 'linear-gradient(160deg,#5cd9ff,#1b6bb3)',
+    w: 820, h: 600, dock: 'linear-gradient(160deg,#5cd9ff,#1556a8)',
+  },
+  browser: {
+    title: 'Real Browser', icon: Globe, accent: 'linear-gradient(160deg,#7ee2a8,#1c8a58)',
+    w: 1100, h: 680, ratio: 0.58, dock: 'linear-gradient(160deg,#7ee2a8,#166b43)',
+  },
   workspace: {
     title: 'Workspace', icon: FileCode2, accent: 'linear-gradient(160deg,#ff3b50,#b31527)',
     w: 980, h: 620, dock: 'linear-gradient(160deg,#ff3b50,#a3121f)',
@@ -40,16 +58,18 @@ const APPS = {
     w: 760, h: 560, dock: 'linear-gradient(160deg,#f7ce46,#8f6a06)',
   },
   about: {
-    title: 'About SPANDR', icon: Info, accent: 'linear-gradient(160deg,#4a4d55,#16171a)',
+    title: 'About SUDO SPANDR', icon: Info, accent: 'linear-gradient(160deg,#4a4d55,#16171a)',
     w: 700, h: 520, dock: 'linear-gradient(160deg,#4a4d55,#121316)',
   },
 };
 
 const LAUNCH = [
-  { id: 'workspace', label: 'Analyse', hint: 'Email · headers · auth' },
-  { id: 'sandbox', label: 'Sandbox', hint: 'Isolated virtual PC' },
+  { id: 'eml', label: 'EML Scorer', hint: 'Email .eml/.msg → score' },
+  { id: 'content', label: 'Content Lab', hint: 'Paste content → score' },
+  { id: 'attach', label: 'Attachment Lab', hint: 'File → direct score' },
+  { id: 'browser', label: 'Real Browser', hint: 'Live Chrome + data-flow log' },
+  { id: 'sandbox', label: 'Sandbox VM', hint: 'Real virtual computer' },
   { id: 'files', label: 'Files', hint: 'Evidence & reports' },
-  { id: 'terminal', label: 'Terminal', hint: 'Local shell' },
 ];
 
 function MobileStatus({ locked }) {
@@ -57,7 +77,7 @@ function MobileStatus({ locked }) {
   return (
     <div className="phone__status">
       <span className="phone__time">{now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
-      <span className="phone__brand"><span className="phone__brand-dot" /> SPANDR</span>
+      <span className="phone__brand"><span className="phone__brand-dot" /> SUDO SPANDR</span>
       <span className="phone__status-icons">
         <Lock size={10} />
         <Wifi size={11} />
@@ -146,7 +166,7 @@ function Wallpaper() {
         ))}
       </div>
       <div className="wallpaper__scan" />
-      <span className="wallpaper__word" aria-hidden="true">SPANDR</span>
+      <span className="wallpaper__word" aria-hidden="true">SUDO SPANDR</span>
       <div className="wallpaper__vignette" />
       <div className="wallpaper__noise" />
     </div>
@@ -184,21 +204,25 @@ function Menubar({ onAction, onOpen, activeTitle, quickOpen, setQuickOpen }) {
     spandr: {
       label: '◆',
       items: [
-        ['About SPANDR', 'about'], ['—'], ['New analysis', 'workspace'], ['Open evidence', 'files'],
+        ['About SUDO SPANDR', 'about'], ['—'], ['New analysis', 'workspace'], ['Open evidence', 'files'],
         ['—'], ['Restart session', 'restart'], ['Lock desktop', 'lock'],
       ],
     },
     File: {
       label: 'File',
       items: [
-        ['New analysis', 'workspace'], ['Open evidence…', 'files'], ['Detonate a link', 'sandbox'],
+        ['Score an email (.eml/.msg)', 'eml'], ['Score content', 'content'], ['Score an attachment', 'attach'],
+        ['—'],
+        ['New analysis', 'workspace'], ['Open evidence…', 'files'], ['Real browser', 'browser'], ['Detonate a link', 'sandbox'],
         ['—'], ['Print dossier', 'dossier'], ['Close window', 'close'],
       ],
     },
     Analysis: {
       label: 'Analysis',
       items: [
-        ['Workspace', 'workspace'], ['Sandbox VM', 'sandbox'], ['MITRE mapping', 'mitre'], ['Dossier & containment', 'dossier'],
+        ['EML / MSG Scorer', 'eml'], ['Content Lab', 'content'], ['Attachment Lab', 'attach'],
+        ['—'],
+        ['Workspace', 'workspace'], ['Real Browser', 'browser'], ['Sandbox VM (real PC)', 'sandbox'], ['MITRE mapping', 'mitre'], ['Dossier & containment', 'dossier'],
       ],
     },
     View: {
@@ -207,7 +231,7 @@ function Menubar({ onAction, onOpen, activeTitle, quickOpen, setQuickOpen }) {
     },
     Help: {
       label: 'Help',
-      items: [['About SPANDR', 'about'], ['Documentation', 'docs'], ['Report a finding', 'issues']],
+      items: [['About SUDO SPANDR', 'about'], ['Documentation', 'docs'], ['Report a finding', 'issues']],
     },
   };
 
@@ -230,7 +254,7 @@ function Menubar({ onAction, onOpen, activeTitle, quickOpen, setQuickOpen }) {
             className={`${key === 'spandr' ? 'menu-brand' : 'menu-item'} ${menu === key ? 'is-open' : ''}`}
             onClick={() => setMenu(menu === key ? null : key)}
           >
-            {key === 'spandr' ? <><span className="menu-brand__mark" />SPANDR</> : value.label}
+            {key === 'spandr' ? <><span className="menu-brand__mark" />SUDO SPANDR</> : value.label}
           </button>
           {menu === key && (
             <div className="dropdown" style={{ left: 0, top: 30 }}>
@@ -269,7 +293,7 @@ function DesktopLauncher({ onOpen, onContext }) {
     >
       <div className="launcher__head">
         <span className="launcher__eyebrow">SentinelMail · deterministic email forensics</span>
-        <h1 className="launcher__title">Welcome to <span>SPANDR</span></h1>
+        <h1 className="launcher__title">Welcome to <span>SUDO SPANDR</span></h1>
         <p className="launcher__sub">Pick an app. Evidence is parsed on this machine — nothing is uploaded.</p>
       </div>
 
@@ -316,7 +340,7 @@ function DesktopMenu({ at, onClose, onAction, onOpen }) {
     ['—'],
     ['MITRE mapping', () => onOpen('mitre')],
     ['Dossier & containment', () => onOpen('dossier')],
-    ['About SPANDR', () => onOpen('about')],
+    ['About SUDO SPANDR', () => onOpen('about')],
     ['—'],
     ['Lock session', () => onAction('lock')],
     ['Restart session', () => onAction('restart')],
@@ -357,7 +381,7 @@ function Dock({ onOpen, openIds }) {
           );
         })}
         <span className="dock__sep" />
-        <button className="dock__item" style={{ background: 'linear-gradient(160deg,#3a3d45,#0f1012)' }} data-label="About" aria-label="About SPANDR" onClick={() => onOpen('about')}>
+        <button className="dock__item" style={{ background: 'linear-gradient(160deg,#3a3d45,#0f1012)' }} data-label="About" aria-label="About SUDO SPANDR" onClick={() => onOpen('about')}>
           <Info />
         </button>
       </nav>
@@ -566,6 +590,10 @@ export default function App() {
   const activeWindow = [...windows].filter((win) => !win.minimized).sort((a, b) => b.z - a.z)[0];
 
   const renderApp = (id) => {
+    if (id === 'eml') return <EmlScoreApp />;
+    if (id === 'content') return <ContentLabApp />;
+    if (id === 'attach') return <AttachLabApp />;
+    if (id === 'browser') return <BrowserApp />;
     if (id === 'workspace') return <WorkspaceApp />;
     if (id === 'sandbox') return <SandboxApp />;
     if (id === 'files') return (
