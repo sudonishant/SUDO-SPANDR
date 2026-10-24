@@ -241,7 +241,7 @@ export async function urlAnalyze(rawUrl) {
       const resp = await fetch(current, {
         redirect: 'manual',
         signal: AbortSignal.timeout(10_000),
-        headers: { 'User-Agent': 'Mozilla/5.0 (SPANDR Threat Lab — static inspection)' },
+        headers: { 'User-Agent': 'Mozilla/5.0 (SPANDR Threat Lab - static inspection)' },
       });
       const loc = resp.headers.get('location') || '';
       chain.push({ url: current, status: resp.status, location: loc });
