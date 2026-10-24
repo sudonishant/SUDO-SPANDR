@@ -8,6 +8,8 @@ const activeFiles = [
   'src/components/Dropzone.jsx',
   'src/store/useForensicStore.jsx',
   'src/lib/forensics.js',
+  'src/styles/base.css',
+  'src/styles/app.css',
   'index.html',
   // Python backend core
   'backend/app/main.py',

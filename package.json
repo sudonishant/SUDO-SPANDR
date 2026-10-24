@@ -8,10 +8,11 @@
   },
   "scripts": {
     "dev": "vite --config vite.config.mjs",
-    "build": "mkdir -p dist && cp -r index.html assets api dist/ && test -f dist/index.html",
+    "build": "vite build",
     "lint": "node scripts/check-forensic-claims.mjs",
-    "preview": "vite preview",
-    "deploy": "npx wrangler pages deploy dist"
+    "preview": "vite preview --config vite.config.mjs",
+    "deploy": "npx wrangler pages deploy dist",
+    "start": "vite --config vite.config.mjs"
   },
   "dependencies": {
     "@kenjiuno/msgreader": "^1.28.0",

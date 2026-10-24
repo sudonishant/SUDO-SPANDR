@@ -567,8 +567,18 @@ def sandbox_preview_frame(url: str) -> HTMLResponse:
     return HTMLResponse(content=res.get("sanitized_html", ""), status_code=200, headers=headers)
 
 
+DIST_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "dist"))
+DIST_INDEX = os.path.join(DIST_DIR, "index.html")
+
+
 @app.get("/", response_class=HTMLResponse)
 def read_root():
+    # Prefer the built React workspace (npm run build) so the FastAPI server and
+    # the static deployment serve the same UI. Fall back to the embedded legacy
+    # single-file build when dist/ has not been generated yet.
+    if os.path.exists(DIST_INDEX):
+        with open(DIST_INDEX, encoding="utf-8") as handle:
+            return HTMLResponse(content=handle.read(), status_code=200)
     return HTMLResponse(content=HTML_CONTENT, status_code=200)
 
 
@@ -1070,6 +1080,11 @@ async def novnc_websocket_proxy(websocket: WebSocket):
 novnc_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "novnc"))
 if os.path.exists(novnc_dir):
     app.mount("/novnc", StaticFiles(directory=novnc_dir, html=True), name="novnc")
+
+# Serve the compiled workspace bundle (hashed CSS/JS) next to the FastAPI routes.
+dist_assets_dir = os.path.join(DIST_DIR, "assets")
+if os.path.isdir(dist_assets_dir):
+    app.mount("/assets", StaticFiles(directory=dist_assets_dir), name="workspace-assets")
 # Render Build Version 4.0 - Clean UI Route
 
 
