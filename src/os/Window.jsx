@@ -1,12 +1,12 @@
 import React from 'react';
-import { Minus, Square, X } from 'lucide-react';
+import { ChevronLeft, Minus, Square, X } from 'lucide-react';
 
 /**
  * Draggable / resizable window shell.
  * Pointer events only (no libraries), clamped to the desktop area.
  */
 export default function Window({
-  win, active, onFocus, onClose, onMinimize, onToggleMax, onMove, onResize, children,
+  win, active, onFocus, onClose, onMinimize, onToggleMax, onMove, onResize, mobile, children,
 }) {
   const ref = React.useRef(null);
   const drag = React.useRef(null);
@@ -57,9 +57,11 @@ export default function Window({
     document.body.style.cursor = 'nwse-resize';
   };
 
-  const style = win.maximized
-    ? { left: 8, top: 8, width: 'calc(100% - 16px)', height: 'calc(100% - 16px)', zIndex: win.z }
-    : { left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z };
+  const style = mobile
+    ? { left: 0, top: 0, width: '100%', height: '100%', zIndex: win.z }
+    : win.maximized
+      ? { left: 8, top: 8, width: 'calc(100% - 16px)', height: 'calc(100% - 84px)', zIndex: win.z }
+      : { left: win.x, top: win.y, width: win.w, height: win.h, zIndex: win.z };
 
   const Icon = win.icon;
 
@@ -72,30 +74,49 @@ export default function Window({
       aria-label={win.title}
       role="dialog"
     >
-      <header className="window__bar" onPointerDown={startDrag} onDoubleClick={() => onToggleMax(win.id)}>
-        <div className="window__lights">
-          <button className="window__light window__light--close" onClick={() => onClose(win.id)} aria-label="Close">
-            <X strokeWidth={3.4} />
+      {mobile ? (
+        <header className="window__bar window__bar--mobile">
+          <button type="button" className="window__back" onClick={() => onClose(win.id)} aria-label="Back to home">
+            <ChevronLeft size={15} /> Home
           </button>
-          <button className="window__light window__light--min" onClick={() => onMinimize(win.id)} aria-label="Minimise">
-            <Minus strokeWidth={3.4} />
-          </button>
-          <button className="window__light window__light--max" onClick={() => onToggleMax(win.id)} aria-label="Maximise">
-            <Square strokeWidth={3} />
-          </button>
-        </div>
-        <span className="window__app">
-          <span className="window__app-icon" style={{ background: win.accent || 'linear-gradient(160deg,#ff3b50,#b31527)' }}>
-            {Icon ? <Icon /> : null}
+          <span className="window__app">
+            <span className="window__app-icon" style={{ background: win.accent || 'linear-gradient(160deg,#ff3b50,#b31527)' }}>
+              {Icon ? <Icon /> : null}
+            </span>
+            <span className="window__title">{win.title}</span>
           </span>
-          <span className="window__title">{win.title}</span>
-          {win.subtitle ? <span className="window__sub">{win.subtitle}</span> : null}
-        </span>
-        <span className="window__bar-spacer" />
-        {win.badge ? <span className={`chip ${win.badgeTone || ''}`}>{win.badge}</span> : null}
-      </header>
+        </header>
+      ) : (
+        <header className="window__bar" onPointerDown={startDrag} onDoubleClick={() => onToggleMax(win.id)}>
+          <div className="window__lights">
+            <button className="window__light window__light--close" onClick={() => onClose(win.id)} aria-label="Close">
+              <X strokeWidth={3.4} />
+            </button>
+            <button className="window__light window__light--min" onClick={() => onMinimize(win.id)} aria-label="Minimise">
+              <Minus strokeWidth={3.4} />
+            </button>
+            <button className="window__light window__light--max" onClick={() => onToggleMax(win.id)} aria-label="Maximise">
+              <Square strokeWidth={3} />
+            </button>
+          </div>
+          <span className="window__app">
+            <span className="window__app-icon" style={{ background: win.accent || 'linear-gradient(160deg,#ff3b50,#b31527)' }}>
+              {Icon ? <Icon /> : null}
+            </span>
+            <span className="window__title">{win.title}</span>
+            {win.subtitle ? <span className="window__sub">{win.subtitle}</span> : null}
+          </span>
+          <span className="window__bar-spacer" />
+          {win.badge ? <span className={`chip ${win.badgeTone || ''}`}>{win.badge}</span> : null}
+        </header>
+      )}
       <div className={`window__body ${win.flush ? 'window__body--flush' : ''}`}>{children}</div>
-      {win.maximized ? null : <span className="window__resize" onPointerDown={startResize} />}
+      {mobile ? (
+        <div className="window__mobilefoot">
+          <button type="button" className="phone__pill" onClick={() => onClose(win.id)} aria-label="Home" />
+        </div>
+      ) : null}
+      {win.maximized || mobile ? null : <span className="window__resize" onPointerDown={startResize} />}
     </section>
   );
 }

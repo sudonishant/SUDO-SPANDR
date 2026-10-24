@@ -21,7 +21,7 @@ const APPS = {
   },
   sandbox: {
     title: 'Sandbox VM', icon: Radar, accent: 'linear-gradient(160deg,#ff8a5c,#b3261b)',
-    w: 1040, h: 640, dock: 'linear-gradient(160deg,#ff8a5c,#a81e14)',
+    w: 1040, h: 660, ratio: 0.58, dock: 'linear-gradient(160deg,#ff8a5c,#a81e14)',
   },
   files: {
     title: 'Files', icon: FolderOpen, accent: 'linear-gradient(160deg,#8a8f9b,#3a3d45)',
@@ -54,6 +54,69 @@ const DESKTOP_FILES = [
 ];
 
 /* ------------------------------------------------------------------ pieces */
+
+function MobileStatus({ locked }) {
+  const now = useClock();
+  return (
+    <div className="phone__status">
+      <span className="phone__time">{now.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit' })}</span>
+      <span className="phone__brand"><span className="phone__brand-dot" /> SPANDR</span>
+      <span className="phone__status-icons">
+        <Lock size={10} />
+        <Wifi size={11} />
+        <BatteryFull size={13} />
+      </span>
+      {locked ? <span className="phone__locked-dot" /> : null}
+    </div>
+  );
+}
+
+function MobileHome({ onOpen }) {
+  const now = useClock();
+  const primary = ['workspace', 'sandbox', 'files', 'terminal'];
+  return (
+    <div className="phone">
+      <div className="phone__head">
+        <span className="phone__eyebrow">SentinelMail · forensic desktop</span>
+        <h1>SUDO SPANDR</h1>
+        <p>{now.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })} · air-gapped session</p>
+      </div>
+
+      <div className="phone__grid">
+        {Object.entries(APPS).map(([id, app]) => {
+          const Icon = app.icon;
+          return (
+            <button type="button" key={id} className="phone__app" onClick={() => onOpen(id)}>
+              <span className="phone__app-icon" style={{ background: app.dock }}><Icon /></span>
+              <span className="phone__app-label">{app.title.replace(' VM', '').replace('SPANDR', 'SPANDR')}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="phone__card">
+        <Shield size={13} />
+        <div>
+          <strong>Evidence stays on this device</strong>
+          <p>Files are parsed locally. The sandbox container is the only thing that touches a URL, and only when you press detonate.</p>
+        </div>
+      </div>
+
+      <div className="phone__dock">
+        {primary.map((id) => {
+          const app = APPS[id];
+          const Icon = app.icon;
+          return (
+            <button type="button" key={id} className="phone__dock-app" onClick={() => onOpen(id)} aria-label={app.title}>
+              <span style={{ background: app.dock }}><Icon /></span>
+            </button>
+          );
+        })}
+      </div>
+      <span className="phone__indicator" />
+    </div>
+  );
+}
 
 function Wallpaper() {
   const stars = useMemo(() => Array.from({ length: 70 }).map((_, index) => ({
@@ -335,6 +398,13 @@ export default function App() {
   const [locked, setLocked] = useState(false);
   const [quickOpen, setQuickOpen] = useState(false);
   const [ctxMenu, setCtxMenu] = useState(null);
+  const [isMobile, setIsMobile] = useState(() => window.innerWidth < 780);
+
+  useEffect(() => {
+    const onResize = () => setIsMobile(window.innerWidth < 780);
+    window.addEventListener('resize', onResize);
+    return () => window.removeEventListener('resize', onResize);
+  }, []);
   useEffect(() => {
     const onDown = (event) => {
       if (ctxMenu) setCtxMenu(null);
@@ -354,8 +424,10 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setBooted(true);
-      open('workspace');
-      if (window.innerWidth >= 780) open('sandbox');
+      if (window.innerWidth >= 780) {
+        open('sandbox');
+        open('workspace');
+      }
     }, 1650);
     return () => clearTimeout(timer);
   }, []);
@@ -404,7 +476,7 @@ export default function App() {
       if (!visible.length) {
         x = vw > 900 ? 128 : 24;
         y = 46;
-        width = Math.min(width, Math.round(vw * 0.53));
+        width = Math.min(width, Math.round(vw * (app.ratio || 0.53)));
       } else if (visible.length === 1) {
         // tile beside the existing window instead of stacking on top of it
         const other = visible[0];
@@ -495,16 +567,25 @@ export default function App() {
   return (
     <div className="os">
       <Wallpaper />
-      <Menubar onAction={action} onOpen={open} activeTitle={activeWindow?.title} quickOpen={quickOpen} setQuickOpen={setQuickOpen} />
-      {quickOpen ? <QuickPanel onAction={action} onOpen={open} onClose={() => setQuickOpen(false)} /> : null}
-      <div
-        onPointerDown={() => setQuickOpen(false)}
-        onContextMenu={(event) => { event.preventDefault(); setCtxMenu({ x: event.clientX, y: event.clientY }); }}
-        style={{ position: 'absolute', inset: '32px 0 0', zIndex: 1 }}
-        aria-hidden="true"
-      />
-      <DesktopIcons onOpen={open} onContext={(at) => setCtxMenu(at)} />
-      {ctxMenu ? <DesktopMenu at={ctxMenu} onClose={() => setCtxMenu(null)} onAction={action} onOpen={open} /> : null}
+      {isMobile ? <MobileStatus locked={locked} /> : (
+        <>
+          <Menubar onAction={action} onOpen={open} activeTitle={activeWindow?.title} quickOpen={quickOpen} setQuickOpen={setQuickOpen} />
+          {quickOpen ? <QuickPanel onAction={action} onOpen={open} onClose={() => setQuickOpen(false)} /> : null}
+        </>
+      )}
+      {!isMobile ? (
+        <>
+          <div
+            onPointerDown={() => setQuickOpen(false)}
+            onContextMenu={(event) => { event.preventDefault(); setCtxMenu({ x: event.clientX, y: event.clientY }); }}
+            style={{ position: 'absolute', inset: '32px 0 0', zIndex: 1 }}
+            aria-hidden="true"
+          />
+          <DesktopIcons onOpen={open} onContext={(at) => setCtxMenu(at)} />
+          {ctxMenu ? <DesktopMenu at={ctxMenu} onClose={() => setCtxMenu(null)} onAction={action} onOpen={open} /> : null}
+        </>
+      ) : null}
+      {isMobile && windows.length === 0 ? <MobileHome onOpen={open} /> : null}
 
       <div className="windows">
         {windows.map((win) => (
@@ -518,13 +599,14 @@ export default function App() {
             onToggleMax={toggleMax}
             onMove={move}
             onResize={resize}
+            mobile={isMobile}
           >
             {renderApp(win.id)}
           </Window>
         ))}
       </div>
 
-      <Dock onOpen={open} openIds={windows.map((win) => win.id)} />
+      {!isMobile ? <Dock onOpen={open} openIds={windows.map((win) => win.id)} /> : null}
 
       {locked && (
         <div className="boot" style={{ opacity: 1, visibility: 'visible' }}>
