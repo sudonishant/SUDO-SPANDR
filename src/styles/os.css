@@ -382,3 +382,74 @@ img, svg { display: block; }
   .quick { display: none; }
   .dropdown { display: none; }
 }
+
+/* ------------------------------------------------------------ big launcher */
+.launcher {
+  position: absolute; inset: 32px 0 0; z-index: 3;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: clamp(14px, 2.4vh, 26px); padding: 10px 20px 86px; text-align: center;
+}
+.launcher__head { display: flex; flex-direction: column; align-items: center; gap: 7px; }
+.launcher__eyebrow { font-size: 9px; letter-spacing: 0.24em; text-transform: uppercase; color: #ff97a3; }
+.launcher__title { font-family: var(--font-display); font-size: clamp(22px, 3.2vw, 34px); font-weight: 800; letter-spacing: -0.035em; }
+.launcher__title span { background: linear-gradient(120deg, #ff4757, #ef233c 55%, #8f0f1d); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.launcher__sub { font-size: 11px; color: var(--ink-faint); max-width: 460px; line-height: 1.5; }
+
+.launcher__apps { display: flex; align-items: stretch; justify-content: center; gap: clamp(10px, 1.8vw, 26px); flex-wrap: wrap; }
+.launcher__app {
+  display: flex; flex-direction: column; align-items: center; gap: 9px; width: clamp(120px, 12vw, 156px);
+  padding: 14px 10px 13px; border-radius: 20px; color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.035); border: 1px solid rgba(255, 255, 255, 0.07);
+  backdrop-filter: blur(14px); transition: transform 0.16s ease, background 0.16s ease, border-color 0.16s ease;
+}
+.launcher__app:hover { transform: translateY(-4px); background: rgba(255, 255, 255, 0.075); border-color: rgba(239, 35, 60, 0.4); color: #fff; }
+.launcher__app:active { transform: translateY(-1px) scale(0.99); }
+.launcher__icon {
+  width: clamp(72px, 7vw, 92px); height: clamp(72px, 7vw, 92px); border-radius: 24px;
+  display: grid; place-items: center; color: #fff;
+  box-shadow: 0 18px 34px rgba(0, 0, 0, 0.5), inset 0 1px 0 rgba(255, 255, 255, 0.32), inset 0 -8px 20px rgba(0, 0, 0, 0.22);
+}
+.launcher__icon svg { width: clamp(30px, 3vw, 40px); height: clamp(30px, 3vw, 40px); }
+.launcher__label { font-family: var(--font-display); font-size: 13.5px; font-weight: 800; letter-spacing: -0.01em; color: var(--ink); }
+.launcher__hint { font-size: 9.5px; line-height: 1.4; color: var(--ink-faint); max-width: 132px; }
+
+.launcher__foot { display: flex; align-items: center; gap: 12px; font-size: 9.5px; color: var(--ink-faint); }
+.launcher__foot span { display: inline-flex; align-items: center; gap: 6px; }
+.launcher__foot i { width: 6px; height: 6px; border-radius: 999px; background: #38d17a; box-shadow: 0 0 8px rgba(56, 209, 122, 0.7); }
+.launcher__foot button { padding: 3px 9px; border-radius: 999px; border: 1px solid var(--hairline); color: var(--ink-dim); font-size: 9.5px; }
+.launcher__foot button:hover { border-color: rgba(239, 35, 60, 0.45); color: #fff; background: rgba(239, 35, 60, 0.12); }
+
+/* bigger dock icons */
+.dock { gap: 9px; padding: 9px 12px; }
+.dock__item { width: 48px; height: 48px; border-radius: 13px; }
+.dock__item svg { width: 21px; height: 21px; }
+
+@media (max-height: 720px) {
+  .launcher { padding-bottom: 78px; gap: 12px; }
+  .launcher__app { padding: 10px 8px; }
+  .launcher__hint { display: none; }
+  .launcher__sub { display: none; }
+}
+
+/* phone: bigger primary icons + small tools row */
+.phone__grid { grid-template-columns: repeat(4, 1fr); gap: 16px 4px; }
+.phone__app-icon { width: 62px; height: 62px; border-radius: 18px; }
+.phone__app-icon svg { width: 25px; height: 25px; }
+.phone__app-label { font-size: 9.5px; }
+.phone__tools { display: flex; gap: 7px; justify-content: center; flex-wrap: wrap; padding: 2px 0 12px; }
+.phone__tool { display: inline-flex; align-items: center; gap: 6px; padding: 5px 10px 5px 5px; border-radius: 999px; font-size: 9px; color: var(--ink-dim);
+  background: rgba(255, 255, 255, 0.05); border: 1px solid var(--hairline); }
+.phone__tool span { width: 20px; height: 20px; border-radius: 6px; display: grid; place-items: center; color: #fff; }
+.phone__tool svg { width: 10px; height: 10px; }
+.phone__dock-app span { width: 46px; height: 46px; border-radius: 14px; }
+.phone__dock-app svg { width: 20px; height: 20px; }
+
+@media (max-width: 780px) {
+  .launcher { display: none; }
+}
+
+/* launcher footer hidden on shorter desktops so four icons always fit */
+@media (max-height: 800px) {
+  .launcher__foot { display: none; }
+  .launcher { padding-bottom: 92px; }
+}
