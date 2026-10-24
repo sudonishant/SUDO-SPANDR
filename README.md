@@ -417,6 +417,8 @@ python3 backend/security_test.py
 
 ![Sandbox VM window](docs/ui/sandbox.jpg)
 
+![Phone layout](docs/ui/phone.jpg)
+
 ![Report window](docs/ui/report.jpg)
 
 The document itself never scrolls: windows, the dock and the menu bar live inside a fixed viewport,
@@ -426,8 +428,10 @@ to resize, double-click a title bar to maximise, and right-click the wallpaper f
 
 The front-end is a fixed-viewport desktop, not a scrolling page: a boot overlay, a menu bar with
 dropdowns and a clock, desktop file tiles, draggable / resizable windows, and a dock. The document
-never scrolls — only window bodies do. On screens under 780 px the shell switches to a single
-full-screen app at a time, phone-style.
+never scrolls — only window bodies do. On screens under 780 px the shell switches to a phone layout: a status bar, a home grid of app
+icons, one full-screen app at a time with a back button, and the same apps — intake, report, sandbox
+VM, files, terminal, MITRE and dossier — fully working. Inside the sandbox VM the guest switches to
+one window at a time so the virtual PC stays usable on a phone.
 
 | Surface | Where | What it calls |
 |---|---|---|
@@ -435,6 +439,7 @@ full-screen app at a time, phone-style.
 | Desktop file tiles (`.eml`, `.pdf`, `.json`, `.md`) | `src/App.jsx` → `FilesApp` | Opens the matching window |
 | Intake (`.eml`, `.msg`, pasted headers, attachment) | `src/apps/WorkspaceApp.jsx` | Browser parsers only — no upload |
 | Static URL checks + detonation telemetry | `src/apps/SandboxApp.jsx` | `POST /api/v1/sandbox/detonate` (falls back to browser checks only) |
+| Sandbox VM (guest desktop) | `src/apps/SandboxApp.jsx` | Guest apps (chromium, system monitor, guest shell) run inside a draggable VM screen with its own taskbar, start menu and reboot |
 | Isolated preview frame | `src/apps/SandboxApp.jsx` → “Render” | `GET /api/v1/sandbox/preview-frame` (fetched, then mounted as `srcDoc` with a script-only sandbox) |
 | Report tabs (Overview, Headers, Auth, Relay, URLs, Files) | `src/apps/Report.jsx` | Browser result object |
 | Files explorer + preview pane | `src/apps/FilesApp.jsx` | Static, read-only evidence samples |
