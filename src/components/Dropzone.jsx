@@ -91,8 +91,9 @@ export default function Dropzone() {
           </label>
           <div className="form-actions">
             <span className="form-note">No DNS, reputation, sandbox or geolocation lookup runs in this flow. You get an observed-value reading of what you pasted.</span>
-            <button className="btn btn--dark" type="button" onClick={analyzeText} disabled={loading || !body.trim()}>
-              <Play size={14} /> {loading ? 'Analysing…' : 'Analyse pasted input'}
+            <button className="app-btn" type="button" onClick={analyzeText} disabled={loading || !body.trim()}>
+              <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)' }}><Play size={14} /></span>
+              {loading ? 'Analysing…' : 'Analyse pasted input'}
             </button>
           </div>
         </div>
@@ -111,8 +112,9 @@ export default function Dropzone() {
               ? 'EML is read as raw RFC-style email. MSG is read as an Outlook container with its own embedded metadata.'
               : 'The file is inspected statically. It is not executed, detonated, or declared clean by this browser app.'}
           </p>
-          <button className="btn btn--primary" type="button" onClick={() => inputRef.current?.click()} disabled={loading}>
-            <FileUp size={14} /> {loading ? 'Analysing…' : 'Select file'}
+          <button className="app-btn" type="button" onClick={() => inputRef.current?.click()} disabled={loading}>
+            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)' }}><FileUp size={14} /></span>
+            {loading ? 'Analysing…' : 'Select file'}
           </button>
           <input
             ref={inputRef}
