@@ -5,9 +5,12 @@ import {
   Database, Download, FileCheck2, FileCode2, FileSearch, FileText, Fingerprint, Github, Globe,
   Hash, Info, KeyRound, LayoutDashboard, Link2, Lock, Mail, MapPin, MessageSquareText, Music,
   Network, Paperclip, Play, RefreshCw, Route, ScanLine, ScrollText, Search, Shield, ShieldAlert,
-  ShieldCheck, Sparkles, Sun, Tag, Terminal, XCircle,
+  ShieldCheck, Sparkles, Sun, Tag, Terminal, XCircle, Printer, Radar,
 } from 'lucide-react';
 import Dropzone from './components/Dropzone';
+import Sandbox from './components/Sandbox';
+import MitrePanel from './components/MitrePanel';
+import { DossierView } from './components/Dossier';
 import { useForensicStore } from './store/useForensicStore';
 
 const REPO_URL = 'https://github.com/sudonishant/SUDO-SPANDR';
@@ -146,6 +149,7 @@ function AppTile({ label, icon: Icon, bg, id, href, mode, size = 'md' }) {
 
 const LAUNCHER = [
   { label: 'Workspace', icon: Terminal, bg: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)', id: 'workspace' },
+  { label: 'Sandbox', icon: Radar, bg: 'linear-gradient(160deg,#ff8a7a,#e4392f)', id: 'sandbox' },
   { label: 'Playbooks', icon: Sparkles, bg: 'linear-gradient(160deg,#b18cf7,#7a45e0)', id: 'playbooks' },
   { label: 'Docs', icon: BookOpen, bg: 'linear-gradient(160deg,#a7a7a7,#5b5b5b)', href: `${REPO_URL}#readme` },
   { label: 'GitHub', icon: Github, bg: 'linear-gradient(160deg,#3a3a3a,#0b0b0b)', href: REPO_URL },
@@ -155,9 +159,9 @@ const SHORTCUTS = [
   { label: 'Email file', icon: Mail, bg: 'linear-gradient(160deg,#5aa8f5,#2f7fe0)', mode: 'email_file' },
   { label: 'Paste text', icon: FileText, bg: 'linear-gradient(160deg,#63e08a,#18a34a)', mode: 'text_email' },
   { label: 'Attachment', icon: Paperclip, bg: 'linear-gradient(160deg,#ffc85a,#e08a00)', mode: 'attachment_file' },
+  { label: 'Sandbox', icon: Radar, bg: 'linear-gradient(160deg,#ff8a7a,#e4392f)', id: 'sandbox' },
   { label: 'Capabilities', icon: LayoutDashboard, bg: 'linear-gradient(160deg,#8fb4ff,#3b62d9)', id: 'capabilities' },
-  { label: 'Achievements', icon: Award, bg: 'linear-gradient(160deg,#ff8a7a,#e4392f)', id: 'achievements' },
-  { label: 'Signature', icon: ScrollText, bg: 'linear-gradient(160deg,#3a3a3a,#111111)', id: 'signature' },
+  { label: 'Achievements', icon: Award, bg: 'linear-gradient(160deg,#ffdf74,#f0a91c)', id: 'achievements' },
 ];
 
 function ShortcutGrid() {
@@ -174,7 +178,7 @@ function Dock() {
     { label: 'Workspace', icon: Terminal, bg: 'linear-gradient(160deg,#4a4a4a,#101010)', id: 'workspace' },
     { label: 'Email intake', icon: Mail, bg: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)', id: 'workspace' },
     { label: 'Playbooks', icon: Sparkles, bg: 'linear-gradient(160deg,#b18cf7,#7a45e0)', id: 'playbooks' },
-    { label: 'Achievements', icon: ShieldCheck, bg: 'linear-gradient(160deg,#ff8a7a,#ef3b45)', id: 'achievements' },
+    { label: 'Sandbox', icon: Radar, bg: 'linear-gradient(160deg,#ff8a7a,#ef3b45)', id: 'sandbox' },
   ];
   const tail = [
     { label: 'Signature', icon: ScrollText, bg: 'linear-gradient(160deg,#6ce08e,#17a04a)', id: 'signature' },
@@ -221,6 +225,7 @@ function Menubar() {
       <span className="menubar__sub">SentinelMail</span>
       <nav className="menubar__nav">
         <a href="#workspace">Workspace</a>
+        <a href="#sandbox">Sandbox</a>
         <a href="#capabilities">Capabilities</a>
         <a href="#playbooks">Playbooks</a>
         <a href="#achievements">Achievements</a>
@@ -280,7 +285,7 @@ function Capabilities() {
       <div className="wrap">
         <div className="section__head reveal">
           <div>
-            <span className="eyebrow"><b>01</b><span className="eyebrow__rule" />Capabilities</span>
+            <span className="eyebrow"><b>02</b><span className="eyebrow__rule" />Capabilities</span>
             <h2 className="section__title">What the workspace actually reads.</h2>
           </div>
           <p className="section__note">Five evidence surfaces, one honest rule: if the artefact is missing, the field says so instead of inventing a verdict.</p>
@@ -614,6 +619,7 @@ function Footer() {
             <h4>Sections</h4>
             <nav className="footer__nav">
               <a href="#workspace">Workspace</a>
+              <a href="#sandbox">Sandbox</a>
               <a href="#capabilities">Capabilities</a>
               <a href="#playbooks">Playbooks</a>
               <a href="#achievements">Achievements</a>
@@ -948,6 +954,7 @@ function AnalysisResult({ data }) {
       base.push(['headers', 'Headers', FileCode2], ['auth', 'Auth checks', Shield], ['route', 'Relay path', Network], ['links', 'URLs', Link2]);
     }
     if (['eml', 'msg', 'attachment'].includes(data.mode)) base.push(['files', 'Files', Paperclip]);
+    base.push(['mitre', 'MITRE', Radar], ['dossier', 'Dossier', Printer]);
     return base;
   }, [data.mode]);
 
@@ -1086,6 +1093,23 @@ function AnalysisResult({ data }) {
           </Panel>
         </div>
       )}
+
+      {active === 'mitre' && (
+        <div className="report-grid">
+          <Panel icon={Radar} eyebrow="Vocabulary, not evidence" title="ATT&CK mapping" full>
+            <MitrePanel caseId={data.case_id} />
+          </Panel>
+        </div>
+      )}
+
+      {active === 'dossier' && (
+        <div className="report-grid">
+          <Panel icon={Printer} eyebrow="Session output · review before use" title="Case dossier, containment draft and ATT&CK mapping" full>
+            <DossierView data={data} />
+            <MitrePanel caseId={data.case_id} />
+          </Panel>
+        </div>
+      )}
     </section>
   );
 }
@@ -1140,6 +1164,7 @@ export default function App() {
       <Menubar />
       <Hero />
       <Workspace />
+      <Sandbox />
       <Capabilities />
       <Playbooks />
       <Achievements />

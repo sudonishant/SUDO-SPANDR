@@ -403,8 +403,26 @@ python3 backend/security_test.py
 | `GET` | `/api/v1/blockchain/verify/{tx_hash}` | Cryptographic verification of on-chain Section 65B notarized digest | Polygon Amoy (Chain ID 80002) |
 | `POST` | `/api/v1/attachment` | Dedicated static byte disassembly & container-aware entropy | Magic-Byte Container Analysis |
 | `POST` | `/api/v1/sandbox/detonate` | Safe URL inspection, DOM redirect tracing & security headers | Sandboxed Chromium Inspector |
+| `GET` | `/api/v1/sandbox/preview-frame` | Sanitised HTML preview of a detonated target (SSRF-guarded, `frame-ancestors *`) | Sandboxed Chromium Inspector |
 | `GET` | `/api/v1/export/cypher/{case_id}` | Export Neo4j Cypher statements for entity graph attribution | STIX 2.1 Graph Mapping |
 | `GET` | `/api/v1/supabase/schema` | Retrieve Supabase PostgreSQL forensic schema & RLS policies | ISO/IEC 27037 Evidence Vault |
+
+---
+
+## 🖥️ Workspace UI map (React app in `src/`)
+
+| Surface | Where | What it calls |
+|---|---|---|
+| Intake (`.eml`, `.msg`, pasted headers, attachment) | `#workspace` | Browser parsers only — no upload |
+| Static URL checks + detonation telemetry | `#sandbox` | `POST /api/v1/sandbox/detonate` (falls back to browser checks only) |
+| Isolated preview frame | `#sandbox` | `GET /api/v1/sandbox/preview-frame` |
+| Report tabs (Overview, Headers, Auth, Relay, URLs, Files) | `#workspace` | Browser result object |
+| MITRE tab | report `/ MITRE` | `GET /api/v1/mitre/navigator-layer` — labelled as a reference layer when the API is unreachable |
+| Dossier tab | report `/ Dossier` | Browser result + locally generated containment drafts (iptables, Cisco, FortiGate, DNS sinkhole, Suricata) |
+| AI second opinion | Overview panel, toolbar | `POST /api/v1/ai-review` |
+
+Every panel above falls back to an explicit "unavailable / not configured" state rather than
+showing an invented verdict.
 
 ---
 

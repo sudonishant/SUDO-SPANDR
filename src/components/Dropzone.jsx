@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileText, FileUp, Mail, MessageSquareText, Paperclip, Play, ShieldAlert } from 'lucide-react';
+import { FileText, FileUp, Mail, MessageSquareText, Paperclip, Play, Radar, ShieldAlert } from 'lucide-react';
 import { useForensicStore } from '../store/useForensicStore';
 
 const MODES = [
@@ -45,7 +45,20 @@ export default function Dropzone() {
           <h3 id="intake-title">Choose exactly what you are analysing</h3>
           <p>Each mode has its own evidence contract. Missing transport data is reported as unavailable — never guessed, never filled with a fake verdict.</p>
         </div>
-        <span className="intake__badge"><i /> Browser-side static analysis</span>
+        <div className="intake__side">
+          <span className="intake__badge"><i /> Browser-side static analysis</span>
+          <button
+            type="button"
+            className="app-btn app-btn--sm"
+            onClick={() => {
+              const el = document.getElementById('sandbox');
+              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }}
+          >
+            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#ff8a7a,#e4392f)' }}><Radar size={13} /></span>
+            Safe URL detonator
+          </button>
+        </div>
       </div>
 
       <div className="mode-tabs" role="tablist" aria-label="Analysis input type">
