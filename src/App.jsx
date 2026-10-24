@@ -45,15 +45,12 @@ const APPS = {
   },
 };
 
-const DESKTOP_FILES = [
-  { name: 'phishing-sample.eml', meta: '14.2 KB · eml', kind: 'eml', accent: '#ef233c', open: 'files' },
-  { name: 'invoice-clean.eml', meta: '4.1 KB · eml', kind: 'eml', accent: '#38d17a', open: 'files' },
-  { name: 'vendor-invoice.pdf', meta: '238 KB · pdf', kind: 'pdf', accent: '#f7ce46', open: 'files' },
-  { name: 'case-report.json', meta: '18.4 KB · json', kind: 'json', accent: '#57a4f0', open: 'dossier' },
-  { name: 'README.md', meta: 'docs', kind: 'md', accent: '#a1a1aa', open: 'about' },
+const LAUNCH = [
+  { id: 'workspace', label: 'Analyse', hint: 'Email · headers · auth' },
+  { id: 'sandbox', label: 'Sandbox', hint: 'Isolated virtual PC' },
+  { id: 'files', label: 'Files', hint: 'Evidence & reports' },
+  { id: 'terminal', label: 'Terminal', hint: 'Local shell' },
 ];
-
-/* ------------------------------------------------------------------ pieces */
 
 function MobileStatus({ locked }) {
   const now = useClock();
@@ -73,7 +70,7 @@ function MobileStatus({ locked }) {
 
 function MobileHome({ onOpen }) {
   const now = useClock();
-  const primary = ['workspace', 'sandbox', 'files', 'terminal'];
+  const tools = ['mitre', 'dossier', 'about'];
   return (
     <div className="phone">
       <div className="phone__head">
@@ -83,12 +80,25 @@ function MobileHome({ onOpen }) {
       </div>
 
       <div className="phone__grid">
-        {Object.entries(APPS).map(([id, app]) => {
+        {LAUNCH.map((item) => {
+          const app = APPS[item.id];
           const Icon = app.icon;
           return (
-            <button type="button" key={id} className="phone__app" onClick={() => onOpen(id)}>
+            <button type="button" key={item.id} className="phone__app" onClick={() => onOpen(item.id)}>
               <span className="phone__app-icon" style={{ background: app.dock }}><Icon /></span>
-              <span className="phone__app-label">{app.title.replace(' VM', '').replace('SPANDR', 'SPANDR')}</span>
+              <span className="phone__app-label">{item.label}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="phone__tools">
+        {tools.map((id) => {
+          const app = APPS[id];
+          const Icon = app.icon;
+          return (
+            <button type="button" key={id} className="phone__tool" onClick={() => onOpen(id)}>
+              <span style={{ background: app.dock }}><Icon /></span>{app.title}
             </button>
           );
         })}
@@ -103,11 +113,11 @@ function MobileHome({ onOpen }) {
       </div>
 
       <div className="phone__dock">
-        {primary.map((id) => {
-          const app = APPS[id];
+        {LAUNCH.map((item) => {
+          const app = APPS[item.id];
           const Icon = app.icon;
           return (
-            <button type="button" key={id} className="phone__dock-app" onClick={() => onOpen(id)} aria-label={app.title}>
+            <button type="button" key={item.id} className="phone__dock-app" onClick={() => onOpen(item.id)} aria-label={app.title}>
               <span style={{ background: app.dock }}><Icon /></span>
             </button>
           );
@@ -251,31 +261,47 @@ function Menubar({ onAction, onOpen, activeTitle, quickOpen, setQuickOpen }) {
   );
 }
 
-function DesktopIcons({ onOpen, onContext }) {
-  const [selected, setSelected] = useState(null);
+function DesktopLauncher({ onOpen, onContext }) {
   return (
-    <div className="desktop-icons">
-      {DESKTOP_FILES.map((file) => (
-        <button
-          key={file.name}
-          type="button"
-          className={`file-tile ${selected === file.name ? 'is-selected' : ''}`}
-          onClick={() => setSelected(file.name)}
-          onDoubleClick={() => onOpen(file.open)}
-          onContextMenu={(event) => { event.preventDefault(); onContext?.({ x: event.clientX, y: event.clientY }); }}
-          title={`Double-click to open ${file.name}`}
-        >
-          <span
-            className={`doc ${file.kind === 'pdf' ? 'doc--red' : ''}`}
-            data-ext={file.kind.toUpperCase()}
-            style={{ '--doc-accent': file.accent }}
-          >
-            <span className="doc__lines"><i /><i /><i /></span>
-          </span>
-          <span className="file-tile__label">{file.name}</span>
-          <span className="file-tile__meta">{file.meta}</span>
-        </button>
-      ))}
+    <div
+      className="launcher"
+      onContextMenu={(event) => { event.preventDefault(); onContext?.({ x: event.clientX, y: event.clientY }); }}
+    >
+      <div className="launcher__head">
+        <span className="launcher__eyebrow">SentinelMail · deterministic email forensics</span>
+        <h1 className="launcher__title">Welcome to <span>SPANDR</span></h1>
+        <p className="launcher__sub">Pick an app. Evidence is parsed on this machine — nothing is uploaded.</p>
+      </div>
+
+      <div className="launcher__apps">
+        {LAUNCH.map((item) => {
+          const app = APPS[item.id];
+          const Icon = app.icon;
+          return (
+            <button
+              key={item.id}
+              type="button"
+              className="launcher__app"
+              onClick={() => onOpen(item.id)}
+              aria-label={`Open ${app.title}`}
+              title={`Open ${app.title}`}
+            >
+              <span className="launcher__icon" style={{ background: app.dock }}>
+                <Icon />
+              </span>
+              <span className="launcher__label">{item.label}</span>
+              <span className="launcher__hint">{item.hint}</span>
+            </button>
+          );
+        })}
+      </div>
+
+      <div className="launcher__foot">
+        <span><i /> local session</span>
+        <button type="button" onClick={() => onOpen('mitre')}>MITRE</button>
+        <button type="button" onClick={() => onOpen('dossier')}>Dossier</button>
+        <button type="button" onClick={() => onOpen('about')}>About</button>
+      </div>
     </div>
   );
 }
@@ -287,6 +313,9 @@ function DesktopMenu({ at, onClose, onAction, onOpen }) {
     ['Open terminal', () => onOpen('terminal')],
     ['—'],
     ['Detonate a link', () => onOpen('sandbox')],
+    ['—'],
+    ['MITRE mapping', () => onOpen('mitre')],
+    ['Dossier & containment', () => onOpen('dossier')],
     ['About SPANDR', () => onOpen('about')],
     ['—'],
     ['Lock session', () => onAction('lock')],
@@ -306,33 +335,29 @@ function DesktopMenu({ at, onClose, onAction, onOpen }) {
 }
 
 function Dock({ onOpen, openIds }) {
-  const items = ['workspace', 'sandbox', 'files', 'terminal', 'mitre', 'dossier'];
   return (
     <div className="dock-wrap">
       <nav className="dock" aria-label="Applications">
-        {items.map((id) => {
-          const app = APPS[id];
+        {LAUNCH.map((item) => {
+          const app = APPS[item.id];
           const Icon = app.icon;
           return (
             <button
-              key={id}
+              key={item.id}
               type="button"
               className="dock__item"
               style={{ background: app.dock }}
-              data-label={app.title}
+              data-label={app.label}
               aria-label={app.title}
-              onClick={() => onOpen(id)}
+              onClick={() => onOpen(item.id)}
             >
               <Icon />
-              {openIds.includes(id) ? <span className="dock__dot" /> : null}
+              {openIds.includes(item.id) ? <span className="dock__dot" /> : null}
             </button>
           );
         })}
         <span className="dock__sep" />
-        <a className="dock__item" style={{ background: 'linear-gradient(160deg,#2c2f36,#0f1012)' }} data-label="Repository" href={REPO_URL} target="_blank" rel="noreferrer" aria-label="Repository">
-          <Github />
-        </a>
-        <button className="dock__item dock__trash" data-label="About" aria-label="About" onClick={() => onOpen('about')}>
+        <button className="dock__item" style={{ background: 'linear-gradient(160deg,#3a3d45,#0f1012)' }} data-label="About" aria-label="About SPANDR" onClick={() => onOpen('about')}>
           <Info />
         </button>
       </nav>
@@ -424,10 +449,6 @@ export default function App() {
   useEffect(() => {
     const timer = setTimeout(() => {
       setBooted(true);
-      if (window.innerWidth >= 780) {
-        open('sandbox');
-        open('workspace');
-      }
     }, 1650);
     return () => clearTimeout(timer);
   }, []);
@@ -581,7 +602,7 @@ export default function App() {
             style={{ position: 'absolute', inset: '32px 0 0', zIndex: 1 }}
             aria-hidden="true"
           />
-          <DesktopIcons onOpen={open} onContext={(at) => setCtxMenu(at)} />
+          {windows.length === 0 ? <DesktopLauncher onOpen={open} onContext={(at) => setCtxMenu(at)} /> : null}
           {ctxMenu ? <DesktopMenu at={ctxMenu} onClose={() => setCtxMenu(null)} onAction={action} onOpen={open} /> : null}
         </>
       ) : null}

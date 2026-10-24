@@ -421,7 +421,11 @@ python3 backend/security_test.py
 
 ![Report window](docs/ui/report.jpg)
 
-The document itself never scrolls: windows, the dock and the menu bar live inside a fixed viewport,
+The landing screen is the desktop itself: four large app icons — **Analyse**, **Sandbox**, **Files**,
+**Terminal** — sit in the middle of the screen like a desktop launcher, with MITRE, Dossier and About
+kept one click away (dock, right-click menu and the app menu, so nothing was dropped).
+
+The document never scrolls: windows, the dock and the menu bar live inside a fixed viewport,
 and only each window body scrolls. Drag a title bar to move a window, drag the bottom-right corner
 to resize, double-click a title bar to maximise, and right-click the wallpaper for a context menu.
 
