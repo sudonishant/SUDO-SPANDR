@@ -7,7 +7,7 @@ import { staticUrlChecks } from '../lib/urlChecks';
 
 const GUEST_APPS = {
   browser: { title: 'Chromium · air-gapped', short: 'Chromium', icon: Globe, x: 33, y: 5, w: 61, h: 63 },
-  lab: { title: 'CyberLab · analysis toolbox', short: 'CyberLab', icon: Crosshair, x: 2, y: 5, w: 48, h: 43 },
+  lab: { title: 'Threat Lab · attachment & link analysis', short: 'ThreatLab', icon: Crosshair, x: 2, y: 5, w: 48, h: 43 },
   monitor: { title: 'System Monitor', short: 'Monitor', icon: Activity, x: 57, y: 20, w: 40, h: 52 },
   terminal: { title: 'guest@spandr-sbx:~', short: 'Terminal', icon: TerminalSquare, x: 2, y: 50, w: 47, h: 43 },
 };
@@ -105,15 +105,13 @@ export default function SandboxApp() {
   const [termValue, setTermValue] = React.useState('');
   const termInput = React.useRef(null);
 
-  /* cyberlab toolbox state */
-  const [labTab, setLabTab] = React.useState('scan');
+  /* threat lab state */
+  const [labTab, setLabTab] = React.useState('auto');
   const [labInput, setLabInput] = React.useState('');
-  const [labMode, setLabMode] = React.useState('quick');
-  const [labAction, setLabAction] = React.useState('dig');
+  const [labUrls, setLabUrls] = React.useState('');
   const [labFile, setLabFile] = React.useState(null);
   const [labBusy, setLabBusy] = React.useState(false);
   const [labOut, setLabOut] = React.useState('');
-  const labToolboxRef = React.useRef(null);
 
   const res = useResources(state === 'loading' || state === 'done');
 
@@ -268,41 +266,113 @@ export default function SandboxApp() {
     return response.json();
   }, []);
 
+  const fmtRisk = (score) => `${score}/100`;
+
+  const fmtAttachmentReport = (r) => {
+    const lines = [];
+    lines.push(`file      ${r.filename} · ${r.size_bytes} bytes`);
+    lines.push(`hashes    md5 ${r.md5}`);
+    lines.push(`          sha1 ${r.sha1}`);
+    lines.push(`          sha256 ${r.sha256}`);
+    lines.push(`format    ${r.format?.type || 'unknown'} · magic ${r.magic_hex}`);
+    if (r.carver?.detected_type) lines.push(`carver    ${r.carver.detected_type} · entropy ${(r.carver.shannon_entropy ?? 0).toFixed(2)}`);
+    if (r.format?.members?.length) lines.push(`members   ${r.format.members.slice(0, 10).join(', ')}`);
+    if (r.format?.risky_members?.length) lines.push(`RISKY     ${r.format.risky_members.join(', ')}`);
+    if (r.format?.macro_markers?.length) lines.push(`macros    ${r.format.macro_markers.join(', ')}`);
+    if (r.iocs?.urls?.length) lines.push(`embedded URLs\n  ${r.iocs.urls.slice(0, 8).join('\n  ')}`);
+    if (r.suspicious_strings?.length) lines.push(`strings   ${r.suspicious_strings.join(', ')}`);
+    if (r.tools?.file) lines.push(`file(1)   ${r.tools.file}`);
+    if (r.tools?.binwalk) lines.push(`binwalk\n${r.tools.binwalk.split('\n').slice(0, 8).join('\n')}`);
+    lines.push('');
+    lines.push('findings');
+    (r.findings || []).forEach((f) => lines.push(`  • ${f}`));
+    lines.push('');
+    lines.push(`RISK ${fmtRisk(r.risk_score)} — ${r.verdict}`);
+    lines.push(r.disclaimer || '');
+    return lines.join('\n');
+  };
+
+  const fmtLinkReport = (r) => {
+    const lines = [];
+    lines.push(`url       ${r.url}`);
+    lines.push(`host      ${r.host} · resolved ${(r.resolved_ips || []).join(', ') || 'unresolved'}`);
+    if (r.structure_signals?.length) lines.push(`structure ${r.structure_signals.join(' | ')}`);
+    if (r.redirect_chain?.length) {
+      lines.push('redirect chain');
+      r.redirect_chain.forEach((h, i) => lines.push(`  ${i + 1}. [${h.status}] ${h.url}${h.location ? ` → ${h.location}` : ''}`));
+    }
+    if (r.page?.title) lines.push(`title     ${r.page.title}`);
+    if (r.page?.password_field) lines.push('page      PASSWORD INPUT FIELD present');
+    if (r.page?.obfuscation?.length) lines.push(`obfusc.   ${r.page.obfuscation.join(', ')}`);
+    if (r.tls_cert) lines.push(`tls cert\n${r.tls_cert.split('\n').slice(0, 5).join('\n')}`);
+    if (r.headers && Object.keys(r.headers).length) {
+      lines.push('headers');
+      Object.entries(r.headers).slice(0, 10).forEach(([k, v]) => lines.push(`  ${k}: ${v}`));
+    }
+    lines.push('');
+    lines.push('findings');
+    (r.findings || []).forEach((f) => lines.push(`  • ${f}`));
+    lines.push('');
+    lines.push(`RISK ${fmtRisk(r.risk_score)} — ${r.verdict}`);
+    lines.push(r.disclaimer || '');
+    return lines.join('\n');
+  };
+
+  const fmtTriageReport = (r) => {
+    const lines = [];
+    lines.push('══ AUTO TRIAGE · email threat lab ══');
+    const m = r.meta || {};
+    if (m.subject !== undefined) {
+      lines.push(`from      ${m.from || '—'}`);
+      lines.push(`subject   ${m.subject || '—'}`);
+      lines.push(`date      ${m.date || '—'}`);
+    }
+    lines.push(`payload   ${m.attachments_found ?? 0} attachment(s) · ${m.links_found ?? 0} link(s)`);
+    lines.push('');
+    lines.push('summary');
+    (r.summary || []).forEach((s) => lines.push(`  ▸ ${s}`));
+    lines.push('');
+    (r.attachments || []).forEach((a) => {
+      lines.push(`──── attachment · ${a.filename} · risk ${fmtRisk(a.risk_score)} ────`);
+      lines.push(fmtAttachmentReport(a));
+      lines.push('');
+    });
+    (r.links || []).forEach((u) => {
+      lines.push(`──── link · ${u.url} · risk ${fmtRisk(u.risk_score)} ────`);
+      lines.push(fmtLinkReport(u));
+      lines.push('');
+    });
+    lines.push(`AGGREGATE RISK ${fmtRisk(r.aggregate_risk || 0)} — ${r.verdict}`);
+    lines.push('recommended actions');
+    (r.recommended_actions || []).forEach((a) => lines.push(`  ✔ ${a}`));
+    lines.push('');
+    lines.push(r.disclaimer || '');
+    return lines.join('\n');
+  };
+
   const runLab = React.useCallback(async (kind) => {
     setLabBusy(true);
     setLabOut(`running ${kind} analysis…`);
-    setTermLines((lines) => [...lines, { tone: 'prompt', text: `$ cyberlab ${kind} ${labInput || ''}`.trim() }]);
+    setTermLines((lines) => [...lines, { tone: 'prompt', text: `$ threat-lab ${kind}` }]);
     try {
       let payload;
       let text;
-      if (kind === 'scan') {
-        payload = await labCall('portscan', { target: labInput.trim(), mode: labMode });
-        const open = payload.open || [];
-        text = `engine  ${payload.engine || 'n/a'}\ntarget  ${payload.target}\n\n` +
-          (payload.error ? `error   ${payload.error}\n` : '') +
-          (open.length
-            ? open.map((p) => `${String(p.port).padEnd(6)}${p.proto || 'tcp'}  open   ${(p.service || '').padEnd(10)}${p.product || ''} ${p.version || ''}`.trimEnd()).join('\n')
-            : '(no open ports reported)') +
-          `\n\n${payload.raw || ''}`;
-      } else if (kind === 'recon') {
-        payload = await labCall('recon', { target: labInput.trim(), action: labAction });
-        text = `engine  ${payload.engine || 'n/a'}\naction  ${payload.action}\ntarget  ${payload.target}` +
-          (payload.resolved_ip ? `\nip      ${payload.resolved_ip}` : '') +
-          `\n\n${payload.output || payload.error || '(no output)'}`;
-      } else if (kind === 'hash') {
-        payload = await labCall('hashcrack', { hash: labInput.trim() });
-        text = `types   ${(payload.identify || []).map((t) => t.type).join(', ') || 'unknown'}\n` +
-          (payload.cracked
-            ? `CRACKED password: ${payload.password}\nengine  ${payload.engine}`
-            : `not cracked · ${payload.message || ''}\nengine  ${payload.engine || 'n/a'}`);
-      } else if (kind === 'web') {
-        payload = await labCall('webanalyze', { url: labInput.trim(), deep: true });
-        text = payload.error
-          ? `error   ${payload.error}`
-          : `status  ${payload.status}\nengine  ${payload.engine}\n\n` +
-            (payload.checks || []).map((c) => `[${c.ok ? ' pass ' : c.severity.padEnd(5)}] ${c.name}: ${c.detail}`).join('\n') +
-            (payload.paths?.length ? `\n\npaths\n${payload.paths.map((p) => ` ${p.status}  ${p.path}  ${p.size}B`).join('\n')}` : '') +
-            (payload.flags?.length ? `\n\nflags\n${payload.flags.join('\n')}` : '');
+      if (kind === 'auto') {
+        const form = new FormData();
+        if (labFile) form.append('file', labFile);
+        if (labUrls.trim()) form.append('urls', labUrls.trim());
+        payload = await labCall('auto-triage', form);
+        text = fmtTriageReport(payload);
+      } else if (kind === 'attach') {
+        if (!labFile) throw new Error('choose an attachment first');
+        const form = new FormData();
+        form.append('file', labFile);
+        payload = await labCall('attachment', form);
+        text = fmtAttachmentReport(payload);
+      } else if (kind === 'link') {
+        if (!labInput.trim()) throw new Error('enter a URL first');
+        payload = await labCall('url', { url: labInput.trim() });
+        text = payload.error ? `error   ${payload.error}` : fmtLinkReport(payload);
       } else if (kind === 'pcap') {
         if (!labFile) throw new Error('choose a .pcap file first');
         const form = new FormData();
@@ -314,17 +384,17 @@ export default function SandboxApp() {
           `flags\n${(payload.flags || []).join('\n') || '(none)'}`;
       }
       setLabOut(text);
-      setTermLines((lines) => [...lines, { tone: 'ok', text: `${kind} analysis complete · see CyberLab window` }]);
+      setTermLines((lines) => [...lines, { tone: 'ok', text: `${kind} analysis complete · see Threat Lab window` }]);
       return payload;
     } catch (error) {
       const message = error?.message || 'unreachable';
-      setLabOut(`cyberlab engine unavailable (${message})\nthe toolbox needs the backend API — static guest tools still work.`);
-      setTermLines((lines) => [...lines, { tone: 'bad', text: `cyberlab engine unavailable (${message})` }]);
+      setLabOut(`threat lab engine unavailable (${message})\nthe analysis pipeline needs the backend API.`);
+      setTermLines((lines) => [...lines, { tone: 'bad', text: `threat lab unavailable (${message})` }]);
       return null;
     } finally {
       setLabBusy(false);
     }
-  }, [labAction, labCall, labFile, labInput, labMode, setTermLines]);
+  }, [labCall, labFile, labInput, labUrls, setTermLines]);
 
   const reboot = () => {
     setStartOpen(false);
@@ -347,7 +417,7 @@ export default function SandboxApp() {
     switch (name) {
       case 'help':
         print('guest: help · neofetch · ifconfig · ps · netstat · open <browser|lab|monitor|terminal> · detonate <url> · render · clear · reboot');
-        print('cyberlab: nmap <host> · ping|dig|whois|traceroute <host> · hashid <hash> · crack <hash> · webchk <url> · toolbox');
+        print('threat lab: triage · link <url> · webchk <url> · hashid <hash> · crack <hash> · nmap <host> · dig|ping|whois|traceroute <host> · toolbox');
         break;
       case 'neofetch':
         print('spandr-sbx-01 · Debian 12 · kernel 6.8.0-hardened · chromium 131 · 1280x720 · egress BLOCKED', 'dim');
@@ -382,9 +452,12 @@ export default function SandboxApp() {
           });
         }).catch((error) => print(`toolbox unavailable (${error?.message || 'error'})`, 'bad'));
         break;
+      case 'triage':
+        setLabTab('auto'); openGuest('lab');
+        print('auto triage: drop a .eml / attachment + links into the Threat Lab window', 'ok');
+        break;
       case 'nmap':
         if (!arg) { print('usage: nmap <host>', 'bad'); break; }
-        setLabInput(arg); setLabMode('quick'); setLabTab('scan'); openGuest('lab');
         labCall('portscan', { target: arg, mode: 'quick' }).then((r) => {
           if (r.error) { print(r.error, 'bad'); return; }
           (r.open || []).forEach((p) => print(`${String(p.port).padEnd(6)}${p.proto} open  ${p.service || ''} ${p.product || ''}`.trimEnd(), 'ok'));
@@ -397,7 +470,6 @@ export default function SandboxApp() {
       case 'whois':
       case 'traceroute':
         if (!arg) { print(`usage: ${name} <host>`, 'bad'); break; }
-        setLabInput(arg); setLabAction(name); setLabTab('recon'); openGuest('lab');
         labCall('recon', { target: arg, action: name }).then((r) => {
           if (r.error) { print(r.error, 'bad'); return; }
           (r.output || '').split('\n').slice(0, 14).forEach((line) => print(line, 'dim'));
@@ -407,7 +479,6 @@ export default function SandboxApp() {
       case 'hashid':
       case 'crack':
         if (!arg) { print(`usage: ${name} <hash>`, 'bad'); break; }
-        setLabInput(arg); setLabTab('hash'); openGuest('lab');
         labCall('hashcrack', { hash: arg }).then((r) => {
           const types = (r.identify || []).map((t) => t.type).join(', ');
           print(`hash type: ${types || 'unknown'}`, 'dim');
@@ -416,14 +487,14 @@ export default function SandboxApp() {
         }).catch((error) => print(`hash engine failed (${error?.message || 'error'})`, 'bad'));
         break;
       case 'webchk':
-        if (!arg) { print('usage: webchk <url>', 'bad'); break; }
-        setLabInput(arg); setLabTab('web'); openGuest('lab');
-        labCall('webanalyze', { url: arg, deep: true }).then((r) => {
+      case 'link':
+        if (!arg) { print(`usage: ${name} <url>`, 'bad'); break; }
+        setLabInput(arg); setLabTab('link'); openGuest('lab');
+        labCall('url', { url: arg }).then((r) => {
           if (r.error) { print(r.error, 'bad'); return; }
-          print(`status ${r.status} · ${r.engine}`, 'ok');
-          (r.checks || []).forEach((c) => print(`[${c.ok ? 'pass' : c.severity}] ${c.name}: ${c.detail}`, c.ok ? 'dim' : 'bad'));
-          if (r.flags?.length) r.flags.forEach((f) => print(`FLAG ${f}`, 'ok'));
-        }).catch((error) => print(`web analysis failed (${error?.message || 'error'})`, 'bad'));
+          print(`RISK ${r.risk_score}/100 — ${r.verdict}`, r.risk_score >= 40 ? 'bad' : 'ok');
+          (r.findings || []).slice(0, 8).forEach((f) => print(`  • ${f}`, 'dim'));
+        }).catch((error) => print(`link analysis failed (${error?.message || 'error'})`, 'bad'));
         break;
       case 'clear':
         setTermLines([]);
@@ -526,7 +597,7 @@ export default function SandboxApp() {
       return (
         <div className="gwin__lab">
           <div className="gwin__lab-tabs">
-            {[['scan', 'Port Scan'], ['recon', 'Recon'], ['hash', 'Hash'], ['web', 'Web'], ['pcap', 'PCAP']].map(([key, label]) => (
+            {[['auto', '⚡ Auto Triage'], ['attach', '📎 Attachment'], ['link', '🔗 Link'], ['pcap', '📡 PCAP']].map(([key, label]) => (
               <button
                 type="button"
                 key={key}
@@ -538,45 +609,51 @@ export default function SandboxApp() {
             ))}
           </div>
           <div className="gwin__lab-form">
-            {labTab === 'recon' && (
-              <select value={labAction} onChange={(event) => setLabAction(event.target.value)} aria-label="Recon action">
-                <option value="dig">dig (DNS)</option>
-                <option value="ping">ping</option>
-                <option value="whois">whois</option>
-                <option value="traceroute">traceroute</option>
-                <option value="headers">http headers</option>
-              </select>
+            {labTab === 'auto' && (
+              <>
+                <input
+                  type="file"
+                  accept=".eml,.msg,.txt,.pdf,.doc,.docx,.xls,.xlsx,.zip,.exe,.bin,*/*"
+                  onChange={(event) => setLabFile(event.target.files?.[0] || null)}
+                  aria-label="Email or attachment for auto triage"
+                />
+                <input
+                  value={labUrls}
+                  onChange={(event) => setLabUrls(event.target.value)}
+                  placeholder="…or paste suspicious links (space/comma separated)"
+                  spellCheck="false"
+                  aria-label="Links for auto triage"
+                />
+              </>
             )}
-            {labTab === 'scan' && (
-              <select value={labMode} onChange={(event) => setLabMode(event.target.value)} aria-label="Scan mode">
-                <option value="quick">quick · top 20</option>
-                <option value="standard">standard · top 100</option>
-                <option value="full">full · 1-2000</option>
-              </select>
+            {labTab === 'attach' && (
+              <input
+                type="file"
+                onChange={(event) => setLabFile(event.target.files?.[0] || null)}
+                aria-label="Attachment to analyse"
+              />
             )}
-            {labTab === 'pcap' ? (
+            {labTab === 'link' && (
+              <input
+                value={labInput}
+                onChange={(event) => setLabInput(event.target.value)}
+                onKeyDown={(event) => { if (event.key === 'Enter') runLab('link'); }}
+                placeholder="https://suspicious-link.example/login"
+                spellCheck="false"
+                aria-label="Link to analyse"
+              />
+            )}
+            {labTab === 'pcap' && (
               <input
                 type="file"
                 accept=".pcap,.pcapng,.cap"
                 onChange={(event) => setLabFile(event.target.files?.[0] || null)}
                 aria-label="PCAP capture"
               />
-            ) : (
-              <input
-                value={labInput}
-                onChange={(event) => setLabInput(event.target.value)}
-                onKeyDown={(event) => { if (event.key === 'Enter') runLab(labTab); }}
-                placeholder={
-                  labTab === 'hash' ? 'e.g. 5f4dcc3b5aa765d61d8327deb882cf99'
-                    : labTab === 'web' ? 'https://suspicious-link.example/login'
-                      : 'target host or IP'}
-                spellCheck="false"
-                aria-label="CyberLab target"
-              />
             )}
             <button type="button" className="btn btn--primary btn--xs" disabled={labBusy} onClick={() => runLab(labTab)}>
               {labBusy ? <Loader2 size={10} className="spin" /> : <Crosshair size={10} />}
-              {labBusy ? 'Running' : 'Run'}
+              {labBusy ? 'Analysing' : labTab === 'auto' ? 'Auto-Analyse' : 'Analyse'}
             </button>
             <button
               type="button"
@@ -584,13 +661,13 @@ export default function SandboxApp() {
               onClick={() => labCall('toolbox').then((t) => {
                 const rows = Object.entries(t.tools || {})
                   .map(([name, info]) => `${name.padEnd(11)} ${info.available ? 'real binary ✓' : 'builtin engine'}`);
-                setLabOut(`guest image  ${t.guest_image}\nprivate targets  ${t.private_targets_allowed ? 'ALLOWED (lab mode)' : 'blocked'}\n\n${rows.join('\n')}`);
+                setLabOut(`guest image  ${t.guest_image}\nanalysis engines\n\n${rows.join('\n')}`);
               }).catch((error) => setLabOut(`toolbox unavailable (${error?.message || 'error'})`))}
             >
               Toolbox
             </button>
           </div>
-          <pre className="gwin__lab-out">{labOut || 'CyberLab toolbox · real analysis tools inside the guest\nnmap · whois · dig · traceroute · ping · tshark · john · binwalk · exiftool · whatweb · sqlmap · hydra\n\npick a tool above — or use the guest terminal:\n  nmap <host>   ·  crack <hash>  ·  webchk <url>  ·  toolbox'}</pre>
+          <pre className="gwin__lab-out">{labOut || 'Threat Lab · real-PC attachment & link analysis\n\n  ⚡ Auto Triage   drop a suspicious .eml (or file + links) → attachments and links are\n                    carved, hashed, dissected and scored in one automated pass\n  📎 Attachment    deep static analysis: magic bytes, entropy, macros, PE/PDF/ZIP dives,\n                    embedded IOCs, exiftool + binwalk\n  🔗 Link          structure heuristics (typosquat/punycode), DNS, redirect chain,\n                    credential-form sniff, TLS certificate\n  📡 PCAP          traffic evidence: DNS, HTTP, credentials\n\n  nothing is executed — every verdict is labelled with its uncertainty'}</pre>
         </div>
       );
     }

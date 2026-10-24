@@ -16,7 +16,7 @@ from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 from urllib.parse import urlparse
 
-from fastapi import FastAPI, File, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse
 from fastapi.staticfiles import StaticFiles
@@ -571,6 +571,11 @@ class LabWebRequest(BaseModel):
     deep: bool = False
 
 
+class LabTriageRequest(BaseModel):
+    urls: List[str] = Field(default_factory=list)
+    eml_text: Optional[str] = None
+
+
 @app.post(f"{settings.API_V1_STR}/sandbox/detonate")
 def sandbox_detonate(req: DetonateUrlRequest) -> Dict[str, Any]:
     return inspect_url_dom_and_headers(req.url)
@@ -1067,6 +1072,53 @@ async def lab_pcap(file: UploadFile = File(...)) -> Dict[str, Any]:
     if len(data) > 50 * 1024 * 1024:
         raise HTTPException(status_code=400, detail="capture too large (50 MB max)")
     return cyberlab_engine.pcap_analyze(data, filename=file.filename or "capture.pcap")
+
+
+# --- Email Threat Lab: attachment & link analysis with automation -------------
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/attachment")
+async def lab_attachment(file: UploadFile = File(...)) -> Dict[str, Any]:
+    """Deep static analysis of one email attachment (carver + strings + format dives)."""
+    data = await file.read()
+    if len(data) > 50 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="file too large (50 MB max)")
+    return cyberlab_engine.attachment_lab(data, file.filename or "attachment.bin")
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/url")
+def lab_url(req: LabWebRequest) -> Dict[str, Any]:
+    """Deep link analysis: structure heuristics, DNS, redirect chain, page sniff, TLS."""
+    return cyberlab_engine.url_lab(req.url)
+
+
+@app.post(f"{settings.API_V1_STR}/sandbox/lab/auto-triage")
+async def lab_auto_triage(
+    file: Optional[UploadFile] = File(None),
+    urls: Optional[str] = Form(None),
+) -> Dict[str, Any]:
+    """One-click automated pipeline: .eml or raw file -> attachments + links -> full triage."""
+    eml_bytes = None
+    files: List[Any] = []
+    raw = b""
+    if file is not None:
+        raw = await file.read()
+        if len(raw) > 50 * 1024 * 1024:
+            raise HTTPException(status_code=400, detail="file too large (50 MB max)")
+        name = (file.filename or "").lower()
+        if name.endswith(".eml") or name.endswith(".msg") or raw[:5].lower().startswith(b"from "):
+            eml_bytes = raw
+        else:
+            files.append((file.filename or "attachment.bin", raw))
+    url_list: List[str] = []
+    if urls:
+        try:
+            parsed_urls = json.loads(urls) if urls.strip().startswith("[") else [u for u in re.split(r"[\s,]+", urls) if u]
+            url_list = [str(u) for u in parsed_urls if str(u).strip()][:20]
+        except Exception:
+            url_list = [u for u in re.split(r"[\s,]+", urls) if u][:20]
+    if not eml_bytes and not files and not url_list:
+        raise HTTPException(status_code=400, detail="provide an .eml, an attachment, or at least one URL")
+    return cyberlab_engine.auto_triage(eml_bytes=eml_bytes, files=files, urls=url_list)
 
 
 @app.websocket("/websockify")
