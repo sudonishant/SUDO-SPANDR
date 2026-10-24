@@ -55,7 +55,11 @@ function ClockWidget() {
       <div className="clock" aria-label="Local time">
         <span className="clock__label">LOCAL</span>
         {Array.from({ length: 12 }).map((_, index) => (
-          <span key={index} className="clock__tick" style={{ transform: `translate(-50%, 0) rotate(${index * 30}deg)`, top: '8px' }} />
+          <span
+            key={index}
+            className="clock__tick"
+            style={{ transform: `rotate(${index * 30}deg)`, transformOrigin: '50% 54px' }}
+          />
         ))}
         <span className="clock__hand clock__hand--hour" style={{ transform: `translateX(-50%) rotate(${hourDeg}deg)` }} />
         <span className="clock__hand clock__hand--minute" style={{ transform: `translateX(-50%) rotate(${minuteDeg}deg)` }} />
@@ -98,154 +102,68 @@ function CalendarWidget() {
   );
 }
 
-function PlayerWidget() {
+function StatusWidget() {
   return (
-    <div className="widget widget--player">
-      <div className="player__row">
-        <div className="player__cover" aria-hidden="true" />
-        <div>
-          <div className="player__title">Chain of Custody</div>
-          <div className="player__meta">SentinelMail — Evidence Session 77</div>
-        </div>
-      </div>
-      <div className="player__controls">
-        <button type="button" aria-label="Previous"><ScanLine size={13} /></button>
-        <button type="button" aria-label="Play"><Play size={17} /></button>
-        <button type="button" aria-label="Next"><Music size={13} /></button>
-      </div>
-      <div className="player__bar"><i /></div>
-      <div className="player__time"><span>0:00</span><span>4:18</span></div>
+    <div className="widget widget--status">
+      <span className="pill pill--green"><i className="dot" /> local mode</span>
+      <p>Files are read in the tab. Nothing is uploaded, nothing is executed.</p>
     </div>
   );
 }
 
-const FORECAST = [
-  { day: 'We', icon: Sun, temp: '31°' },
-  { day: 'Th', icon: Sun, temp: '33°' },
-  { day: 'Fr', icon: CloudSun, temp: '29°' },
-  { day: 'Sa', icon: CloudRain, temp: '28°' },
-  { day: 'Su', icon: Sun, temp: '30°' },
-  { day: 'Mo', icon: CloudSun, temp: '32°' },
-  { day: 'Tu', icon: CloudSun, temp: '27°' },
-];
-
-function WeatherWidget() {
-  return (
-    <div className="widget widget--weather">
-      <div className="weather__head">
-        <span className="weather__city">Patna, IN</span>
-        <span className="weather__range">workstation · local</span>
-      </div>
-      <div className="weather__days">
-        {FORECAST.map(({ day, icon: Icon, temp }, index) => (
-          <div className={`weather__day ${index === 3 ? 'is-now' : ''}`} key={day}>
-            <span>{day}</span>
-            <Icon size={13} color="rgba(0,0,0,0.45)" />
-            <b>{temp}</b>
-          </div>
-        ))}
-      </div>
-    </div>
-  );
-}
-
-function NoteWidget() {
-  return (
-    <div className="note">
-      <b>Redaction on</b>
-      Personal data is masked before anything leaves the tab.
-      <div style={{ marginTop: 6 }}><code>victim@ → v•••@</code></div>
-    </div>
-  );
-}
-
-function EvidenceCard() {
-  const rows = [
-    ['from', <span key="f">v<span className="selfie__redact">ictim</span>@bank.co</span>, ''],
-    ['subject', 'URGENT: verify', 'amber'],
-    ['spf', 'pass', 'green'],
-    ['dkim', 'fail', 'red'],
-    ['dmarc', 'none', 'amber'],
-  ];
-  return (
-    <div className="widget widget--selfie">
-      <div className="selfie">
-        <div className="selfie__grain" />
-        <div className="selfie__head">
-          <i /><i /><i />
-        </div>
-        {rows.map(([label, value, tone]) => (
-          <div className="selfie__line" key={label}>
-            <span>{label}</span>
-            <b className={tone}>{value}</b>
-          </div>
-        ))}
-        <span className="selfie__tag">REDACTED VIEW</span>
-      </div>
-    </div>
-  );
-}
-
-function AppCluster() {
-  const tiles = [
-    { label: 'Workspace', icon: Terminal, bg: 'linear-gradient(160deg,#3a3a3a,#141414)', id: 'workspace' },
-    { label: 'Capabilities', icon: LayoutDashboard, bg: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)', id: 'capabilities' },
-    { label: 'Playbooks', icon: BookOpen, bg: 'linear-gradient(160deg,#a583f5,#6d3bd6)', id: 'playbooks' },
-    { label: 'Achievements', icon: Award, bg: 'linear-gradient(160deg,#ffdf74,#f0a91c)', id: 'achievements' },
-    { label: 'Signature', icon: ScrollText, bg: 'linear-gradient(160deg,#63e08a,#18a34a)', id: 'signature' },
-    { label: 'API', icon: Code2, bg: 'linear-gradient(160deg,#4a4a4a,#0f0f0f)', id: 'signature' },
-    { label: 'GitHub', icon: Github, bg: 'linear-gradient(160deg,#2f2f2f,#000000)', href: REPO_URL },
-    { label: 'Email', icon: Mail, bg: 'linear-gradient(160deg,#ff8a7a,#e4392f)', href: 'mailto:security@example.org' },
-  ];
-  return (
-    <div className="app-cluster" aria-label="Quick links">
-      {tiles.map(({ label, icon: Icon, bg, id, href }) => (
-        <a
-          key={label}
-          className="app-tile"
-          style={{ background: bg }}
-          href={href || `#${id}`}
-          aria-label={label}
-          title={label}
-          onClick={(event) => { if (id) { event.preventDefault(); scrollToId(id); } }}
-        >
-          <Icon strokeWidth={2} />
-        </a>
-      ))}
-    </div>
-  );
-}
-
-const FOLDERS = [
-  { label: 'Email file', mode: 'email_file' },
-  { label: 'Paste text', mode: 'text_email' },
-  { label: 'Attachment', mode: 'attachment_file' },
-  { label: 'Capabilities', id: 'capabilities' },
-  { label: 'Achievements', id: 'achievements' },
-];
-
-function FolderRail() {
+function AppTile({ label, icon: Icon, bg, id, href, mode, size = 'md' }) {
   const { setInputMode } = useForensicStore();
+  const className = `app-tile ${size === 'lg' ? 'app-tile--lg' : ''}`;
+  const inner = (
+    <>
+      <span className="app-tile__icon" style={{ background: bg }}><Icon strokeWidth={2} /></span>
+      <span className="app-tile__label">{label}</span>
+    </>
+  );
+  if (mode) {
+    return (
+      <button
+        type="button"
+        className={className}
+        aria-label={label}
+        onClick={() => { setInputMode(mode); scrollToId('workspace'); }}
+      >
+        {inner}
+      </button>
+    );
+  }
   return (
-    <nav className="rail" aria-label="Intake shortcuts">
-      {FOLDERS.map(({ label, mode, id }) => (
-        <button
-          key={label}
-          type="button"
-          className="folder-btn"
-          onClick={() => {
-            if (mode) setInputMode(mode);
-            scrollToId(id || 'workspace');
-          }}
-        >
-          <span className="folder" aria-hidden="true">
-            <span className="folder__back" />
-            <span className="folder__tab" />
-            <span className="folder__front" />
-          </span>
-          <span>{label}</span>
-        </button>
-      ))}
+    <a
+      className={className}
+      href={href || `#${id}`}
+      aria-label={label}
+      onClick={(event) => { if (id) { event.preventDefault(); scrollToId(id); } }}
+    >
+      {inner}
+    </a>
+  );
+}
+
+const LAUNCHER = [
+  { label: 'Workspace', icon: Terminal, bg: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)', id: 'workspace' },
+  { label: 'Playbooks', icon: Sparkles, bg: 'linear-gradient(160deg,#b18cf7,#7a45e0)', id: 'playbooks' },
+  { label: 'Docs', icon: BookOpen, bg: 'linear-gradient(160deg,#a7a7a7,#5b5b5b)', href: `${REPO_URL}#readme` },
+  { label: 'GitHub', icon: Github, bg: 'linear-gradient(160deg,#3a3a3a,#0b0b0b)', href: REPO_URL },
+];
+
+const SHORTCUTS = [
+  { label: 'Email file', icon: Mail, bg: 'linear-gradient(160deg,#5aa8f5,#2f7fe0)', mode: 'email_file' },
+  { label: 'Paste text', icon: FileText, bg: 'linear-gradient(160deg,#63e08a,#18a34a)', mode: 'text_email' },
+  { label: 'Attachment', icon: Paperclip, bg: 'linear-gradient(160deg,#ffc85a,#e08a00)', mode: 'attachment_file' },
+  { label: 'Capabilities', icon: LayoutDashboard, bg: 'linear-gradient(160deg,#8fb4ff,#3b62d9)', id: 'capabilities' },
+  { label: 'Achievements', icon: Award, bg: 'linear-gradient(160deg,#ff8a7a,#e4392f)', id: 'achievements' },
+  { label: 'Signature', icon: ScrollText, bg: 'linear-gradient(160deg,#3a3a3a,#111111)', id: 'signature' },
+];
+
+function ShortcutGrid() {
+  return (
+    <nav className="app-grid" aria-label="Shortcuts">
+      {SHORTCUTS.map((item) => <AppTile key={item.label} {...item} />)}
     </nav>
   );
 }
@@ -323,34 +241,24 @@ function Hero() {
         <div className="hero__col hero__col--left">
           <ClockWidget />
           <CalendarWidget />
-          <PlayerWidget />
-          <WeatherWidget />
-          <EvidenceCard />
+          <StatusWidget />
         </div>
 
         <div className="hero__center">
           <span className="pill pill--blue">SIH 2026 · Problem statement 26106</span>
-          <h1 className="hero__name" style={{ marginTop: 18 }}>I&rsquo;m SentinelMail.</h1>
+          <h1 className="hero__name" style={{ marginTop: 16 }}>I&rsquo;m SentinelMail.</h1>
           <p className="hero__role">I read mail as <a href="#workspace">evidence.</a></p>
           <p className="hero__lead">
-            Header reconstruction, authentication, relay order and attachment inspection — a deterministic
-            triage that says what it can prove, and stays quiet about what it cannot.
+            Headers, authentication, relay order and attachments — read locally, labelled honestly.
           </p>
-          <div className="hero__cta">
-            <button type="button" className="btn btn--primary" onClick={() => scrollToId('workspace')}>
-              Open the workspace <ArrowRight size={14} />
-            </button>
-            <a className="btn btn--ghost" href={REPO_URL} target="_blank" rel="noreferrer">
-              <Github size={14} /> Repository
-            </a>
+          <div className="launcher">
+            {LAUNCHER.map((item) => <AppTile key={item.label} {...item} size="lg" />)}
           </div>
-          <div className="hero__hint">No file upload in browser mode · nothing is executed · every claim is labelled</div>
+          <div className="hero__hint">No upload · nothing executed · every claim labelled</div>
         </div>
 
         <div className="hero__col hero__col--right">
-          <FolderRail />
-          <NoteWidget />
-          <AppCluster />
+          <ShortcutGrid />
         </div>
       </div>
     </section>
@@ -384,45 +292,6 @@ function Capabilities() {
               <h3>{title}</h3>
               <p>{copy}</p>
             </article>
-          ))}
-        </div>
-      </div>
-    </section>
-  );
-}
-
-const SIGNALS = [
-  { icon: FileCode2, title: 'RFC 5322 headers', copy: 'ordered, not guessed' },
-  { icon: Shield, title: 'SPF · DKIM · DMARC', copy: 'as reported' },
-  { icon: Mail, title: 'EML · MSG intake', copy: 'two parsers' },
-  { icon: Hash, title: 'SHA-256', copy: 'payload fingerprint' },
-  { icon: Fingerprint, title: 'Entropy', copy: 'container-aware' },
-  { icon: Route, title: 'Relay order', copy: 'evidence sequence' },
-  { icon: Globe, title: 'RDAP context', copy: 'registration only' },
-  { icon: Lock, title: 'Redaction', copy: 'before export' },
-  { icon: Database, title: 'ISO/IEC 27037', copy: 'preservation note' },
-  { icon: Boxes, title: 'FastAPI backend', copy: 'optional depth' },
-  { icon: Bot, title: 'AI second opinion', copy: 'opt-in, labelled' },
-  { icon: Cpu, title: 'noVNC sandbox', copy: 'isolated detonation' },
-];
-
-function SignalsStrip() {
-  const row = [...SIGNALS, ...SIGNALS];
-  return (
-    <section className="section section--canvas section--tight" id="standards">
-      <div className="wrap" style={{ marginBottom: 18 }}>
-        <span className="eyebrow reveal"><b>02</b><span className="eyebrow__rule" />Signals we surface</span>
-      </div>
-      <div className="marquee">
-        <div className="marquee__track">
-          {row.map(({ icon: Icon, title, copy }, index) => (
-            <div className="chip-card" key={`${title}-${index}`}>
-              <Icon />
-              <div>
-                <strong>{title}</strong>
-                <small>{copy}</small>
-              </div>
-            </div>
           ))}
         </div>
       </div>
@@ -528,11 +397,13 @@ function Playbooks() {
                     ))}
                   </ul>
                   <div className="deck__actions">
-                    <button type="button" className="btn btn--primary" onClick={() => scrollToId('workspace')}>
-                      Try it on your file <ArrowRight size={13} />
+                    <button type="button" className="app-btn" onClick={() => scrollToId('workspace')}>
+                      <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)' }}><Shield size={15} /></span>
+                      Try it on your file
                     </button>
-                    <a className="btn btn--ghost" href={`${REPO_URL}#readme`} target="_blank" rel="noreferrer">
-                      <BookOpen size={13} /> Read the docs
+                    <a className="app-btn" href={`${REPO_URL}#readme`} target="_blank" rel="noreferrer">
+                      <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#a7a7a7,#5b5b5b)' }}><BookOpen size={15} /></span>
+                      Read the docs
                     </a>
                   </div>
                 </div>
@@ -632,8 +503,9 @@ function Signature() {
                 </div>
               </div>
             ))}
-            <a className="btn btn--dark" href={REPO_URL} target="_blank" rel="noreferrer" style={{ width: 'fit-content', marginTop: 4 }}>
-              <Github size={14} /> sudonishant / SUDO-SPANDR
+            <a className="app-btn" href={REPO_URL} target="_blank" rel="noreferrer" style={{ width: 'fit-content', marginTop: 4 }}>
+              <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#3a3a3a,#0b0b0b)' }}><Github size={15} /></span>
+              sudonishant / SUDO-SPANDR
             </a>
           </div>
           <div className="terminal">
@@ -704,15 +576,22 @@ function Playground() {
                 is a button you press, and each answer is labelled with what it actually is.
               </p>
               <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 16 }}>
-                <a className="btn btn--dark btn--sm" href={REPO_URL} target="_blank" rel="noreferrer"><Code2 size={12} /> API reference</a>
-                <a className="btn btn--ghost btn--sm" href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer"><MessageSquareText size={12} /> Report a finding</a>
+                <a className="app-btn app-btn--sm" href={REPO_URL} target="_blank" rel="noreferrer">
+                  <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#3a3a3a,#0b0b0b)' }}><Code2 size={13} /></span>
+                  API reference
+                </a>
+                <a className="app-btn app-btn--sm" href={`${REPO_URL}/issues`} target="_blank" rel="noreferrer">
+                  <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#ff8a7a,#e4392f)' }}><MessageSquareText size={13} /></span>
+                  Report a finding
+                </a>
               </div>
             </div>
           </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'center', marginTop: 26 }} className="reveal">
-          <button type="button" className="btn btn--primary" onClick={() => scrollToId('workspace')}>
-            Open the workspace <ArrowRight size={14} />
+          <button type="button" className="app-btn" onClick={() => scrollToId('workspace')}>
+            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)' }}><Terminal size={15} /></span>
+            Open the workspace
           </button>
         </div>
       </div>
@@ -875,7 +754,7 @@ function AIReviewPanel({ review, onRun, question, onQuestionChange }) {
       <div className="ai-review-empty">
         <p>AI is an optional second opinion. It runs only after you press the button, and it never replaces observed evidence or the deterministic category.</p>
         {questionBox}
-        <button type="button" className="btn btn--dark btn--sm" onClick={() => onRun(question)} style={{ width: 'fit-content' }}><Bot size={13} /> Run AI second opinion</button>
+        <button type="button" className="app-btn app-btn--sm" onClick={() => onRun(question)} style={{ width: 'fit-content' }}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#b18cf7,#7a45e0)' }}><Bot size={13} /></span>Run AI second opinion</button>
       </div>
     );
   }
@@ -896,7 +775,7 @@ function AIReviewPanel({ review, onRun, question, onQuestionChange }) {
             <p>{review.fallback.recommended_action}</p>
           </div>
         ) : null}
-        {review.status !== 'not_configured' ? <button type="button" className="btn btn--ghost btn--sm" onClick={() => onRun(question)} style={{ width: 'fit-content' }}>Try AI again</button> : null}
+        {review.status !== 'not_configured' ? <button type="button" className="app-btn app-btn--sm" onClick={() => onRun(question)} style={{ width: 'fit-content' }}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#b18cf7,#7a45e0)' }}><RefreshCw size={12} /></span>Try AI again</button> : null}
       </div>
     );
   }
@@ -977,7 +856,8 @@ function RelayPanel({ relay, onLookup, geoLoading }) {
         </div>
       ) : <div className="empty-panel">No public IP was extracted from the submitted headers; route visualisation is unavailable.</div>}
       <div className="ip-context-action">
-        <button type="button" className="btn btn--ghost btn--sm" onClick={onLookup} disabled={!ips.length || geoLoading} style={{ width: 'fit-content' }}>
+        <button type="button" className="app-btn app-btn--sm" onClick={onLookup} disabled={!ips.length || geoLoading} style={{ width: 'fit-content' }}>
+          <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#5aa8f5,#2f7fe0)' }}><Globe size={12} /></span>
           {geoLoading ? 'Looking up registration context…' : 'Check approximate network context'}
         </button>
         <small>Uses public RDAP registration data only. It may indicate a cloud/hosting or access network, but it cannot identify a person or exact location.</small>
@@ -1101,9 +981,9 @@ function AnalysisResult({ data }) {
           <span>No fake pass/fail claims are generated.</span>
         </div>
         <div className="report-toolbar__actions">
-          <button type="button" className="btn btn--ghost btn--sm" onClick={runAiReview}><Bot size={13} /> AI second opinion</button>
-          <button type="button" className="btn btn--ghost btn--sm" onClick={downloadJSON}><Download size={13} /> Export JSON</button>
-          <button type="button" className="btn btn--ghost btn--sm" onClick={resetResult}><XCircle size={13} /> Clear</button>
+          <button type="button" className="app-btn app-btn--sm" onClick={runAiReview}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#b18cf7,#7a45e0)' }}><Bot size={13} /></span>AI second opinion</button>
+          <button type="button" className="app-btn app-btn--sm" onClick={downloadJSON}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#63e08a,#18a34a)' }}><Download size={13} /></span>Export JSON</button>
+          <button type="button" className="app-btn app-btn--sm" onClick={resetResult}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#ff8a7a,#e4392f)' }}><XCircle size={13} /></span>Clear</button>
         </div>
       </div>
 
@@ -1261,7 +1141,6 @@ export default function App() {
       <Hero />
       <Workspace />
       <Capabilities />
-      <SignalsStrip />
       <Playbooks />
       <Achievements />
       <Signature />
