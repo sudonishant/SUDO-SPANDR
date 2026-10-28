@@ -521,6 +521,154 @@ HTML_CONTENT = """<!DOCTYPE html>
         box-shadow: none !important; border: none !important; padding: 0 !important;
       }
     }
+
+    /* Elena Gonci QA Agent Loop Hero & Cards */
+    .eg-hero-wrap {
+      max-width: 780px;
+      margin: 0 auto 28px;
+      text-align: center;
+      padding-top: 10px;
+    }
+    .eg-category-pill {
+      font-size: 11px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.15em;
+      color: rgba(0, 0, 0, 0.55);
+      margin-bottom: 12px;
+      display: inline-block;
+    }
+    .eg-hero-title {
+      font-size: clamp(26px, 4.2vw, 38px);
+      font-weight: 800;
+      letter-spacing: -0.03em;
+      color: #000;
+      line-height: 1.15;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 12px;
+      flex-wrap: wrap;
+      margin-bottom: 12px;
+    }
+    .eg-version-tag {
+      font-size: 11px;
+      font-weight: 700;
+      color: rgba(0, 0, 0, 0.55);
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      border-radius: 9999px;
+      padding: 3px 10px;
+      box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+      letter-spacing: 0.02em;
+    }
+    .eg-hero-desc {
+      font-size: 15px;
+      line-height: 1.6;
+      color: rgba(0, 0, 0, 0.55);
+      max-width: 580px;
+      margin: 0 auto 22px;
+    }
+    .eg-action-bar {
+      max-width: 680px;
+      margin: 0 auto;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      background: #ffffff;
+      border: 1px solid rgba(0, 0, 0, 0.13);
+      border-radius: 9999px;
+      padding: 6px 8px 6px 20px;
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.08);
+      cursor: pointer;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .eg-action-bar:hover {
+      border-color: #57a4f0;
+      box-shadow: 0 12px 36px rgba(87, 164, 240, 0.18);
+      transform: translateY(-1px);
+    }
+    .eg-action-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      font-size: 13.5px;
+      color: rgba(0, 0, 0, 0.85);
+      font-family: inherit;
+    }
+    .eg-action-btn {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #000;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      transition: background 0.15s ease;
+    }
+    .eg-action-btn:hover {
+      background: #334155;
+    }
+    .eg-action-note {
+      font-size: 10.5px;
+      color: rgba(0, 0, 0, 0.45);
+      margin-top: 8px;
+      text-align: center;
+    }
+
+    /* 2-Column Choice Cards (Elena Gonci QA Agent Loop style) */
+    .eg-choice-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 12px;
+      max-width: 720px;
+      margin: 22px auto 26px;
+    }
+    .eg-card-primary {
+      border-radius: 18px;
+      border: 1px solid rgba(87, 164, 240, 0.35);
+      background: linear-gradient(180deg, rgba(87, 164, 240, 0.10) 0%, rgba(87, 164, 240, 0.03) 100%);
+      padding: 18px 20px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .eg-card-primary:hover {
+      border-color: rgba(87, 164, 240, 0.7);
+      box-shadow: 0 10px 30px rgba(87, 164, 240, 0.16);
+      transform: translateY(-2px);
+    }
+    .eg-card-secondary {
+      border-radius: 18px;
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      background: #fafbfc;
+      padding: 18px 20px;
+      text-align: left;
+      cursor: pointer;
+      transition: all 0.25s ease;
+    }
+    .eg-card-secondary:hover {
+      border-color: rgba(0, 0, 0, 0.25);
+      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+      transform: translateY(-2px);
+    }
+    .eg-card-title {
+      font-size: 14.5px;
+      font-weight: 800;
+      color: rgba(0, 0, 0, 0.88);
+      margin-bottom: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .eg-card-sub {
+      font-size: 12.5px;
+      line-height: 1.5;
+      color: rgba(0, 0, 0, 0.58);
+    }
 </style>
 </head>
 <body>
@@ -552,6 +700,89 @@ HTML_CONTENT = """<!DOCTYPE html>
   <div class="main-wrap">
     
     <!-- Swipeable Mode Selection Bar -->
+    
+    <!-- Elena Gonci QA Agent Loop Hero Header -->
+    <div class="eg-hero-wrap">
+      <p class="eg-category-pill">AI THREAT DETECTION & FORENSIC PLATFORM</p>
+      <h1 class="eg-hero-title">
+        SentinelMail Forensics
+        <span class="eg-version-tag">SIH-26106</span>
+      </h1>
+      <p class="eg-hero-desc">
+        Autonomous multi-hop forensic engine that traces geodesic SMTP flight trajectories, detects header forgery & spoofing, and anchors court-admissible Section 65B evidence.
+      </p>
+
+      <!-- Elena Gonci Floating Omni-Bar -->
+      <div>
+        <div class="eg-action-bar" onclick="document.getElementById('eml-input').click()">
+          <div style="display: flex; align-items: center; gap: 8px; color: #57a4f0;">
+            <i data-lucide="upload-cloud" style="width: 18px;"></i>
+          </div>
+          <input type="text" readonly class="eg-action-input" placeholder="Select or drop .EML / .MSG evidence file, or choose a corridor below..." />
+          <button type="button" class="eg-action-btn" title="Choose Evidence File">
+            <svg viewBox="0 0 24 24" style="width: 16px; height: 16px;" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 19V5M5 12l7-7 7 7"></path></svg>
+          </button>
+        </div>
+        <p class="eg-action-note">Preserved in strict accordance with ISO/IEC 27037:2012 guidelines and Section 65B Indian Evidence Act.</p>
+      </div>
+
+      <!-- Elena Gonci 2-Choice Cards Grid -->
+      <div class="eg-choice-grid" style="grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); max-width: 960px; margin: 24px auto 30px;">
+        <!-- Feature 1: Flight Radar -->
+        <div class="eg-card-primary" onclick="switchTab('geomap', document.getElementById('tab-btn-geomap'))">
+          <div class="eg-card-title">
+            <span>🛰️ Flight Radar & GeoIP</span>
+            <span class="hop-pill cyan" style="font-size: 8.5px;">LIVE MAP</span>
+          </div>
+          <p class="eg-card-sub">Trace geodesic air corridors, reverse-DNS telecom hops, and flight distance.</p>
+        </div>
+
+        <!-- Feature 2: Attack Graph -->
+        <div class="eg-card-secondary" onclick="switchTab('graph', document.getElementById('tab-btn-graph'))">
+          <div class="eg-card-title">
+            <span>🕸️ Neo4j Attack Graph</span>
+            <span class="hop-pill cyan" style="font-size: 8.5px;">CYPHER</span>
+          </div>
+          <p class="eg-card-sub">Interactive entity relationship graph mapping sender, IP, target, and campaign.</p>
+        </div>
+
+        <!-- Feature 3: AI NLP -->
+        <div class="eg-card-secondary" onclick="switchTab('nlp', document.getElementById('tab-btn-nlp'))">
+          <div class="eg-card-title">
+            <span>🧠 AI NLP & Urgency</span>
+            <span class="hop-pill warn" style="font-size: 8.5px;">TRIGGERS</span>
+          </div>
+          <p class="eg-card-sub">Paragraph-by-paragraph threat scoring, urgency detection, and bilingual analysis.</p>
+        </div>
+
+        <!-- Feature 4: MITRE & AI Bot -->
+        <div class="eg-card-secondary" onclick="switchTab('mitre', document.getElementById('tab-btn-mitre'))">
+          <div class="eg-card-title">
+            <span>🤖 MITRE & AI Copilot</span>
+            <span class="hop-pill cyan" style="font-size: 8.5px;">T1566</span>
+          </div>
+          <p class="eg-card-sub">Enterprise ATT&CK matrix mapping and interactive AI forensic chat assistant.</p>
+        </div>
+
+        <!-- Feature 5: SPF/DKIM/DMARC -->
+        <div class="eg-card-secondary" onclick="switchTab('auth', document.getElementById('tab-btn-auth'))">
+          <div class="eg-card-title">
+            <span>🛡️ SPF · DKIM · DMARC</span>
+            <span class="hop-pill good" style="font-size: 8.5px;">CRYPTO AUTH</span>
+          </div>
+          <p class="eg-card-sub">Deterministic cryptographic email authentication and envelope alignment audit.</p>
+        </div>
+
+        <!-- Feature 6: Section 65B Court Docket -->
+        <div class="eg-card-primary" style="border-color: rgba(16, 185, 129, 0.4); background: linear-gradient(180deg, rgba(16, 185, 129, 0.10) 0%, rgba(16, 185, 129, 0.03) 100%);" onclick="switchTab('dossier', document.querySelector('.nav-tabs button:last-child'))">
+          <div class="eg-card-title">
+            <span>📜 Section 65B Docket</span>
+            <span class="hop-pill good" style="font-size: 8.5px;">SEC 65B IEA</span>
+          </div>
+          <p class="eg-card-sub">Statutory certificate under Sec 65B IEA & Sec 63 BSA with certified PDF export.</p>
+        </div>
+      </div>
+
     <div class="mode-bar">
       <button class="mode-tab active" id="tab-eml" onclick="setMode('eml')"><i data-lucide="mail"></i> 1. EML File</button>
       <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text / Headers</button>
