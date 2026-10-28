@@ -431,16 +431,18 @@ current workspace UI.
 | Intake (`.eml`, `.msg`, pasted headers, attachment) | `src/apps/WorkspaceApp.jsx` | Browser parsers and deterministic scoring; no evidence upload by this workflow |
 | Cases | `src/pages/CasesPage.jsx`, `src/lib/caseDatabase.js` | Reopen, export, remove and clear cases saved in this browser profile’s IndexedDB |
 | Device retention | `src/store/useForensicStore.jsx` | Hydrates on startup, persists creates/updates/deletes, and retains the newest 50 cases; unavailable IndexedDB falls back to memory-only with an explicit notice |
-| Web Computer | `src/pages/SandboxPage.jsx` | Workspace guest desktop with Mail Intake/Triage windows, Start menu and taskbar; manual Start/Stop plus opt-in active-tab auto-resume; local EML/MSG intake → analysis → triage plan → saved case and actual runtime events |
-| Mailbox / remote VM | Web Computer integration panel | Not connected in this static UI; no fake incoming mail, remote Chromium, quarantine, reply or delete action is claimed |
+| Web Computer | `src/pages/SandboxPage.jsx`, `src/components/BrowserComputer.jsx` | Real WebContainers Node.js/jsh runtime with xterm.js, code editor and IndexedDB workspace snapshots; manual Start/Stop and opt-in active-tab auto-resume. This is not a full Linux OS |
+| Optional hosted Linux | `src/components/HostedLinuxComputer.jsx`, `scripts/agent-computer-server.mjs` | When the local control plane is configured, Start/Stop manages real Chromium, xterm, PCManFM, Fluxbox and noVNC processes as a dedicated unprivileged user; unavailable hosts show an honest not-connected state |
+| Mailbox / automated actions | Web Computer integration panel | No mailbox is connected; submitted EML/MSG files still use local analysis → triage plan → saved case. No fake incoming mail, quarantine, reply or delete action is claimed |
 | Network-free URL inspection | `src/pages/UrlLabPage.jsx` → “Inspect” | Browser-only URL parsing; the legacy same-origin remote-preview proxy returns 410 and performs no fetch |
 | Report tabs and dossier | `src/apps/Report.jsx`, `src/components/Dossier.jsx` | Actual browser result object, JSON export and print/save-PDF |
 | Sample library | `src/pages/SamplesPage.jsx`, `src/data/samples.js` | 11 clearly labelled synthetic fixtures run through the real analyzer |
 | AI second opinion | Analysis overview / toolbar | Optional `POST /api/v1/ai-review`; content leaves the browser only after this explicit action |
 
-Case evidence is kept out of `localStorage`; only non-evidence preferences such as theme and the
-Web Computer auto-resume choice use that storage. IndexedDB is device/profile-local, not an
-immutable evidence vault or a remote synchronized database. Anyone with access to the same browser
+Case evidence and browser-computer workspace snapshots are kept out of `localStorage`; only
+non-evidence preferences such as theme, runtime selection and auto-resume use that storage.
+Cases and browser workspace files use separate IndexedDB databases. IndexedDB is
+device/profile-local, not an immutable evidence vault or a remote synchronized database. Anyone with access to the same browser
 profile may be able to reopen saved cases, so export and clear them before using a shared device.
 
 All panels use responsive layouts and explicit unavailable/not-configured states rather than

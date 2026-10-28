@@ -1,11 +1,13 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ArrowRight, CheckCircle2, Container, Download, FileSearch, FolderOpen, Globe2, HardDrive,
-  Mail, MonitorPlay, Pause, Play, ShieldAlert, Upload, X,
+  ArrowRight, CheckCircle2, Code2, Container, Download, FileSearch, Globe2, HardDrive,
+  Mail, MonitorPlay, ShieldAlert, Upload,
 } from 'lucide-react';
 import { useForensicStore } from '../store/useForensicStore';
 import { downloadCase } from '../lib/workspaceUtils';
 import { PageHeader, RiskBadge, StatusLine } from '../components/WorkspaceUI';
+import BrowserComputer from '../components/BrowserComputer';
+import HostedLinuxComputer from '../components/HostedLinuxComputer';
 
 function triagePlan(data) {
   const score = Number(data?.threat?.risk_score) || 0;
@@ -34,203 +36,123 @@ function eventTime(value) {
   return new Date(value).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
 }
 
-function WindowBar({ icon: Icon, title, onClose, closeLabel }) {
-  return (
-    <header className="computer-window__bar">
-      <span className="computer-window__lights" aria-hidden="true"><i /><i /><i /></span>
-      <span className="computer-window__title"><Icon size={13} />{title}</span>
-      <button type="button" className="computer-window__close" aria-label={closeLabel} onClick={onClose}><X size={13} /></button>
-    </header>
-  );
-}
-
-export default function SandboxPage({ onNavigate, onViewCase, health }) {
+export default function SandboxPage({ onNavigate, onViewCase }) {
   const { analyzeFile, cases, loading, storageStatus } = useForensicStore();
+  const [runtimeMode, setRuntimeMode] = useState(() => {
+    try { return localStorage.getItem('spandr-computer-runtime') === 'linux' ? 'linux' : 'browser'; } catch { return 'browser'; }
+  });
   const [running, setRunning] = useState(false);
   const [autoResume, setAutoResume] = useState(() => {
     try { return localStorage.getItem('spandr-computer-auto') === 'true'; } catch { return false; }
   });
   const [lastResult, setLastResult] = useState(null);
   const [intakeError, setIntakeError] = useState('');
-  const [events, setEvents] = useState(() => [{ id: 'ready', at: new Date().toISOString(), message: 'Runtime ready. No mail has been processed.' }]);
-  const [openPanes, setOpenPanes] = useState({ intake: true, result: true });
-  const [activePane, setActivePane] = useState('intake');
-  const [startOpen, setStartOpen] = useState(false);
+  const [events, setEvents] = useState(() => [{ id: 'ready', at: new Date().toISOString(), message: 'No computer runtime started. No mail has been processed.' }]);
   const fileRef = useRef(null);
-  const edgeSandbox = health?.host_dependent_subsystems?.AIR_GAPPED_DETONATION_SANDBOX;
-  const remoteAvailable = Boolean(edgeSandbox?.available_at_edge);
   const restoredResult = cases.find((item) => item._workspace?.origin === 'web-computer');
   const currentResult = lastResult || restoredResult || null;
   const plan = currentResult ? triagePlan(currentResult) : null;
 
-  const addEvent = (message) => {
+  const addEvent = useCallback((message) => {
     const at = new Date().toISOString();
-    setEvents((current) => [{ id: `${at}-${Math.random()}`, at, message }, ...current].slice(0, 8));
-  };
-
-  const openPane = (pane) => {
-    setOpenPanes((current) => ({ ...current, [pane]: true }));
-    setActivePane(pane);
-    setStartOpen(false);
-  };
-
-  const closePane = (pane) => {
-    setOpenPanes((current) => ({ ...current, [pane]: false }));
-    setActivePane((current) => (current === pane ? (pane === 'intake' ? 'result' : 'intake') : current));
-  };
+    setEvents((current) => [{ id: `${at}-${Math.random()}`, at, message }, ...current].slice(0, 10));
+  }, []);
 
   useEffect(() => {
     try { localStorage.setItem('spandr-computer-auto', String(autoResume)); } catch { /* optional preference */ }
   }, [autoResume]);
 
-  useEffect(() => {
-    if (!autoResume) return undefined;
-    const syncWithVisibility = () => setRunning(!document.hidden);
-    syncWithVisibility();
-    document.addEventListener('visibilitychange', syncWithVisibility);
-    return () => document.removeEventListener('visibilitychange', syncWithVisibility);
-  }, [autoResume]);
-
-  const start = () => {
-    setRunning(true);
-    setIntakeError('');
-    setStartOpen(false);
-    setOpenPanes({ intake: true, result: true });
-    setActivePane('intake');
-    addEvent('Web Computer started. Local guest desktop and mail intake are now available.');
-  };
-
-  const stop = () => {
+  const selectRuntime = (mode) => {
+    if (mode === runtimeMode) return;
     setRunning(false);
-    setAutoResume(false);
-    setStartOpen(false);
-    addEvent('Web Computer stopped. No background mail intake remains active.');
+    setRuntimeMode(mode);
+    setIntakeError('');
+    try { localStorage.setItem('spandr-computer-runtime', mode); } catch { /* optional preference */ }
+    addEvent(`Switched to ${mode === 'browser' ? 'browser Node.js' : 'hosted Linux'} mode.`);
   };
 
   const processFile = async (file) => {
     if (!file) return;
     if (!running) {
-      setIntakeError('Start Web Computer before submitting mail.');
+      setIntakeError('Start the selected computer before submitting mail.');
       return;
     }
     if (!/\.(eml|msg)$/i.test(file.name)) {
-      setIntakeError('Web Computer currently accepts .eml and .msg mail files. Use New analysis for standalone attachments.');
-      openPane('intake');
+      setIntakeError('Mail automation accepts .eml and .msg files. Use New analysis for standalone attachments.');
       return;
     }
     setIntakeError('');
-    openPane('intake');
     addEvent(`Reading ${file.name} locally.`);
     const result = await analyzeFile(file, { sourceLabel: file.name, origin: 'web-computer' });
     if (result) {
       setLastResult(result);
-      openPane('result');
       addEvent(`${file.name}: analysis complete with triage score ${result.threat?.risk_score || 0}/100.`);
     } else {
       setIntakeError('The message could not be analyzed. No result was generated; check the file and try again.');
-      openPane('intake');
       addEvent(`${file.name}: analysis failed without generating a verdict.`);
     }
   };
 
-  const goTo = (route) => {
-    setStartOpen(false);
-    onNavigate(route);
+  const runtimeProps = {
+    autoResume,
+    onRunningChange: setRunning,
+    onEvent: addEvent,
+    onUserStop: () => setAutoResume(false),
   };
 
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="On-demand mail operations"
+        eyebrow="Real browser and hosted computing"
         title="Virtual web computer"
-        description={storageStatus === 'ready' ? 'Start a local mail-triage runtime when you need it. It accepts EML/MSG evidence, analyzes it automatically, creates an action plan and saves the case on this device.' : storageStatus === 'loading' ? 'Start a local mail-triage runtime when you need it. It accepts EML/MSG evidence, analyzes it automatically and creates an action plan while device storage is restored.' : 'Start a local mail-triage runtime when you need it. It accepts EML/MSG evidence, analyzes it automatically and creates an action plan; device storage is currently unavailable, so cases remain in this tab.'}
-        meta={<StatusLine tone={running ? 'ready' : 'neutral'}>{running ? 'Running on this tab' : 'Stopped'}</StatusLine>}
+        description={storageStatus === 'ready' ? 'Run a real Node.js workspace in your browser, or connect the optional hosted Linux desktop. Submitted EML/MSG evidence can then be analyzed and saved as a device case.' : storageStatus === 'loading' ? 'Run a real Node.js workspace in your browser, or connect the optional hosted Linux desktop. Device case storage is being restored.' : 'Run a real Node.js workspace in your browser, or connect the optional hosted Linux desktop. Device case storage is unavailable, so new cases remain in this tab.'}
+        meta={<StatusLine tone={running ? 'ready' : 'neutral'}>{running ? `${runtimeMode === 'browser' ? 'Browser runtime' : 'Linux desktop'} running` : 'Selected runtime stopped'}</StatusLine>}
       />
 
-      <section className={`computer-shell surface ${running ? 'is-running' : ''}`} aria-label="Virtual web computer runtime">
-        <div className="computer-topbar">
-          <div className="computer-identity"><span><MonitorPlay size={21} /></span><div><strong>SUDO Web Computer</strong><small>Workspace guest desktop · local mail triage · not a remote VM</small></div></div>
-          <div className="computer-controls">
-            <span className={`computer-power-state ${running ? 'is-on' : ''}`}><i />{running ? 'ACTIVE' : 'OFFLINE'}</span>
-            {running ? <button type="button" className="ui-button ui-button--secondary" onClick={stop}><Pause size={15} />Stop</button> : <button type="button" className="ui-button ui-button--primary" onClick={start}><Play size={15} />Start Web Computer</button>}
-          </div>
-        </div>
+      <div className="runtime-mode-switch" role="group" aria-label="Computer runtime type">
+        <button type="button" className={runtimeMode === 'browser' ? 'is-active' : ''} aria-pressed={runtimeMode === 'browser'} onClick={() => selectRuntime('browser')}><Code2 size={17} /><span><strong>Browser Node.js</strong><small>WebContainers + terminal + editor</small></span></button>
+        <button type="button" className={runtimeMode === 'linux' ? 'is-active' : ''} aria-pressed={runtimeMode === 'linux'} onClick={() => selectRuntime('linux')}><Container size={17} /><span><strong>Hosted Linux</strong><small>Optional Chromium + terminal + files</small></span></button>
+      </div>
 
-        <div className={`computer-screen ${running ? 'computer-screen--desktop' : 'computer-screen--off'}`}>
-          {!running ? (
-            <div className="computer-stopped">
-              <span><MonitorPlay size={34} /></span>
-              <h2>Computer is stopped</h2>
-              <p>Nothing runs in the background. Start the workspace guest desktop manually, or enable active-tab auto-resume below.</p>
-              <button type="button" className="ui-button ui-button--primary" onClick={start}><Play size={15} />Start local runtime</button>
+      {runtimeMode === 'browser' ? <BrowserComputer {...runtimeProps} /> : <HostedLinuxComputer {...runtimeProps} />}
+
+      <div className="computer-preferences surface">
+        <label className="computer-auto"><input type="checkbox" checked={autoResume} onChange={(event) => { const enabled = event.target.checked; setAutoResume(enabled); addEvent(`Active-tab auto-resume ${enabled ? 'enabled' : 'disabled'} for the selected runtime.`); }} /><span><strong>Active-tab auto-resume</strong><small>Starts the selected runtime while visible and stops it when hidden. It does not monitor email.</small></span></label>
+        <span className="computer-storage"><HardDrive size={14} />{storageStatus === 'ready' ? 'Cases saved on device' : storageStatus === 'loading' ? 'Restoring storage…' : 'Memory fallback'}</span>
+      </div>
+
+      <section className="mail-automation-section" aria-labelledby="mail-automation-title">
+        <div className="section-heading"><div><span className="ui-eyebrow">Workspace automation</span><h2 id="mail-automation-title">Submitted mail triage</h2><p>After you submit a message, the existing local analyzer scores it and prepares a review plan. No mailbox is connected.</p></div><span className={`mail-automation-state ${running ? 'is-ready' : ''}`}><i />{running ? 'Ready for submitted files' : 'Start a computer first'}</span></div>
+        <div className="mail-automation-grid">
+          <section className="surface surface--padded" aria-labelledby="computer-intake-title">
+            <div className="computer-pane-title"><span><Mail size={18} /></span><div><h2 id="computer-intake-title">Mail intake</h2><p>Automatic analysis after a file is submitted here.</p></div></div>
+            <div
+              className={`computer-dropzone ${!running ? 'is-disabled' : ''}`}
+              onDragOver={(event) => event.preventDefault()}
+              onDrop={(event) => { event.preventDefault(); processFile(event.dataTransfer.files?.[0]); }}
+            >
+              <span><Upload size={23} /></span>
+              <strong>{loading ? 'Analyzing message…' : 'Drop an .eml or .msg file'}</strong>
+              <p>The message is parsed locally; no mailbox credentials or remote upload are used.</p>
+              <button type="button" className="ui-button ui-button--secondary" disabled={loading || !running} onClick={() => fileRef.current?.click()}><Mail size={15} />{loading ? 'Please wait…' : 'Select mail file'}</button>
+              <input ref={fileRef} type="file" accept=".eml,.msg" hidden onChange={(event) => { processFile(event.target.files?.[0]); event.target.value = ''; }} />
             </div>
-          ) : (
-            <div className="computer-desktop">
-              <div className="computer-desktop__topline"><span><i />SUDO-SPANDR / LOCAL GUEST DESKTOP</span><span>Mail triage only · no remote execution</span></div>
-              <div className="computer-desktop__icons" aria-label="Guest desktop apps">
-                <button type="button" onClick={() => openPane('intake')}><span><Mail size={16} /></span>Mail intake</button>
-                <button type="button" onClick={() => openPane('result')}><span><FileSearch size={16} /></span>Triage report</button>
-                <button type="button" onClick={() => goTo('cases')}><span><FolderOpen size={16} /></span>Case library</button>
-              </div>
+            {intakeError ? <div className="error-callout" role="alert">{intakeError}</div> : null}
+            <div className="computer-automation"><CheckCircle2 size={15} /><span><strong>Automatic local steps</strong>Parse → score → action plan → device case storage</span></div>
+          </section>
 
-              <div className="computer-workspace">
-                {openPanes.intake ? (
-                  <section className={`computer-mail-intake computer-window ${activePane === 'intake' ? 'is-active' : ''}`} aria-labelledby="computer-intake-title" onPointerDown={() => setActivePane('intake')}>
-                    <WindowBar icon={Mail} title="Mail intake · local guest app" onClose={() => closePane('intake')} closeLabel="Close mail intake window" />
-                    <div className="computer-window__content">
-                      <div className="computer-pane-title"><span><Mail size={18} /></span><div><h2 id="computer-intake-title">Mail intake</h2><p>Automatic analysis as soon as a message arrives here.</p></div></div>
-                      <div
-                        className="computer-dropzone"
-                        onDragOver={(event) => event.preventDefault()}
-                        onDrop={(event) => { event.preventDefault(); processFile(event.dataTransfer.files?.[0]); }}
-                      >
-                        <span><Upload size={23} /></span>
-                        <strong>{loading ? 'Analyzing message…' : 'Drop an .eml or .msg file'}</strong>
-                        <p>The message is parsed locally; no mailbox credentials or remote upload are used.</p>
-                        <button type="button" className="ui-button ui-button--secondary" disabled={loading} onClick={() => fileRef.current?.click()}><Mail size={15} />{loading ? 'Please wait…' : 'Select mail file'}</button>
-                        <input ref={fileRef} type="file" accept=".eml,.msg" hidden onChange={(event) => { processFile(event.target.files?.[0]); event.target.value = ''; }} />
-                      </div>
-                      {intakeError ? <div className="error-callout" role="alert">{intakeError}</div> : null}
-                      <div className="computer-automation"><CheckCircle2 size={15} /><span><strong>Automatic local steps</strong>Parse → score → action plan → device case storage</span></div>
-                    </div>
-                  </section>
-                ) : null}
-
-                {openPanes.result ? (
-                  <section className={`computer-result computer-window ${activePane === 'result' ? 'is-active' : ''}`} aria-live="polite" aria-label="Latest mail triage result" onPointerDown={() => setActivePane('result')}>
-                    <WindowBar icon={FileSearch} title="Triage report · local guest app" onClose={() => closePane('result')} closeLabel="Close triage report window" />
-                    <div className="computer-window__content">
-                      {currentResult ? (
-                        <>
-                          <div className="computer-result__head"><div><span className="ui-eyebrow">Latest processed mail</span><h2>{currentResult._workspace?.sourceLabel || currentResult.case_id}</h2><code>{currentResult.case_id}</code></div><RiskBadge data={currentResult} compact /></div>
-                          <div className="computer-score"><span>Triage score</span><strong>{currentResult.threat?.risk_score || 0}<small>/100</small></strong></div>
-                          <div className={`computer-plan computer-plan--${plan.tone}`}><strong>{plan.title}</strong><ol>{plan.steps.map((step) => <li key={step}>{step}</li>)}</ol></div>
-                          <div className="computer-result__actions"><button type="button" className="ui-button ui-button--primary" onClick={() => onViewCase(currentResult.case_id)}>Open full case<ArrowRight size={15} /></button><button type="button" className="ui-button ui-button--secondary" onClick={() => downloadCase(currentResult)}><Download size={15} />Export</button></div>
-                        </>
-                      ) : (
-                        <div className="computer-result__empty"><FileSearch size={28} /><h2>Waiting for mail</h2><p>Drop a message into Mail intake. The action plan will appear here without executing links or attachments.</p><button type="button" className="ui-button ui-button--secondary" onClick={() => openPane('intake')}><Mail size={14} />Open mail intake</button></div>
-                      )}
-                    </div>
-                  </section>
-                ) : null}
-
-                {!openPanes.intake && !openPanes.result ? <div className="computer-desktop__empty"><MonitorPlay size={26} /><strong>Guest desktop is ready</strong><p>Open an app from the desktop icons or taskbar.</p><button type="button" className="ui-button ui-button--primary" onClick={() => openPane('intake')}><Mail size={14} />Open mail intake</button></div> : null}
-              </div>
-
-              {startOpen ? <div className="computer-startmenu" id="computer-start-menu"><strong>Web Computer · local apps</strong><button type="button" onClick={() => openPane('intake')}><Mail size={14} />Mail intake</button><button type="button" onClick={() => openPane('result')}><FileSearch size={14} />Triage report</button><button type="button" onClick={() => goTo('cases')}><FolderOpen size={14} />Open case library</button><button type="button" onClick={() => goTo('url-lab')}><Globe2 size={14} />Open URL Lab</button></div> : null}
-              <div className="computer-taskbar">
-                <button type="button" className="computer-taskbar__start" aria-expanded={startOpen} aria-controls="computer-start-menu" onClick={() => setStartOpen((current) => !current)}><MonitorPlay size={13} />Start</button>
-                <button type="button" className={openPanes.intake && activePane === 'intake' ? 'is-active' : ''} onClick={() => openPane('intake')}><Mail size={13} />Mail</button>
-                <button type="button" className={openPanes.result && activePane === 'result' ? 'is-active' : ''} onClick={() => openPane('result')}><FileSearch size={13} />Triage</button>
-                <span className="computer-taskbar__status"><i />LOCAL ONLY · no remote VM</span>
-              </div>
-            </div>
-          )}
-        </div>
-
-        <div className="computer-statusbar">
-          <label className="computer-auto"><input type="checkbox" checked={autoResume} onChange={(event) => { const enabled = event.target.checked; setAutoResume(enabled); if (enabled) setRunning(!document.hidden); addEvent(`Active-tab auto-resume ${enabled ? 'enabled' : 'disabled'}.`); }} /><span><strong>Active-tab auto-resume</strong><small>Runs only while this tab is visible; it does not monitor email in the background.</small></span></label>
-          <span className="computer-storage"><HardDrive size={14} />{storageStatus === 'ready' ? 'Cases saved on device' : storageStatus === 'loading' ? 'Restoring storage…' : 'Memory fallback'}</span>
+          <section className="surface surface--padded" aria-live="polite" aria-label="Latest mail triage result">
+            {currentResult ? (
+              <>
+                <div className="computer-result__head"><div><span className="ui-eyebrow">Latest processed mail</span><h2>{currentResult._workspace?.sourceLabel || currentResult.case_id}</h2><code>{currentResult.case_id}</code></div><RiskBadge data={currentResult} compact /></div>
+                <div className="computer-score"><span>Triage score</span><strong>{currentResult.threat?.risk_score || 0}<small>/100</small></strong></div>
+                <div className={`computer-plan computer-plan--${plan.tone}`}><strong>{plan.title}</strong><ol>{plan.steps.map((step) => <li key={step}>{step}</li>)}</ol></div>
+                <div className="computer-result__actions"><button type="button" className="ui-button ui-button--primary" onClick={() => onViewCase(currentResult.case_id)}>Open full case<ArrowRight size={15} /></button><button type="button" className="ui-button ui-button--secondary" onClick={() => downloadCase(currentResult)}><Download size={15} />Export</button></div>
+              </>
+            ) : (
+              <div className="computer-result__empty"><FileSearch size={28} /><h2>Waiting for submitted mail</h2><p>Start a runtime and submit a message. The action plan will appear here without executing links or attachments.</p></div>
+            )}
+          </section>
         </div>
       </section>
 
@@ -241,9 +163,9 @@ export default function SandboxPage({ onNavigate, onViewCase, health }) {
         </section>
 
         <section className="surface surface--padded">
-          <div className="section-icon-title"><span><Container size={19} /></span><div><h2>External execution & mailbox</h2><p>Integrations are shown only when genuinely configured.</p></div></div>
-          <dl className="runtime-list"><div><dt>Real mailbox / IMAP</dt><dd>Not connected</dd></div><div><dt>Remote isolated VM</dt><dd>{remoteAvailable ? 'Reported available' : 'Not connected'}</dd></div><div><dt>Automatic mail actions</dt><dd>Recommendations only</dd></div></dl>
-          <p className="computer-integration-note">Live mail receiving, quarantine, replies or remote browsing require authenticated backend connectors and an isolated worker. This page never claims those actions happened.</p>
+          <div className="section-icon-title"><span><MonitorPlay size={19} /></span><div><h2>Execution & mailbox boundaries</h2><p>Capabilities are labeled by their real runtime.</p></div></div>
+          <dl className="runtime-list"><div><dt>Browser WebContainer</dt><dd>{runtimeMode === 'browser' && running ? 'Running in this tab' : 'Available; stopped'}</dd></div><div><dt>Hosted Linux desktop</dt><dd>{runtimeMode === 'linux' && running ? 'Running on configured host' : 'Optional; not running'}</dd></div><div><dt>Real mailbox / IMAP</dt><dd>Not connected</dd></div><div><dt>Automatic mail actions</dt><dd>Recommendations only</dd></div></dl>
+          <p className="computer-integration-note">Live mail receiving, quarantine, replies or remote browsing require authenticated backend connectors and isolated workers. This page never claims those actions happened.</p>
           <button type="button" className="ui-button ui-button--secondary" onClick={() => onNavigate('url-lab')}><Globe2 size={15} />Open network-free URL Lab</button>
         </section>
       </div>
