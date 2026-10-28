@@ -8,6 +8,19 @@ async function controlRequest(path, method = 'GET') {
   return data;
 }
 
+function themeNoVncControls(frame) {
+  try {
+    const frameDocument = frame.contentDocument;
+    if (!frameDocument?.head || frameDocument.querySelector('style[data-spandr-novnc-theme]')) return;
+    const style = frameDocument.createElement('style');
+    style.dataset.spandrNovncTheme = '';
+    style.textContent = ':root{--novnc-blue:#536d5b!important;--novnc-lightblue:#c78e64!important;--novnc-darkblue:#354d3e!important;--novnc-grey:#d8c9b4!important;--novnc-lightgrey:#eee1ca!important;--novnc-darkgrey:#8f8375!important;--novnc-buttongrey:rgba(238,225,202,.28)!important;}';
+    frameDocument.head.appendChild(style);
+  } catch {
+    // A remotely hosted noVNC origin may not permit styling; its real stream still works.
+  }
+}
+
 export default function HostedLinuxComputer({ autoResume, onRunningChange, onEvent, onUserStop }) {
   const [status, setStatus] = useState('checking');
   const [available, setAvailable] = useState(false);
@@ -119,16 +132,16 @@ export default function HostedLinuxComputer({ autoResume, onRunningChange, onEve
   const busy = status === 'starting' || status === 'stopping' || status === 'checking';
 
   return (
-    <section className={`computer-shell surface hosted-computer ${running ? 'is-running' : ''}`} aria-label="Hosted Linux computer" data-runtime-status={status}>
+    <section className={`computer-shell surface hosted-computer ${running ? 'is-running' : ''}`} aria-label="Real GUI Agent PC" data-runtime-status={status}>
       <div className="computer-topbar">
-        <div className="computer-identity"><span><Container size={21} /></span><div><strong>Hosted Linux Desktop</strong><small>Real Chromium · xterm · PCManFM · dedicated unprivileged user</small></div></div>
+        <div className="computer-identity"><span><Container size={21} /></span><div><strong>Agent PC · Live Linux GUI</strong><small>Real Chromium · xterm · PCManFM · dedicated unprivileged user</small></div></div>
         <div className="computer-controls">
           <span className={`computer-power-state ${running ? 'is-on' : ''}`}><i />{status.toUpperCase()}</span>
-          {running || busy ? <button type="button" className="ui-button ui-button--secondary" disabled={status === 'stopping' || status === 'checking'} onClick={() => { onUserStop?.(); stop(); }}><Pause size={15} />{busy ? 'Working…' : 'Stop'}</button> : <button type="button" className="ui-button ui-button--primary" disabled={!available} onClick={start}><Play size={15} />Start Linux desktop</button>}
+          {running || busy ? <button type="button" className="ui-button ui-button--secondary" disabled={status === 'stopping' || status === 'checking'} onClick={() => { onUserStop?.(); stop(); }}><Pause size={15} />{busy ? 'Working…' : 'Stop'}</button> : <button type="button" className="ui-button ui-button--primary" disabled={!available} onClick={start}><Play size={15} />Start Agent PC</button>}
         </div>
       </div>
 
-      <div className="browser-computer__notice"><MonitorPlay size={14} /><span>Optional local hosted runtime. Network enabled; not air-gapped and not a hardware VM. Host workspace is not mounted.</span></div>
+      <div className="browser-computer__notice"><MonitorPlay size={14} /><span>Real Linux GUI runtime. Network enabled; not air-gapped and not a hardware VM. Host workspace is not mounted.</span></div>
       {error ? <div className="error-callout browser-computer__error" role="alert">{error}</div> : null}
 
       <div className={`computer-screen hosted-computer__screen ${running ? '' : 'computer-screen--off'}`}>
@@ -142,15 +155,15 @@ export default function HostedLinuxComputer({ autoResume, onRunningChange, onEve
               src={session.frame_url}
               sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads"
               allow="clipboard-read; clipboard-write"
-              onLoad={() => setStreamLoaded(true)}
+              onLoad={(event) => { setStreamLoaded(true); themeNoVncControls(event.currentTarget); }}
             />
           </div>
         ) : (
           <div className="computer-stopped">
             <span><Container size={34} /></span>
-            <h2>{status === 'unavailable' ? 'Hosted Linux is not connected' : 'Linux desktop is stopped'}</h2>
-            <p>{status === 'unavailable' ? 'This mode needs the local control server and OS packages. Browser Node.js mode remains available without a compute backend.' : 'Start launches actual desktop processes. No incoming mail or shell runs in the background while stopped.'}</p>
-            {status === 'unavailable' ? <code className="hosted-computer__setup">sudo bash scripts/setup-agent-computer.sh</code> : <button type="button" className="ui-button ui-button--primary" disabled={!available || busy} onClick={start}><Play size={15} />Start real Linux desktop</button>}
+            <h2>{status === 'unavailable' ? 'Agent PC host is not connected' : 'Agent PC is stopped'}</h2>
+            <p>{status === 'unavailable' ? 'The real GUI needs the local control server and OS packages. Browser Node.js remains available as a secondary workshop without a compute backend.' : 'Start launches actual desktop processes. No incoming mail or shell runs in the background while stopped.'}</p>
+            {status === 'unavailable' ? <code className="hosted-computer__setup">sudo bash scripts/setup-agent-computer.sh</code> : <button type="button" className="ui-button ui-button--primary" disabled={!available || busy} onClick={start}><Play size={15} />Boot real Agent PC</button>}
           </div>
         )}
       </div>

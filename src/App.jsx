@@ -1,7 +1,7 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  Activity, Beaker, FileBarChart, FilePlus2, FolderOpen, Github, Globe2,
-  LayoutDashboard, Link2, LockKeyhole, Menu, MonitorPlay, Moon, Plus,
+  Activity, Beaker, FileBarChart, FilePlus2, FolderOpen, Github,
+  LayoutDashboard, LockKeyhole, Menu, MonitorPlay, Moon, Plus,
   Settings, ShieldCheck, Sun, X,
 } from 'lucide-react';
 import { useForensicStore } from './store/useForensicStore';
@@ -10,7 +10,6 @@ import DashboardPage from './pages/DashboardPage';
 import AnalysisPage from './pages/AnalysisPage';
 import CasesPage from './pages/CasesPage';
 import SamplesPage from './pages/SamplesPage';
-import UrlLabPage from './pages/UrlLabPage';
 import SandboxPage from './pages/SandboxPage';
 import ReportsPage from './pages/ReportsPage';
 import SettingsPage from './pages/SettingsPage';
@@ -27,8 +26,7 @@ const NAVIGATION = [
   {
     label: 'Investigate',
     items: [
-      { id: 'url-lab', label: 'URL Lab', icon: Link2 },
-      { id: 'sandbox', label: 'Web Computer', icon: MonitorPlay },
+      { id: 'sandbox', label: 'Agent PC', icon: MonitorPlay },
       { id: 'samples', label: 'Sample library', icon: Beaker },
     ],
   },
@@ -46,6 +44,10 @@ const MOBILE_ROUTES = ['overview', 'analysis', 'cases', 'sandbox'];
 
 function routeFromHash() {
   const value = window.location.hash.replace(/^#\/?/, '').split('/')[0];
+  if (value === 'url-lab') {
+    window.history.replaceState(null, '', '#/sandbox');
+    return 'sandbox';
+  }
   return ROUTES[value] ? value : 'overview';
 }
 
@@ -112,7 +114,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#05070a' : '#f5f8fc');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1d2c27' : '#f2ecdf');
     try { localStorage.setItem('spandr-theme', theme); } catch { /* preference persistence is optional */ }
   }, [theme]);
 
@@ -191,7 +193,6 @@ export default function App() {
     if (route === 'analysis') return <AnalysisPage onNavigate={navigate} />;
     if (route === 'cases') return <CasesPage onViewCase={viewCase} onStart={startAnalysis} />;
     if (route === 'samples') return <SamplesPage onAnalyzed={() => navigate('analysis')} />;
-    if (route === 'url-lab') return <UrlLabPage onNavigate={navigate} />;
     if (route === 'sandbox') return <SandboxPage onNavigate={navigate} onViewCase={viewCase} health={health} />;
     if (route === 'reports') return <ReportsPage onStart={startAnalysis} />;
     if (route === 'settings') return <SettingsPage theme={theme} setTheme={setTheme} health={health} />;
@@ -286,7 +287,7 @@ export default function App() {
         {MOBILE_ROUTES.map((id) => {
           const item = ROUTES[id];
           const Icon = item.icon;
-          return <button type="button" key={id} className={route === id ? 'is-active' : ''} aria-current={route === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={19} /><span>{id === 'analysis' ? 'Analyze' : id === 'overview' ? 'Home' : id === 'sandbox' ? 'Computer' : item.label}</span></button>;
+          return <button type="button" key={id} className={route === id ? 'is-active' : ''} aria-current={route === id ? 'page' : undefined} onClick={() => navigate(id)}><Icon size={19} /><span>{id === 'analysis' ? 'Analyze' : id === 'overview' ? 'Home' : id === 'sandbox' ? 'Agent PC' : item.label}</span></button>;
         })}
       </nav>
     </div>

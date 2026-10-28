@@ -2,7 +2,9 @@
 
 **Implementation date:** 28 October 2026<br>
 **Source baseline:** `79feea3abdbb9306d1a7068fdf35ded1b3579549`<br>
-**Status:** implemented and validated locally; the public Vercel deployment was not updated by this workspace session.
+**Status:** historical baseline; implemented and validated locally at that revision. The public Vercel deployment was not updated by that workspace session.
+
+> Current Agent PC navigation, dual-runtime defaults, warm Fieldwork palette and newer validation are documented in `docs/AGENT_PC_REDESIGN.md`.
 
 ## What changed
 

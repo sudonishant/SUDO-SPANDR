@@ -1,6 +1,6 @@
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
-  ArrowRight, CheckCircle2, Code2, Container, Download, FileSearch, Globe2, HardDrive,
+  ArrowRight, CheckCircle2, Code2, Container, Download, FileSearch, HardDrive,
   Mail, MonitorPlay, ShieldAlert, Upload,
 } from 'lucide-react';
 import { useForensicStore } from '../store/useForensicStore';
@@ -39,7 +39,7 @@ function eventTime(value) {
 export default function SandboxPage({ onNavigate, onViewCase }) {
   const { analyzeFile, cases, loading, storageStatus } = useForensicStore();
   const [runtimeMode, setRuntimeMode] = useState(() => {
-    try { return localStorage.getItem('spandr-computer-runtime') === 'linux' ? 'linux' : 'browser'; } catch { return 'browser'; }
+    try { return localStorage.getItem('spandr-computer-runtime') === 'browser' ? 'browser' : 'linux'; } catch { return 'linux'; }
   });
   const [running, setRunning] = useState(false);
   const [autoResume, setAutoResume] = useState(() => {
@@ -103,15 +103,15 @@ export default function SandboxPage({ onNavigate, onViewCase }) {
   return (
     <div className="page-stack">
       <PageHeader
-        eyebrow="Real browser and hosted computing"
-        title="Virtual web computer"
-        description={storageStatus === 'ready' ? 'Run a real Node.js workspace in your browser, or connect the optional hosted Linux desktop. Submitted EML/MSG evidence can then be analyzed and saved as a device case.' : storageStatus === 'loading' ? 'Run a real Node.js workspace in your browser, or connect the optional hosted Linux desktop. Device case storage is being restored.' : 'Run a real Node.js workspace in your browser, or connect the optional hosted Linux desktop. Device case storage is unavailable, so new cases remain in this tab.'}
+        eyebrow="Real GUI workstation · agent operations"
+        title="Agent PC"
+        description={storageStatus === 'ready' ? 'Boot a real Linux GUI with Chromium, terminal and files. Browser Node.js is available as a secondary workshop; submitted EML/MSG evidence can still become a saved device case.' : storageStatus === 'loading' ? 'Boot a real Linux GUI with Chromium, terminal and files. Device case storage is being restored.' : 'Boot a real Linux GUI with Chromium, terminal and files. Device case storage is unavailable, so new cases remain in this tab.'}
         meta={<StatusLine tone={running ? 'ready' : 'neutral'}>{running ? `${runtimeMode === 'browser' ? 'Browser runtime' : 'Linux desktop'} running` : 'Selected runtime stopped'}</StatusLine>}
       />
 
       <div className="runtime-mode-switch" role="group" aria-label="Computer runtime type">
-        <button type="button" className={runtimeMode === 'browser' ? 'is-active' : ''} aria-pressed={runtimeMode === 'browser'} onClick={() => selectRuntime('browser')}><Code2 size={17} /><span><strong>Browser Node.js</strong><small>WebContainers + terminal + editor</small></span></button>
-        <button type="button" className={runtimeMode === 'linux' ? 'is-active' : ''} aria-pressed={runtimeMode === 'linux'} onClick={() => selectRuntime('linux')}><Container size={17} /><span><strong>Hosted Linux</strong><small>Optional Chromium + terminal + files</small></span></button>
+        <button type="button" className={runtimeMode === 'linux' ? 'is-active' : ''} aria-pressed={runtimeMode === 'linux'} onClick={() => selectRuntime('linux')}><Container size={17} /><span><strong>Agent PC GUI</strong><small>Real Chromium + terminal + files</small></span></button>
+        <button type="button" className={runtimeMode === 'browser' ? 'is-active' : ''} aria-pressed={runtimeMode === 'browser'} onClick={() => selectRuntime('browser')}><Code2 size={17} /><span><strong>Browser Node.js</strong><small>Secondary WebContainers workshop</small></span></button>
       </div>
 
       {runtimeMode === 'browser' ? <BrowserComputer {...runtimeProps} /> : <HostedLinuxComputer {...runtimeProps} />}
@@ -158,19 +158,19 @@ export default function SandboxPage({ onNavigate, onViewCase }) {
 
       <div className="computer-lower-grid">
         <section className="surface surface--padded">
-          <div className="section-icon-title"><span><CheckCircle2 size={19} /></span><div><h2>Runtime activity</h2><p>Actual events from this Web Computer view.</p></div></div>
-          <ol className="computer-event-list" aria-live="polite">{events.map((event) => <li key={event.id}><time dateTime={event.at}>{eventTime(event.at)}</time><span>{event.message}</span></li>)}</ol>
+          <div className="section-icon-title"><span><CheckCircle2 size={19} /></span><div><h2>Runtime activity</h2><p>Actual events from this Agent PC view.</p></div></div>
+          <ol className="computer-event-list" aria-live="polite" aria-label="Runtime activity events" tabIndex={0}>{events.map((event) => <li key={event.id}><time dateTime={event.at}>{eventTime(event.at)}</time><span>{event.message}</span></li>)}</ol>
         </section>
 
         <section className="surface surface--padded">
           <div className="section-icon-title"><span><MonitorPlay size={19} /></span><div><h2>Execution & mailbox boundaries</h2><p>Capabilities are labeled by their real runtime.</p></div></div>
           <dl className="runtime-list"><div><dt>Browser WebContainer</dt><dd>{runtimeMode === 'browser' && running ? 'Running in this tab' : 'Available; stopped'}</dd></div><div><dt>Hosted Linux desktop</dt><dd>{runtimeMode === 'linux' && running ? 'Running on configured host' : 'Optional; not running'}</dd></div><div><dt>Real mailbox / IMAP</dt><dd>Not connected</dd></div><div><dt>Automatic mail actions</dt><dd>Recommendations only</dd></div></dl>
           <p className="computer-integration-note">Live mail receiving, quarantine, replies or remote browsing require authenticated backend connectors and isolated workers. This page never claims those actions happened.</p>
-          <button type="button" className="ui-button ui-button--secondary" onClick={() => onNavigate('url-lab')}><Globe2 size={15} />Open network-free URL Lab</button>
+          <button type="button" className="ui-button ui-button--secondary" onClick={() => onNavigate('analysis')}>Open analysis workspace<ArrowRight size={15} /></button>
         </section>
       </div>
 
-      <section className="info-callout"><ShieldAlert size={18} /><div><strong>Human approval stays in the loop</strong><p>Web Computer analyzes submitted mail and drafts a triage plan. It does not auto-reply, delete, quarantine, open links, or declare a message safe.</p></div></section>
+      <section className="info-callout"><ShieldAlert size={18} /><div><strong>Human approval stays in the loop</strong><p>Agent PC analyzes submitted mail and drafts a triage plan. It does not auto-reply, delete, quarantine, open links, or declare a message safe.</p></div></section>
     </div>
   );
 }

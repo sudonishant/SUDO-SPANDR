@@ -100,12 +100,18 @@ export default function BrowserComputer({ autoResume, onRunningChange, onEvent, 
       scrollback: 5000,
       fontFamily: 'ui-monospace, SFMono-Regular, Consolas, monospace',
       fontSize: 13,
-      theme: { background: '#071019', foreground: '#d7e3ee', cursor: '#67e8f9', selectionBackground: '#164e63' },
+      theme: {
+        background: '#1f3029', foreground: '#eee1ca', cursor: '#d28a60', selectionBackground: '#465d4d',
+        black: '#2f2933', red: '#eda0aa', green: '#a9d8b8', yellow: '#e4bc78',
+        blue: '#d5a06f', magenta: '#c39aba', cyan: '#91cfad', white: '#eee1ca',
+        brightBlack: '#b2a294', brightRed: '#f0b1b8', brightGreen: '#b4dfc3', brightYellow: '#e8ca91',
+        brightBlue: '#e0b77c', brightMagenta: '#d4b0cc', brightCyan: '#b4dfc3', brightWhite: '#fbf1dc',
+      },
     });
     const fit = new FitAddon();
     terminal.loadAddon(fit);
     terminal.open(terminalElementRef.current);
-    terminal.writeln('\x1b[37mBrowser computer stopped. Press Start to boot WebContainers.\x1b[0m');
+    terminal.writeln('\x1b[37mBrowser Node.js runtime stopped. Press Start to boot WebContainers.\x1b[0m');
     terminalRef.current = terminal;
     fitRef.current = fit;
     const inputDisposable = terminal.onData((data) => {
@@ -168,15 +174,26 @@ export default function BrowserComputer({ autoResume, onRunningChange, onEvent, 
         })).catch((streamError) => {
           if (mountedRef.current && statusRef.current === 'running') emit(`Terminal output closed: ${streamError.message}`);
         });
-        shell.exit.then((code) => {
-          if (mountedRef.current && statusRef.current === 'running') {
-            updateStatus('stopped');
-            inputRef.current = null;
-            shellRef.current = null;
-            containerRef.current = null;
-            Promise.resolve(container.teardown()).catch(() => {});
-            emit(`Browser shell exited with code ${code}. Start the computer to open a new shell.`);
+        const handleShellClosed = (code, closeReason = '') => {
+          if (!mountedRef.current || statusRef.current !== 'running') return;
+          updateStatus('stopped');
+          inputRef.current = null;
+          shellRef.current = null;
+          containerRef.current = null;
+          Promise.resolve(container.teardown()).catch(() => {});
+          if (closeReason) {
+            const message = `Browser shell closed: ${closeReason}`;
+            setError(`${message}. Start the runtime to open a new shell.`);
+            emit(message);
+          } else {
+            emit(`Browser shell exited with code ${code}. Start the runtime to open a new shell.`);
           }
+        };
+        shell.exit.then((code) => handleShellClosed(code)).catch((exitError) => {
+          // WebContainers may reject shell.exit with "Process aborted" during
+          // intentional navigation/teardown. Always consume that rejection;
+          // only surface it when the mounted runtime was genuinely active.
+          handleShellClosed(null, exitError?.message || 'Process aborted');
         });
         updateStatus('running');
         emit('Browser WebContainer started. Node.js, jsh and the virtual filesystem are running in this tab.');
@@ -283,10 +300,10 @@ export default function BrowserComputer({ autoResume, onRunningChange, onEvent, 
   return (
     <section className={`computer-shell surface browser-computer ${running ? 'is-running' : ''}`} aria-label="Browser Node.js computer" data-runtime-status={status}>
       <div className="computer-topbar">
-        <div className="computer-identity"><span><Code2 size={21} /></span><div><strong>Browser Agent Computer</strong><small>WebContainers Node.js · xterm.js · virtual files · not full Linux</small></div></div>
+        <div className="computer-identity"><span><Code2 size={21} /></span><div><strong>Browser Node.js Workshop</strong><small>Secondary runtime · WebContainers · xterm.js · virtual files · not full Linux</small></div></div>
         <div className="computer-controls">
           <span className={`computer-power-state ${running ? 'is-on' : ''}`}><i />{status.toUpperCase()}</span>
-          {running || busy ? <button type="button" className="ui-button ui-button--secondary" disabled={status === 'stopping'} onClick={() => { onUserStop?.(); stop(); }}><Pause size={15} />{busy ? 'Working…' : 'Stop'}</button> : <button type="button" className="ui-button ui-button--primary" onClick={start}><Play size={15} />Start browser computer</button>}
+          {running || busy ? <button type="button" className="ui-button ui-button--secondary" disabled={status === 'stopping'} onClick={() => { onUserStop?.(); stop(); }}><Pause size={15} />{busy ? 'Working…' : 'Stop'}</button> : <button type="button" className="ui-button ui-button--primary" onClick={start}><Play size={15} />Start browser runtime</button>}
         </div>
       </div>
 
