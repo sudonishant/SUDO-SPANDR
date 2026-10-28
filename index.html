@@ -6,7 +6,7 @@
   <title>SUDO SPANDR SentinelMail — AI Threat Detection & Forensic Platform</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,400;500;600;700;800&family=DM+Mono:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
   <link rel="stylesheet" href="assets/leaflet.css"/>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
   <script src="assets/leaflet.js"></script>
@@ -14,26 +14,28 @@
   <script src="https://unpkg.com/lucide@latest"></script>
   <style>
     :root {
-      --bg: #030712;
-      --card-bg: rgba(15, 23, 42, 0.88);
-      --panel-bg: rgba(15, 23, 42, 0.96);
-      --border: #1e293b;
-      --border-focus: #3b82f6;
-      --text: #f8fafc;
-      --text-muted: #94a3b8;
+      --bg: #fafafa;
+      --card-bg: rgba(255, 255, 255, 0.88);
+      --panel-bg: rgba(255, 255, 255, 0.96);
+      --border: rgba(0, 0, 0, 0.08);
+      --border-focus: #0066cc;
+      --text: #0f172a;
+      --text-muted: #64748b;
       --accent: #3b82f6;
-      --accent-glow: rgba(59, 130, 246, 0.3);
-      --success: #10b981;
-      --warning: #f59e0b;
-      --danger: #ef4444;
-      --purple: #a855f7;
+      --accent-hover: #2563eb;
+      --accent-glow: rgba(59, 130, 246, 0.25);
+      --success: #16a34a;
+      --warning: #d97706;
+      --danger: #dc2626;
+      --purple: #7c3aed;
+      --glass-border: rgba(255, 255, 255, 0.75);
+      --glass-shadow: 0 8px 30px rgba(0, 0, 0, 0.04), inset 0 1px 0 rgba(255, 255, 255, 0.9);
+      --font-bricolage: 'Bricolage Grotesque', 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
     }
     * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
     body {
-      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-      background: radial-gradient(circle at 50% 0%, rgba(30, 58, 138, 0.25), transparent 50%),
-                  radial-gradient(circle at 90% 20%, rgba(147, 51, 234, 0.15), transparent 40%),
-                  var(--bg);
+      font-family: var(--font-bricolage);
+      background: #fafafa;
       color: var(--text);
       min-height: 100vh;
       line-height: 1.5;
@@ -42,722 +44,462 @@
     }
     code, .mono { font-family: 'DM Mono', monospace; word-break: break-all; }
     button, input, textarea, select { font-family: inherit; }
-    button { cursor: pointer; border: none; outline: none; transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+    button { cursor: pointer; border: none; outline: none; transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1); }
     button:disabled { cursor: not-allowed; opacity: 0.5; }
 
-    /* Top Navigation Bar - Mobile Optimized */
+    /* Top Navigation Bar — Elena Gonci Apple Frosted Aesthetic */
     .topbar {
-      height: 62px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.08);
-      background: rgba(3, 7, 18, 0.9);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
+      height: 56px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.07);
+      background: rgba(255, 255, 255, 0.82);
+      backdrop-filter: blur(20px) saturate(160%);
+      -webkit-backdrop-filter: blur(20px) saturate(160%);
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding: 0 clamp(12px, 3vw, 32px);
+      padding: 0 clamp(16px, 3.5vw, 40px);
       position: sticky;
       top: 0;
       z-index: 1000;
+      box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
     }
-    .brand { display: flex; align-items: center; gap: 10px; }
+    .brand { display: flex; align-items: center; gap: 12px; }
     .brand-mark {
       width: 36px; height: 36px;
       display: grid; place-items: center;
-      border: 1px solid rgba(59, 130, 246, 0.5);
-      border-radius: 9px;
-      color: #60a5fa;
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.2), rgba(168, 85, 247, 0.2));
-      box-shadow: 0 0 16px rgba(59, 130, 246, 0.35);
+      border: 1px solid rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      color: #fff;
+      background: linear-gradient(135deg, #5fb0ff, #2e7cf6);
+      box-shadow: 0 2px 8px rgba(46, 124, 246, 0.35);
       flex-shrink: 0;
     }
-    .brand-title { font-size: 14.5px; font-weight: 800; letter-spacing: -0.02em; color: #fff; line-height: 1.2; }
-    .brand-sub { font-size: 8.5px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.05em; font-weight: 700; display: block; }
+    .brand-title {
+      font-size: 15px;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+      color: #000;
+      line-height: 1.2;
+    }
+    .brand-sub {
+      font-size: 9.5px;
+      color: rgba(0, 0, 0, 0.45);
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      font-weight: 700;
+      display: block;
+    }
 
-    .top-actions { display: flex; align-items: center; gap: 6px; }
+    .top-actions { display: flex; align-items: center; gap: 8px; }
     .badge-gov {
-      display: inline-flex; align-items: center; gap: 4px;
-      padding: 3px 8px; border-radius: 6px; font-size: 9.5px; font-weight: 700;
-      background: rgba(59, 130, 246, 0.15); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);
+      display: inline-flex; align-items: center; gap: 5px;
+      padding: 4px 10px; border-radius: 9999px; font-size: 10.5px; font-weight: 700;
+      background: rgba(0, 0, 0, 0.04); color: rgba(0, 0, 0, 0.75); border: 1px solid rgba(0, 0, 0, 0.08);
       white-space: nowrap;
     }
 
     .main-wrap {
       max-width: 1400px;
       margin: 0 auto;
-      padding: 14px clamp(10px, 2.5vw, 28px) 40px;
+      padding: 20px clamp(12px, 3vw, 36px) 60px;
     }
 
-    /* Swipeable Mode Bar */
+    /* Swipeable Mode Bar — Apple Frosted Segmented Dock */
     .mode-bar {
-      display: flex; gap: 6px; margin-bottom: 16px;
-      background: rgba(15, 23, 42, 0.7); padding: 4px; border-radius: 12px; border: 1px solid var(--border);
+      display: flex; gap: 6px; margin-bottom: 20px;
+      background: rgba(255, 255, 255, 0.7);
+      padding: 5px; border-radius: 16px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.8);
       overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none;
     }
     .mode-bar::-webkit-scrollbar { display: none; }
     .mode-tab {
-      flex: 1; min-width: 110px; padding: 9px 12px; border-radius: 8px; background: transparent;
-      color: var(--text-muted); font-size: 11.5px; font-weight: 700; display: flex; align-items: center;
-      justify-content: center; gap: 5px; border: 1px solid transparent; white-space: nowrap;
+      flex: 1; min-width: 120px; padding: 10px 14px; border-radius: 12px; background: transparent;
+      color: rgba(0, 0, 0, 0.6); font-size: 12px; font-weight: 700; display: flex; align-items: center;
+      justify-content: center; gap: 6px; border: 1px solid transparent; white-space: nowrap;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+    }
+    .mode-tab:hover {
+      color: #000; background: rgba(0, 0, 0, 0.04);
     }
     .mode-tab.active {
-      background: linear-gradient(135deg, rgba(59, 130, 246, 0.3), rgba(37, 99, 235, 0.2));
-      color: #93c5fd; border-color: rgba(59, 130, 246, 0.6);
-      box-shadow: 0 0 12px rgba(59, 130, 246, 0.25);
+      background: #000000;
+      color: #ffffff;
+      border-color: #000000;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.16);
     }
 
-    /* Modern Dropzone & Touch-Target */
+    /* Elena Gonci Glass Box Dropzone */
     .dropzone-box {
-      border: 2px dashed rgba(59, 130, 246, 0.45); border-radius: 16px; padding: 36px 16px;
-      text-align: center; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.1), rgba(15, 23, 42, 0.7));
-      cursor: pointer; position: relative; transition: all 0.2s ease;
+      border: 2px dashed rgba(0, 0, 0, 0.14);
+      border-radius: 22px;
+      padding: 44px 20px;
+      text-align: center;
+      background: rgba(255, 255, 255, 0.75);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      cursor: pointer;
+      position: relative;
+      transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 8px 30px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.9);
     }
-    .dropzone-box:hover, .dropzone-box.dragover, .dropzone-box:active {
-      border-color: #60a5fa; background: radial-gradient(circle at 50% 50%, rgba(59, 130, 246, 0.2), rgba(15, 23, 42, 0.9));
-      transform: scale(0.995);
+    .dropzone-box:hover, .dropzone-box.dragover {
+      border-color: #3b82f6;
+      background: rgba(255, 255, 255, 0.95);
+      transform: translateY(-2px);
+      box-shadow: 0 12px 36px rgba(59, 130, 246, 0.15), inset 0 1px 0 #fff;
+    }
+    .dropzone-box h2 {
+      color: #000;
+      font-weight: 800;
+      letter-spacing: -0.02em;
     }
 
-    /* Cards */
+    /* Cards — Elena Gonci Liquid Porcelain Glass */
     .card {
-      background: var(--card-bg); border: 1px solid rgba(255, 255, 255, 0.08);
-      backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      border-radius: 14px; padding: 16px; margin-bottom: 14px;
-      box-shadow: 0 6px 24px rgba(0, 0, 0, 0.4);
+      background: rgba(255, 255, 255, 0.88);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      backdrop-filter: blur(24px) saturate(160%);
+      -webkit-backdrop-filter: blur(24px) saturate(160%);
+      border-radius: 20px;
+      padding: 22px;
+      margin-bottom: 18px;
+      box-shadow: 0 6px 28px rgba(0, 0, 0, 0.03), inset 0 1px 0 rgba(255, 255, 255, 0.85);
+      transition: all 0.2s ease;
     }
     .card-title {
-      display: flex; align-items: center; gap: 8px; margin-bottom: 12px;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.06); padding-bottom: 8px;
+      display: flex; align-items: center; gap: 10px; margin-bottom: 16px;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.06); padding-bottom: 12px;
     }
-    .card-title h3 { font-size: 13.5px; font-weight: 800; letter-spacing: -0.01em; color: #fff; }
-    .card-title small { font-size: 9px; color: var(--text-muted); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.04em; }
+    .card-title h3 { font-size: 15px; font-weight: 800; letter-spacing: -0.01em; color: #000; }
+    .card-title small { font-size: 9.5px; color: rgba(0, 0, 0, 0.45); text-transform: uppercase; display: block; font-weight: 700; letter-spacing: 0.06em; }
 
+    /* Elena Gonci Buttons */
     .primary-btn {
-      background: linear-gradient(135deg, #2563eb, #1d4ed8); color: #fff; font-weight: 700;
-      padding: 9px 16px; border-radius: 8px; font-size: 11.5px; display: inline-flex; align-items: center; gap: 6px;
-      box-shadow: 0 4px 14px rgba(37, 99, 235, 0.35); justify-content: center;
-    }
-    .primary-btn:active { transform: scale(0.97); }
-
-    .ghost-btn {
-      background: rgba(255, 255, 255, 0.05); color: var(--text); border: 1px solid rgba(255, 255, 255, 0.12);
-      padding: 7px 12px; border-radius: 7px; font-size: 11px; font-weight: 600;
-      display: inline-flex; align-items: center; gap: 5px;
-    }
-    .ghost-btn:active { background: rgba(255, 255, 255, 0.12); }
-
-    /* Results Tabs */
-    .nav-tabs {
-      display: flex; gap: 4px; border-bottom: 1px solid var(--border); margin-bottom: 14px;
-      overflow-x: auto; -webkit-overflow-scrolling: touch; scrollbar-width: none; padding-bottom: 2px;
-    }
-    .nav-tabs::-webkit-scrollbar { display: none; }
-    .nav-tab {
-      padding: 8px 12px; border-radius: 8px 8px 0 0; background: transparent; color: var(--text-muted);
-      font-size: 11.5px; font-weight: 700; display: inline-flex; align-items: center; gap: 5px;
-      border-bottom: 2px solid transparent; white-space: nowrap; flex-shrink: 0;
-    }
-    .nav-tab.active {
-      color: #60a5fa; border-bottom-color: #3b82f6; background: rgba(59, 130, 246, 0.12);
-    }
-
-    .result-grid {
-      display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 14px;
-    }
-
-    .key-val {
-      display: flex; justify-content: space-between; align-items: flex-start; padding: 7px 0;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.04); font-size: 11.5px; gap: 8px;
-    }
-    .key-val span { color: var(--text-muted); flex-shrink: 0; }
-    .key-val strong { font-weight: 700; color: #fff; text-align: right; word-break: break-word; }
-
-    /* ========================================================= */
-    /* 🛰️ COMPONENT 2 & 3: TACTICAL FLIGHT RADAR & TELEMETRY HUD */
-    /* ========================================================= */
-    
-    /* Map Container & High-Tech HUD Styling */
-    #map-wrapper {
-      position: relative;
-      border-radius: 12px;
-      overflow: hidden;
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      background: #020617;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.7);
-    }
-    #map-container {
-      height: 420px;
-      width: 100%;
-      z-index: 10;
-      background: #020617;
-    }
-    @media (max-width: 768px) {
-      #map-container { height: 320px !important; }
-    }
-
-    /* Targeting Reticle Brackets on Map Corners */
-    .hud-corner {
-      position: absolute;
-      width: 14px;
-      height: 14px;
-      z-index: 20;
-      pointer-events: none;
-    }
-    .hud-corner.tl { top: 8px; left: 8px; border-top: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
-    .hud-corner.tr { top: 8px; right: 8px; border-top: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
-    .hud-corner.bl { bottom: 8px; left: 8px; border-bottom: 2px solid #38bdf8; border-left: 2px solid #38bdf8; }
-    .hud-corner.br { bottom: 8px; right: 8px; border-bottom: 2px solid #38bdf8; border-right: 2px solid #38bdf8; }
-
-    /* Flight Telemetry HUD Ribbon */
-    .flight-hud {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      gap: 10px;
-      background: linear-gradient(180deg, rgba(8, 14, 28, 0.96), rgba(4, 8, 18, 0.98));
-      border: 1px solid rgba(56, 189, 248, 0.3);
-      border-bottom: none;
-      border-radius: 12px 12px 0 0;
-      padding: 12px 14px;
-      align-items: center;
-      position: relative;
-    }
-    @media (max-width: 860px) {
-      .flight-hud { grid-template-columns: 1fr; gap: 8px; }
-    }
-
-    .hud-station-card {
-      display: flex;
-      flex-direction: column;
-      gap: 3px;
-      background: rgba(15, 23, 42, 0.7);
-      border: 1px solid rgba(255, 255, 255, 0.08);
-      border-radius: 8px;
-      padding: 8px 12px;
-    }
-    .hud-station-card.origin { border-left: 3px solid #ef4444; }
-    .hud-station-card.dest { border-right: 3px solid #10b981; }
-
-    .hud-station-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 9px;
-      font-weight: 800;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-    }
-    .hud-station-location {
-      font-size: 13px;
-      font-weight: 800;
-      color: #fff;
-      display: flex;
-      align-items: center;
-      gap: 5px;
-    }
-    .hud-station-meta {
-      font-size: 10px;
-      color: var(--text-muted);
-      font-family: 'DM Mono', monospace;
-      display: flex;
-      justify-content: space-between;
-    }
-
-    /* Center Vector Corridor */
-    .hud-corridor-box {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 5px;
-      padding: 4px 8px;
-    }
-    .hud-corridor-vector {
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      font-family: 'DM Mono', monospace;
-      font-size: 11px;
+      background: #000000;
+      color: #ffffff;
       font-weight: 700;
-      color: #38bdf8;
-      background: rgba(56, 189, 248, 0.08);
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-radius: 20px;
-      padding: 3px 12px;
-    }
-    .hud-telemetry-metrics {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
+      padding: 10px 20px;
+      border-radius: 9999px;
+      font-size: 12px;
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+      box-shadow: 0 3px 10px rgba(0, 0, 0, 0.15);
       justify-content: center;
-      align-items: center;
+      transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
     }
-    .hud-metric-item {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
+    .primary-btn:hover {
+      background: #1e293b;
+      transform: translateY(-1px);
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.22);
     }
-    .hud-metric-val {
-      font-family: 'DM Mono', monospace;
-      font-size: 11.5px;
-      font-weight: 800;
-      color: #f8fafc;
-    }
-    .hud-metric-lbl {
-      font-size: 8px;
-      color: var(--text-muted);
-      text-transform: uppercase;
-      letter-spacing: 0.05em;
-    }
-    .hud-status-banner {
-      font-size: 9px;
+    .ghost-btn {
+      background: rgba(0, 0, 0, 0.03);
+      color: rgba(0, 0, 0, 0.75);
+      border: 1px solid rgba(0, 0, 0, 0.1);
       font-weight: 700;
-      font-family: 'DM Mono', monospace;
-      color: #38bdf8;
-      background: rgba(0, 0, 0, 0.4);
-      padding: 2px 8px;
-      border-radius: 4px;
-      border: 1px solid rgba(56, 189, 248, 0.2);
-    }
-
-    /* Tactical Map Toolbar */
-    .map-tactical-toolbar {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      background: #070d1a;
-      border: 1px solid rgba(56, 189, 248, 0.25);
-      border-top: none;
-      border-bottom: 1px solid rgba(56, 189, 248, 0.2);
-      padding: 6px 12px;
+      padding: 8px 14px;
+      border-radius: 9999px;
       font-size: 11px;
-      flex-wrap: wrap;
-      gap: 6px;
-    }
-    .map-btn-group {
-      display: flex;
+      display: inline-flex;
       align-items: center;
       gap: 5px;
+      transition: all 0.2s ease;
     }
-    .tactical-btn {
-      background: rgba(15, 23, 42, 0.85);
-      border: 1px solid rgba(56, 189, 248, 0.35);
-      color: #e2e8f0;
-      font-size: 10.5px;
-      font-weight: 700;
-      padding: 4px 10px;
-      border-radius: 6px;
+    .ghost-btn:hover {
+      background: rgba(0, 0, 0, 0.08);
+      color: #000;
+      border-color: rgba(0, 0, 0, 0.2);
+    }
+
+    /* Large High-Visibility macOS Window Traffic Lights */
+    .mac-window-controls {
+      display: inline-flex;
+      align-items: center;
+      gap: 9px;
+      padding: 2px 4px;
+      user-select: none;
+    }
+    .mac-btn {
+      width: 15px;
+      height: 15px;
+      min-width: 15px;
+      min-height: 15px;
+      border-radius: 50%;
+      border: 1px solid rgba(0, 0, 0, 0.15);
       cursor: pointer;
       display: inline-flex;
       align-items: center;
+      justify-content: center;
+      font-size: 9.5px;
+      font-weight: 900;
+      line-height: 1;
+      padding: 0;
+      transition: all 0.15s cubic-bezier(0.16, 1, 0.3, 1);
+      box-shadow: 0 1px 3px rgba(0,0,0,0.12);
+    }
+    .mac-btn:hover {
+      transform: scale(1.22);
+    }
+    .mac-close {
+      background: #ff5f56;
+      border-color: #e0443e;
+      color: #5c0002;
+    }
+    .mac-close:hover {
+      background: #ff3b30;
+      box-shadow: 0 0 10px rgba(255, 59, 48, 0.65);
+    }
+    .mac-min {
+      background: #ffbd2e;
+      border-color: #dea123;
+      color: #5c3f00;
+    }
+    .mac-min:hover {
+      background: #ffcc00;
+      box-shadow: 0 0 10px rgba(255, 204, 0, 0.65);
+    }
+    .mac-max {
+      background: #27c93f;
+      border-color: #1aab29;
+      color: #004d13;
+    }
+    .mac-max:hover {
+      background: #34c759;
+      box-shadow: 0 0 10px rgba(52, 199, 89, 0.65);
+    }
+
+    /* Sample Corridor Cards in Grid */
+    .sample-card {
+      background: rgba(255, 255, 255, 0.9);
+      border: 1px solid rgba(0, 0, 0, 0.08);
+      border-radius: 12px;
+      padding: 10px 12px;
+      transition: all 0.2s ease;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.02);
+    }
+    .sample-card:hover {
+      border-color: #3b82f6;
+      box-shadow: 0 4px 14px rgba(59, 130, 246, 0.12);
+      transform: translateY(-1px);
+    }
+
+    /* Key-Value Pair Rows */
+    .key-val {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 0;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05);
+      font-size: 11.5px;
+      color: rgba(0, 0, 0, 0.65);
+    }
+    .key-val:last-child { border-bottom: none; }
+    .key-val strong { color: #000; font-weight: 700; }
+
+    /* Result Grid */
+    .result-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(360px, 1fr));
+      gap: 16px;
+    }
+
+    /* Navigation Tabs Under Result */
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      margin-bottom: 18px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      background: rgba(255, 255, 255, 0.6);
+      padding: 5px;
+      border-radius: 14px;
+      border: 1px solid rgba(0, 0, 0, 0.08);
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .nav-tab {
+      padding: 8px 14px;
+      border-radius: 10px;
+      background: transparent;
+      color: rgba(0, 0, 0, 0.6);
+      font-size: 11.5px;
+      font-weight: 700;
+      white-space: nowrap;
+      display: flex;
+      align-items: center;
       gap: 5px;
       transition: all 0.2s ease;
     }
-    .tactical-btn:hover {
-      background: rgba(56, 189, 248, 0.15);
-      border-color: #38bdf8;
-      color: #38bdf8;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.25);
+    .nav-tab:hover {
+      background: rgba(0, 0, 0, 0.04);
+      color: #000;
     }
-    .tactical-btn.active {
-      background: #0284c7;
-      border-color: #38bdf8;
+    .nav-tab.active {
+      background: #000;
       color: #fff;
-    }
-    .tactical-btn.pulse-action {
-      background: linear-gradient(135deg, #0284c7, #2563eb);
-      border-color: #38bdf8;
-      color: #fff;
-      box-shadow: 0 0 12px rgba(56, 189, 248, 0.4);
-    }
-    .tactical-btn.pulse-action:hover {
-      background: linear-gradient(135deg, #0369a1, #1d4ed8);
-      box-shadow: 0 0 18px rgba(56, 189, 248, 0.7);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
     }
 
-    /* Radar Node Markers (Custom HTML Leaflet DivIcons) */
-    .radar-node-wrap {
+    /* Tactical Radar Map & Flight HUD */
+    #map-wrapper {
       position: relative;
-      width: 40px;
-      height: 40px;
-      display: grid;
-      place-items: center;
-      pointer-events: auto;
+      border-radius: 14px;
+      overflow: hidden;
+      border: 1px solid rgba(0, 0, 0, 0.12);
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+      margin-top: 12px;
     }
-    .radar-ring {
-      position: absolute;
-      border-radius: 50%;
-      pointer-events: none;
-      box-sizing: border-box;
-    }
-    
-    /* Origin Node (Red Pulsing Reticle) */
-    .radar-node-origin .radar-ring {
-      border: 1.5px solid #ef4444;
+    #map-container {
       width: 100%;
-      height: 100%;
-      animation: radar-ping-origin 2.2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
+      height: 440px;
+      background: #090d16;
     }
-    .radar-node-origin .radar-ring.r2 {
-      animation-delay: 0.7s;
-    }
-    .radar-node-origin .radar-ring.r3 {
-      animation-delay: 1.4s;
-    }
-    .radar-core-origin {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #f87171, #ef4444);
-      border: 2px solid #fff;
-      box-shadow: 0 0 14px rgba(239, 68, 68, 0.9);
+    .flight-hud {
       display: grid;
-      place-items: center;
-      font-size: 11px;
+      grid-template-columns: 240px 1fr 240px;
+      gap: 12px;
+      margin-bottom: 12px;
+    }
+    @media (max-width: 900px) {
+      .flight-hud { grid-template-columns: 1fr; }
+    }
+    .hud-station-card {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
       color: #fff;
-      z-index: 2;
     }
-
-    /* Relay Node (Cyan Pulsing Node) */
-    .radar-node-relay .radar-ring {
-      border: 1.5px solid #38bdf8;
-      width: 100%;
-      height: 100%;
-      animation: radar-ping-relay 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-    }
-    .radar-core-relay {
-      width: 18px;
-      height: 18px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #38bdf8, #0284c7);
-      border: 2px solid #fff;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.9);
-      display: grid;
-      place-items: center;
-      font-size: 10px;
-      font-weight: 800;
-      color: #fff;
-      z-index: 2;
-    }
-
-    /* Destination Node (Emerald Shield Node) */
-    .radar-node-dest .radar-ring {
-      border: 1.5px solid #10b981;
-      width: 100%;
-      height: 100%;
-      animation: radar-ping-dest 2s cubic-bezier(0, 0.2, 0.8, 1) infinite;
-    }
-    .radar-core-dest {
-      width: 22px;
-      height: 22px;
-      border-radius: 50%;
-      background: radial-gradient(circle, #34d399, #059669);
-      border: 2px solid #fff;
-      box-shadow: 0 0 14px rgba(16, 185, 129, 0.9);
-      display: grid;
-      place-items: center;
-      font-size: 11px;
-      color: #fff;
-      z-index: 2;
-    }
-
-    /* Permanent Tactical Callout HUD Labels */
-    .radar-hud-tag {
-      position: absolute;
-      bottom: -22px;
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      font-family: 'DM Mono', monospace;
-      font-size: 9px;
-      font-weight: 700;
-      padding: 1px 6px;
-      border-radius: 4px;
-      pointer-events: none;
-      box-shadow: 0 2px 8px rgba(0,0,0,0.8);
-      z-index: 5;
-    }
-    .radar-hud-tag.origin {
-      background: rgba(239, 68, 68, 0.9);
-      color: #fff;
-      border: 1px solid #f87171;
-    }
-    .radar-hud-tag.relay {
-      background: rgba(15, 23, 42, 0.9);
-      color: #38bdf8;
-      border: 1px solid rgba(56, 189, 248, 0.5);
-    }
-    .radar-hud-tag.dest {
-      background: rgba(16, 185, 129, 0.9);
-      color: #fff;
-      border: 1px solid #34d399;
-    }
-
-    /* Animated Flight Drone Marker */
-    .flight-drone-divicon {
-      background: transparent !important;
-      border: none !important;
-    }
-    .drone-pulse-wrap {
-      position: relative;
-      width: 32px;
-      height: 32px;
-      display: grid;
-      place-items: center;
-      pointer-events: none;
-    }
-    .drone-head {
-      font-size: 18px;
-      color: #38bdf8;
-      filter: drop-shadow(0 0 8px #00f0ff);
-      transform-origin: center center;
-      transition: transform 0.1s linear;
-      z-index: 4;
-    }
-    .drone-halo {
-      position: absolute;
-      width: 28px;
-      height: 28px;
-      border-radius: 50%;
-      background: radial-gradient(circle, rgba(56, 189, 248, 0.45), transparent 70%);
-      animation: drone-pulse 1s infinite alternate;
-    }
-    .drone-tag {
-      position: absolute;
-      top: -18px;
-      left: 50%;
-      transform: translateX(-50%);
-      white-space: nowrap;
-      font-family: 'DM Mono', monospace;
-      font-size: 8.5px;
-      font-weight: 800;
-      color: #00f0ff;
-      background: rgba(3, 7, 18, 0.9);
-      border: 1px solid #00f0ff;
-      border-radius: 3px;
-      padding: 1px 5px;
-      box-shadow: 0 0 8px rgba(0, 240, 255, 0.5);
-    }
-
-    @keyframes radar-ping-origin {
-      0% { transform: scale(0.4); opacity: 0.95; }
-      100% { transform: scale(2.6); opacity: 0; }
-    }
-    @keyframes radar-ping-relay {
-      0% { transform: scale(0.4); opacity: 0.85; }
-      100% { transform: scale(2.2); opacity: 0; }
-    }
-    @keyframes radar-ping-dest {
-      0% { transform: scale(0.4); opacity: 0.9; }
-      100% { transform: scale(2.4); opacity: 0; }
-    }
-    @keyframes drone-pulse {
-      0% { transform: scale(0.8); opacity: 0.5; }
-      100% { transform: scale(1.3); opacity: 1; }
-    }
-    @keyframes drone-glide {
-      0% { filter: drop-shadow(0 0 4px #00f0ff); }
-      50% { filter: drop-shadow(0 0 12px #38bdf8); }
-      100% { filter: drop-shadow(0 0 4px #00f0ff); }
-    }
-
-    /* Leaflet Tactical Popup Overrides */
-    .leaflet-popup-content-wrapper {
-      background: rgba(8, 14, 28, 0.95) !important;
-      color: #f8fafc !important;
-      border: 1px solid rgba(56, 189, 248, 0.6) !important;
-      box-shadow: 0 10px 30px rgba(0, 0, 0, 0.9), 0 0 15px rgba(56, 189, 248, 0.25) !important;
-      border-radius: 10px !important;
-      backdrop-filter: blur(10px) !important;
-      padding: 2px !important;
-    }
-    .leaflet-popup-content {
-      margin: 10px 14px !important;
-      font-size: 11px !important;
-      line-height: 1.5 !important;
-    }
-    .leaflet-popup-tip {
-      background: #080e1c !important;
-      border: 1px solid rgba(56, 189, 248, 0.6) !important;
-    }
-
-    /* Upgraded Hop Timeline Cards */
-    .hop-timeline {
+    .hud-corridor-box {
+      background: rgba(15, 23, 42, 0.95);
+      border: 1px solid #334155;
+      border-radius: 12px;
+      padding: 12px;
       display: flex;
       flex-direction: column;
-      gap: 10px;
-      margin-top: 14px;
-      position: relative;
+      justify-content: space-between;
+      color: #fff;
     }
-    .hop-timeline::before {
-      content: '';
-      position: absolute;
-      left: 27px;
-      top: 15px;
-      bottom: 15px;
-      width: 2px;
-      background: linear-gradient(180deg, #ef4444 0%, #38bdf8 50%, #10b981 100%);
-      opacity: 0.4;
-      z-index: 1;
+    .hud-station-header {
+      display: flex; justify-content: space-between; align-items: center; font-size: 10px; font-weight: 800; margin-bottom: 6px;
     }
-    .hop-item {
-      display: flex;
-      gap: 14px;
-      align-items: flex-start;
-      padding: 12px 16px;
-      border-radius: 10px;
-      background: rgba(15, 23, 42, 0.65);
-      border: 1px solid rgba(255, 255, 255, 0.07);
-      position: relative;
-      z-index: 2;
-      transition: all 0.2s ease;
-    }
-    .hop-item:hover {
-      background: rgba(15, 23, 42, 0.9);
-      border-color: rgba(56, 189, 248, 0.4);
-      transform: translateX(2px);
-    }
-    .hop-badge {
-      width: 32px;
-      height: 32px;
-      border-radius: 50%;
-      display: grid;
-      place-items: center;
-      font-weight: 900;
-      font-size: 11px;
-      flex-shrink: 0;
-      box-shadow: 0 4px 12px rgba(0,0,0,0.5);
-    }
-    .hop-badge.origin {
-      background: rgba(239, 68, 68, 0.25);
-      color: #f87171;
-      border: 2px solid #ef4444;
-      box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-    }
-    .hop-badge.relay {
-      background: rgba(56, 189, 248, 0.2);
-      color: #38bdf8;
-      border: 2px solid #38bdf8;
-      box-shadow: 0 0 10px rgba(56, 189, 248, 0.4);
-    }
-    .hop-badge.dest {
-      background: rgba(16, 185, 129, 0.25);
-      color: #34d399;
-      border: 2px solid #10b981;
-      box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-    }
+    .hud-station-location { font-size: 13px; font-weight: 800; color: #fff; margin-bottom: 4px; }
+    .hud-station-meta { font-size: 10.5px; font-family: 'DM Mono', monospace; }
+    .hud-corridor-vector { display: flex; justify-content: space-between; align-items: center; font-size: 11px; font-weight: 800; }
+    .hud-telemetry-metrics { display: flex; justify-content: space-around; align-items: center; padding: 6px 0; font-size: 10.5px; }
+    .hud-metric-item { text-align: center; }
+    .hud-metric-val { font-size: 14px; font-weight: 800; font-family: 'DM Mono', monospace; display: block; }
+    .hud-metric-lbl { font-size: 8.5px; color: #94a3b8; font-weight: 700; }
+    .hud-status-banner { font-size: 9.5px; text-align: center; color: #38bdf8; font-family: 'DM Mono', monospace; font-weight: 700; }
 
     .hop-pill {
-      display: inline-flex;
-      align-items: center;
-      gap: 4px;
-      padding: 2px 7px;
-      border-radius: 4px;
-      font-size: 9.5px;
-      font-weight: 700;
+      display: inline-flex; align-items: center; gap: 4px;
+      padding: 2px 8px; border-radius: 9999px; font-size: 9.5px; font-weight: 800;
       font-family: 'DM Mono', monospace;
-      background: rgba(255, 255, 255, 0.05);
-      border: 1px solid rgba(255, 255, 255, 0.1);
-      color: #cbd5e1;
     }
-    .hop-pill.good { background: rgba(16, 185, 129, 0.15); color: #34d399; border-color: rgba(16, 185, 129, 0.35); }
-    .hop-pill.warn { background: rgba(245, 158, 11, 0.15); color: #fbbf24; border-color: rgba(245, 158, 11, 0.35); }
-    .hop-pill.bad { background: rgba(239, 68, 68, 0.15); color: #f87171; border-color: rgba(239, 68, 68, 0.35); }
-    .hop-pill.cyan { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border-color: rgba(56, 189, 248, 0.35); }
-    .hop-pill.purple { background: rgba(168, 85, 247, 0.15); color: #c084fc; border-color: rgba(168, 85, 247, 0.35); }
+    .hop-pill.good { background: rgba(22, 163, 74, 0.12); color: #16a34a; border: 1px solid rgba(22, 163, 74, 0.25); }
+    .hop-pill.warn { background: rgba(217, 119, 6, 0.12); color: #d97706; border: 1px solid rgba(217, 119, 6, 0.25); }
+    .hop-pill.bad { background: rgba(220, 38, 38, 0.12); color: #dc2626; border: 1px solid rgba(220, 38, 38, 0.25); }
+    .hop-pill.cyan { background: rgba(2, 132, 199, 0.12); color: #0284c7; border: 1px solid rgba(2, 132, 199, 0.25); }
 
-    #graph-canvas-wrap {
-      height: 320px; width: 100%; background: #060a14; border-radius: 12px;
-      border: 1px solid var(--border); position: relative; overflow: hidden;
+    .map-btn-group { display: flex; gap: 6px; align-items: center; }
+    .tactical-btn {
+      background: rgba(0, 0, 0, 0.05); color: rgba(0, 0, 0, 0.7);
+      padding: 6px 12px; border-radius: 8px; font-size: 11px; font-weight: 700;
+      display: inline-flex; align-items: center; gap: 5px; border: 1px solid rgba(0, 0, 0, 0.08);
+      transition: all 0.2s ease;
     }
-
-    /* Sandbox Frame */
-    .novnc-command-bar {
-      display: flex; justify-content: space-between; align-items: center;
-      background: var(--card-bg); border: 1px solid var(--border); border-radius: 10px;
-      padding: 6px 10px; margin-bottom: 8px; flex-wrap: wrap; gap: 6px;
-    }
-    .novnc-ribbon { display: flex; align-items: center; gap: 4px; flex-wrap: wrap; }
-    .ribbon-divider { width: 1px; height: 16px; background: var(--border); margin: 0 2px; }
-    .url-detonation-box { display: flex; gap: 6px; margin-bottom: 8px; }
-    .url-input-wrap {
-      flex: 1; display: flex; align-items: center; gap: 6px; background: var(--card-bg);
-      border: 1px solid var(--border); border-radius: 8px; padding: 0 8px;
-    }
-    .url-input-wrap input {
-      width: 100%; background: transparent; border: none; outline: none; color: #fff; font-size: 16px; padding: 8px 0;
-    }
-    .sandbox-frame-box {
-      border: 1px solid var(--border); border-radius: 12px; overflow: hidden; background: #000;
-      position: relative; height: 480px; box-shadow: 0 8px 25px rgba(0, 0, 0, 0.7);
-    }
-    .sandbox-iframe { width: 100%; height: calc(100% - 28px); border: none; }
-    .telemetry-bar {
-      height: 28px; background: #070c17; border-top: 1px solid var(--border);
-      display: flex; align-items: center; justify-content: space-between; padding: 0 10px;
-      font-size: 9.5px; color: var(--text-muted);
+    .tactical-btn:hover, .tactical-btn.active {
+      background: #000; color: #fff; border-color: #000;
     }
 
-    .mitre-badge {
-      display: inline-flex; align-items: center; gap: 4px; padding: 3px 7px; border-radius: 5px;
-      background: rgba(168, 85, 247, 0.15); color: #c084fc; border: 1px solid rgba(168, 85, 247, 0.3);
-      font-size: 10px; font-weight: 700; margin: 2px;
+    /* Radar Scanning Loader */
+    .radar-scanning {
+      display: none; text-align: center; padding: 24px 0;
     }
 
-    /* Radar scan spinner */
-    .radar-scanning { display: none; text-align: center; padding: 24px; }
-    .radar-sweep {
-      width: 46px; height: 46px; border-radius: 50%;
-      border: 3px solid rgba(59, 130, 246, 0.2);
-      border-top-color: #3b82f6;
-      animation: spin 1s linear infinite;
-      margin: 0 auto 10px;
+    /* Authentic Chromium Browser Sandbox */
+    .chromium-browser-frame.is-fullscreen {
+      position: fixed !important;
+      top: 0 !important; left: 0 !important; right: 0 !important; bottom: 0 !important;
+      width: 100vw !important; height: 100vh !important;
+      max-width: 100vw !important; max-height: 100vh !important;
+      z-index: 9999999 !important; margin: 0 !important; border-radius: 0 !important;
+      border: none !important; box-shadow: none !important;
+      display: flex !important; flex-direction: column !important;
+      background: #202124 !important;
     }
-    @keyframes spin { to { transform: rotate(360deg); } }
+    .chromium-browser-frame.is-fullscreen .chromium-viewport {
+      flex: 1 !important; height: 100% !important; min-height: 0 !important;
+    }
+    .chromium-browser-frame {
+      background: #202124; border: 1px solid #3c4043; border-radius: 12px;
+      overflow: hidden; box-shadow: 0 20px 60px rgba(0, 0, 0, 0.2);
+      margin-top: 14px; display: flex; flex-direction: column;
+    }
+    .chromium-tabstrip {
+      background: #1f2023; padding: 8px 12px 0 12px; display: flex; align-items: center;
+      gap: 6px; border-bottom: 1px solid #3c4043;
+    }
+    .chromium-tab {
+      background: #292a2d; color: #e8eaed; padding: 7px 16px; border-radius: 8px 8px 0 0;
+      font-size: 11.5px; font-weight: 600; display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid #3c4043; border-bottom: none; max-width: 260px;
+    }
+    .chromium-newtab-btn {
+      color: #9aa0a6; background: transparent; border: none; font-size: 16px;
+      cursor: pointer; padding: 2px 8px; border-radius: 50%;
+    }
+    .chromium-toolbar {
+      background: #292a2d; padding: 8px 14px; display: flex; align-items: center;
+      gap: 10px; border-bottom: 1px solid #3c4043; flex-wrap: wrap;
+    }
+    .chromium-nav-btn {
+      background: transparent; border: none; color: #9aa0a6; padding: 6px 8px;
+      border-radius: 50%; cursor: pointer; display: flex; align-items: center; justify-content: center;
+    }
+    .chromium-nav-btn:hover { background: #3c4043; color: #e8eaed; }
+    .chromium-omnibox {
+      flex: 1; min-width: 250px; background: #202124; border: 1px solid #3c4043;
+      border-radius: 20px; padding: 6px 14px 6px 36px; color: #e8eaed; font-size: 13px; outline: none;
+    }
+    .chromium-viewport { height: 480px; position: relative; background: #202124; }
+    .chromium-bottom-bar {
+      background: #1f2023; border-top: 1px solid #3c4043; padding: 6px 14px;
+      display: flex; justify-content: space-between; font-size: 10.5px; color: #9aa0a6;
+      font-family: 'DM Mono', monospace;
+    }
 
-    /* ========================================================================== */
-    /* MASTER FORENSIC DOSSIER & COURT CERTIFICATE (SEC 65B)                      */
-    /* ========================================================================== */
+    /* Print Dossier Styling */
     .dossier-wrap {
-      background: #ffffff;
-      color: #0f172a;
-      border-radius: 12px;
-      padding: clamp(16px, 3vw, 32px);
-      box-shadow: 0 10px 40px rgba(0,0,0,0.5);
-      border: 2px solid #1e3a8a;
-      font-size: 11.5px;
-      line-height: 1.6;
+      background: #fff; color: #000; padding: 24px; border-radius: 12px;
+      border: 1px solid rgba(0,0,0,0.1); box-shadow: 0 4px 16px rgba(0,0,0,0.04);
     }
     .dossier-header {
-      display: flex; justify-content: space-between; align-items: flex-start;
-      border-bottom: 2.5px solid #0f172a; padding-bottom: 14px; margin-bottom: 18px;
-      flex-wrap: wrap; gap: 8px;
+      display: flex; justify-content: space-between; border-bottom: 2px solid #000;
+      padding-bottom: 14px; margin-bottom: 16px;
     }
-    .dossier-gov-seal {
-      font-size: 10px; font-weight: 900; color: #1e3a8a; letter-spacing: 0.08em; text-transform: uppercase;
-    }
-    .dossier-main-title {
-      font-size: 17px; font-weight: 900; color: #0f172a; margin-top: 2px; letter-spacing: -0.01em;
-    }
+    .dossier-gov-seal { font-size: 10px; font-weight: 800; letter-spacing: 0.08em; color: #1e3a8a; }
+    .dossier-main-title { font-size: 18px; font-weight: 800; margin: 4px 0; color: #000; }
     .dossier-badge-court {
-      background: #fee2e2; color: #991b1b; border: 1.5px solid #f87171;
-      font-size: 9.5px; font-weight: 800; padding: 4px 10px; border-radius: 5px;
-      text-transform: uppercase; letter-spacing: 0.04em; display: inline-block;
+      background: #fee2e2; color: #991b1b; border: 1px solid #f87171;
+      padding: 3px 8px; border-radius: 4px; font-size: 9.5px; font-weight: 800;
     }
     .dossier-section-title {
-      font-size: 12px; font-weight: 900; color: #1e3a8a; text-transform: uppercase;
-      letter-spacing: 0.04em; border-bottom: 1.5px solid #cbd5e1; padding-bottom: 4px;
-      margin-top: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 5px;
+      font-size: 12px; font-weight: 800; background: #f1f5f9; padding: 6px 10px;
+      margin: 14px 0 8px; border-left: 3px solid #1e3a8a; color: #0f172a;
     }
     .dossier-table {
-      width: 100%; border-collapse: collapse; margin-bottom: 10px; font-size: 11px;
+      width: 100%; border-collapse: collapse; font-size: 10.5px; margin-bottom: 10px;
     }
-    .dossier-table th {
-      background: #f1f5f9; color: #1e293b; text-align: left; padding: 6px 8px;
-      border: 1px solid #cbd5e1; font-weight: 800;
+    .dossier-table th, .dossier-table td {
+      border: 1px solid #cbd5e1; padding: 6px 8px; text-align: left;
     }
-    .dossier-table td {
-      padding: 6px 8px; border: 1px solid #e2e8f0; vertical-align: middle;
-    }
-    .dossier-table tr:nth-child(even) td { background: #f8fafc; }
-    
+    .dossier-table th { background: #f8fafc; font-weight: 700; color: #334155; }
     .dossier-legal-box {
       background: #f8fafc; border: 1px solid #cbd5e1; border-left: 4px solid #1e3a8a;
       border-radius: 6px; padding: 10px 12px; margin-top: 12px; font-size: 10.5px; color: #334155; line-height: 1.5;
@@ -768,248 +510,17 @@
     }
 
     @media print {
-      body { background: #fff !important; color: #000 !important; padding-bottom: 0 !important; }
-      .topbar, .mode-bar, .nav-tabs, #alert-banner-box, .dropzone-box,
-      #mode-text-view, #mode-attach-view, #mode-sandbox-view, .primary-btn, .ghost-btn, .mobile-floating-bar {
+      body { background: #fff !important; color: #000 !important; }
+      .topbar, .mode-bar, .nav-tabs, #alert-banner-box, .dropzone-box, .sample-corridor-drawer,
+      #mode-text-view, #mode-attach-view, #mode-sandbox-view, .primary-btn, .ghost-btn {
         display: none !important;
       }
       #results-view, #tab-dossier, .dossier-wrap {
-        display: block !important;
-        position: static !important;
-        width: 100% !important;
-        box-shadow: none !important;
-        border: none !important;
-        padding: 0 !important;
-        background: #fff !important;
-        color: #000 !important;
-      }
-      .dossier-wrap * { visibility: visible !important; color: #000 !important; }
-      .dossier-table th { background: #e2e8f0 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .dossier-badge-court { background: #fee2e2 !important; border-color: #ef4444 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      .dossier-legal-box { border-left-color: #1e3a8a !important; background: #f8fafc !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
-      @page { margin: 12mm; size: A4; }
-    }
-  
-    
-    
-    .desktop-titlebar {
-      background: #0d1322; border-bottom: 1px solid #1e293b; padding: 8px 14px; display: flex; align-items: center; justify-content: space-between;
-    }
-    .desktop-tab {
-      background: rgba(30, 41, 59, 0.7); border: 1px solid rgba(255, 255, 255, 0.08); padding: 5px 14px; border-radius: 8px 8px 0 0; font-size: 11px; font-weight: 700; color: #93c5fd; display: inline-flex; align-items: center; gap: 6px;
-    }
-    .desktop-taskbar {
-      background: #090d16; border-top: 1px solid #1e293b; padding: 6px 14px; display: flex; align-items: center; justify-content: space-between; font-size: 10.5px; color: #94a3b8;
-    }
-
-    
-    /* Authentic Chromium Browser Sandbox */
-    .chromium-browser-frame.is-fullscreen {
-      position: fixed !important;
-      top: 0 !important;
-      left: 0 !important;
-      right: 0 !important;
-      bottom: 0 !important;
-      width: 100vw !important;
-      height: 100vh !important;
-      max-width: 100vw !important;
-      max-height: 100vh !important;
-      z-index: 9999999 !important;
-      margin: 0 !important;
-      border-radius: 0 !important;
-      border: none !important;
-      box-shadow: none !important;
-      display: flex !important;
-      flex-direction: column !important;
-      background: #202124 !important;
-    }
-    .chromium-browser-frame.is-fullscreen .chromium-viewport {
-      flex: 1 !important;
-      height: 100% !important;
-      min-height: 0 !important;
-    }
-
-    .chromium-browser-frame {
-      background: #202124;
-      border: 1px solid #3c4043;
-      border-radius: 10px;
-      overflow: hidden;
-      box-shadow: 0 20px 60px rgba(0, 0, 0, 0.75);
-      margin-top: 14px;
-      display: flex;
-      flex-direction: column;
-    }
-    .chromium-tabstrip {
-      background: #1f2023;
-      padding: 8px 12px 0 12px;
-      display: flex;
-      align-items: center;
-      gap: 6px;
-      border-bottom: 1px solid #3c4043;
-    }
-    .chromium-tab {
-      background: #292a2d;
-      color: #e8eaed;
-      border-radius: 8px 8px 0 0;
-      padding: 7px 16px;
-      font-size: 12px;
-      font-weight: 500;
-      display: inline-flex;
-      align-items: center;
-      gap: 8px;
-      border: 1px solid #3c4043;
-      border-bottom: none;
-      max-width: 260px;
-      white-space: nowrap;
-      overflow: hidden;
-      text-overflow: ellipsis;
-    }
-    .chromium-newtab-btn {
-      color: #9aa0a6;
-      background: transparent;
-      border: none;
-      font-size: 16px;
-      cursor: pointer;
-      padding: 2px 8px;
-      border-radius: 50%;
-    }
-    .chromium-toolbar {
-      background: #292a2d;
-      padding: 8px 14px;
-      display: flex;
-      align-items: center;
-      gap: 10px;
-      border-bottom: 1px solid #3c4043;
-      flex-wrap: wrap;
-    }
-    .chromium-nav-btn {
-      background: transparent;
-      border: none;
-      color: #9aa0a6;
-      padding: 6px 8px;
-      border-radius: 50%;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      transition: background 0.15s, color 0.15s;
-    }
-    .chromium-nav-btn:hover {
-      background: #3c4043;
-      color: #e8eaed;
-    }
-    .chromium-omnibox {
-      flex: 1;
-      min-width: 250px;
-      background: #202124;
-      border: 1px solid #3c4043;
-      border-radius: 20px;
-      padding: 6px 14px 6px 36px;
-      color: #e8eaed;
-      font-size: 13px;
-      outline: none;
-      position: relative;
-      transition: border-color 0.2s, background 0.2s;
-    }
-    .chromium-omnibox:focus {
-      border-color: #8ab4f8;
-      background: #1f2023;
-    }
-    .chromium-viewport {
-      height: 640px;
-      background: #202124;
-      position: relative;
-      width: 100%;
-    }
-    @media (max-width: 680px) {
-      .chromium-viewport {
-        height: 68vh;
+        display: block !important; position: static !important; width: 100% !important;
+        box-shadow: none !important; border: none !important; padding: 0 !important;
       }
     }
-    .chromium-bottom-bar {
-      background: #202124;
-      border-top: 1px solid #3c4043;
-      padding: 5px 14px;
-      font-size: 11px;
-      color: #9aa0a6;
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
-
-    /* Mobile-First Master Column & Grid Rules */
-    @media (max-width: 768px) {
-      .brand-sub {
-        display: none !important;
-      }
-    }
-    @media (max-width: 680px) {
-      .brand-sub {
-        display: none !important;
-      }
-      .header-wrap { padding: 10px 12px !important; }
-      .header-meta { display: none !important; }
-      .main-wrap { padding: 10px 10px 30px !important; }
-      
-      /* Mode Bar: 2-Column Responsive Card Grid on Mobile */
-      .mode-bar {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
-        padding: 6px !important;
-        margin-bottom: 14px !important;
-        background: rgba(15, 23, 42, 0.9) !important;
-      }
-      .mode-tab {
-        width: 100% !important;
-        min-width: 0 !important;
-        padding: 12px 6px !important;
-        font-size: 11.5px !important;
-        justify-content: center !important;
-        border-radius: 8px !important;
-      }
-      
-      /* Feature Navigation Tabs: 2-Column Clean Vertical Column Grid on Mobile */
-      .nav-tabs {
-        display: grid !important;
-        grid-template-columns: 1fr 1fr !important;
-        gap: 6px !important;
-        border-bottom: none !important;
-        margin-bottom: 14px !important;
-        padding-bottom: 0 !important;
-      }
-      .nav-tab {
-        width: 100% !important;
-        justify-content: center !important;
-        padding: 10px 6px !important;
-        font-size: 11px !important;
-        border-radius: 8px !important;
-        border: 1px solid rgba(255, 255, 255, 0.1) !important;
-        background: rgba(15, 23, 42, 0.7) !important;
-        text-align: center !important;
-      }
-      .nav-tab.active {
-        background: linear-gradient(135deg, rgba(59, 130, 246, 0.4), rgba(37, 99, 235, 0.3)) !important;
-        border-color: rgba(59, 130, 246, 0.8) !important;
-        color: #93c5fd !important;
-        box-shadow: 0 0 10px rgba(59, 130, 246, 0.3) !important;
-      }
-      
-      .card { padding: 12px 10px !important; border-radius: 12px !important; margin-bottom: 10px !important; }
-      .dropzone-box { padding: 24px 12px !important; border-radius: 14px !important; }
-      .dropzone-box i { width: 36px !important; height: 36px !important; }
-      
-      .sandbox-ctrl-row { flex-direction: column !important; }
-      .sandbox-ctrl-row button { width: 100% !important; }
-      
-      .result-grid { grid-template-columns: 1fr !important; gap: 10px !important; }
-      #map-container { height: 260px !important; }
-      
-      .dossier-sign-row { flex-direction: column !important; gap: 14px !important; }
-      .dossier-sign-row > div:last-child { text-align: left !important; }
-    }
-
-  </style>
+</style>
 </head>
 <body>
 
@@ -1063,7 +574,96 @@
           Parses transport headers, extracts multi-hop SMTP routing, resolves originating GeoIP/ASN, and computes deterministic threat matrix.
         </p>
         <button class="primary-btn" style="width: 100%; max-width: 280px;"><i data-lucide="file-search"></i> Select Email Evidence</button>
+      
+      <!-- Instant 1-Click Forensic Sample Corridors Ribbon & Direct Downloaders -->
+      <div class="sample-corridor-drawer" style="margin-top: 14px; background: rgba(255,255,255,0.85); border: 1px solid rgba(0,0,0,0.08); border-radius: 16px; padding: 14px; backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; flex-wrap: wrap; gap: 6px;">
+          <div style="display: flex; align-items: center; gap: 8px;">
+            <i data-lucide="zap" style="width: 14px; color: #f59e0b;"></i>
+            <span style="font-size: 11px; font-weight: 800; letter-spacing: 0.04em; text-transform: uppercase; color: #0f172a;">Instant Forensic Test Corridors & Evidence Downloads</span>
+          </div>
+          <span style="font-size: 10px; color: #64748b; font-weight: 700;">1-Click Map Simulation OR Direct .EML File Download</span>
+        </div>
+        
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 8px;">
+          <!-- Sample 1: Emkei.cz -->
+          <div class="sample-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 11.5px; display: block; color: #0f172a;">🚨 Emkei.cz Mail Forgery</strong>
+                <span style="font-size: 9.5px; color: #64748b;">Prague, CZ ➔ Google Security Alert</span>
+              </div>
+              <span class="hop-pill bad" style="font-size: 9px;">SCORE 88</span>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="primary-btn" style="flex: 1; padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="selectCorridor('emkei')">
+                <i data-lucide="play" style="width: 10px;"></i> Analyze & Map
+              </button>
+              <button class="ghost-btn" style="padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="downloadSamplePreset('emkei')" title="Download original .eml file to computer">
+                <i data-lucide="download" style="width: 10px;"></i> .EML
+              </button>
+            </div>
+          </div>
+
+          <!-- Sample 2: BEC Wire Fraud -->
+          <div class="sample-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 11.5px; display: block; color: #0f172a;">💼 BEC CEO Wire Fraud</strong>
+                <span style="font-size: 9.5px; color: #64748b;">London, UK ➔ $250k Urgent Request</span>
+              </div>
+              <span class="hop-pill bad" style="font-size: 9px;">SCORE 82</span>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="primary-btn" style="flex: 1; padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="selectCorridor('bec_wire')">
+                <i data-lucide="play" style="width: 10px;"></i> Analyze & Map
+              </button>
+              <button class="ghost-btn" style="padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="downloadSamplePreset('bec_wire')" title="Download original .eml file to computer">
+                <i data-lucide="download" style="width: 10px;"></i> .EML
+              </button>
+            </div>
+          </div>
+
+          <!-- Sample 3: AiTM Phishing -->
+          <div class="sample-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 11.5px; display: block; color: #0f172a;">🕵️ AiTM Reverse Proxy</strong>
+                <span style="font-size: 9.5px; color: #64748b;">Session Hijacking / Evilginx Lure</span>
+              </div>
+              <span class="hop-pill bad" style="font-size: 9px;">SCORE 94</span>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="primary-btn" style="flex: 1; padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="selectCorridor('apt_tor')">
+                <i data-lucide="play" style="width: 10px;"></i> Analyze & Map
+              </button>
+              <button class="ghost-btn" style="padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="downloadSamplePreset('apt_tor')" title="Download original .eml file to computer">
+                <i data-lucide="download" style="width: 10px;"></i> .EML
+              </button>
+            </div>
+          </div>
+
+          <!-- Sample 4: Hindi Extortion -->
+          <div class="sample-card">
+            <div style="display: flex; justify-content: space-between; align-items: flex-start; margin-bottom: 6px;">
+              <div>
+                <strong style="font-size: 11.5px; display: block; color: #0f172a;">⚡ Hindi Bijli Bill Scam</strong>
+                <span style="font-size: 9.5px; color: #64748b;">Urgent Power Disconnect & UPI</span>
+              </div>
+              <span class="hop-pill warn" style="font-size: 9px;">SCORE 75</span>
+            </div>
+            <div style="display: flex; gap: 6px; margin-top: 6px;">
+              <button class="primary-btn" style="flex: 1; padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="selectCorridor('hindi_scam')">
+                <i data-lucide="play" style="width: 10px;"></i> Analyze & Map
+              </button>
+              <button class="ghost-btn" style="padding: 5px 8px; font-size: 10.5px; border-radius: 8px;" onclick="downloadSamplePreset('hindi_scam')" title="Download original .eml file to computer">
+                <i data-lucide="download" style="width: 10px;"></i> .EML
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
+</div>
     </div>
 
     <!-- 2. TEXT INTAKE -->
@@ -1218,7 +818,11 @@
 
         <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; flex-wrap: wrap; gap: 8px;">
           <span id="att-verdict-note" style="font-size: 10.5px; color: #94a3b8;">✓ No malicious executable payload or macro trigger detected.</span>
-          <button class="primary-btn" onclick="openCurrentAttachmentInSandbox()" style="font-size: 11px; padding: 5px 12px; background: linear-gradient(135deg, #0284c7, #0369a1); font-weight: 700;">
+          
+          <button class="primary-btn" id="btn-download-attach-file" onclick="downloadCurrentAttachmentFile()" style="font-size: 11px; padding: 5px 12px; background: #10b981; font-weight: 700;">
+            <i data-lucide="download" style="width: 12px;"></i> 📥 Download File (<span id="att-download-filename">file</span>)
+          </button>
+<button class="primary-btn" onclick="openCurrentAttachmentInSandbox()" style="font-size: 11px; padding: 5px 12px; background: linear-gradient(135deg, #0284c7, #0369a1); font-weight: 700;">
             <i data-lucide="shield" style="width: 12px;"></i> 🌐 Detonate in Sandbox
           </button>
           <button class="ghost-btn" onclick="document.getElementById('attach-disassembly-results').style.display='none'" style="font-size: 11px; padding: 4px 10px;">
@@ -1294,8 +898,13 @@
         <!-- REAL CHROMIUM BROWSER WINDOW -->
         <div class="chromium-browser-frame">
           
-          <!-- Top Tabstrip -->
+          <!-- Top Tabstrip with Prominent Window Controls -->
           <div class="chromium-tabstrip">
+            <div class="mac-window-controls" style="margin-right: 12px;">
+              <button class="mac-btn mac-close" title="Cut / Close Sandbox" onclick="closeSandboxWindow()">✕</button>
+              <button class="mac-btn mac-min" title="Minimize Sandbox View" onclick="minimizeSandboxWindow()">–</button>
+              <button class="mac-btn mac-max" title="Maximize / Full Screen" onclick="toggleSandboxFullscreen()">⤢</button>
+            </div>
             <div class="chromium-tab" id="chromium-tab-title">
               <i data-lucide="globe" style="width: 12px; color: #8ab4f8;"></i>
               <span id="chromium-tab-text">Google</span>
@@ -1421,7 +1030,11 @@
             <button class="primary-btn" onclick="openSocFirewallModal()" style="font-size: 11px; padding: 6px 12px; background: linear-gradient(135deg, #ef4444, #b91c1c); font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(239,68,68,0.35);">
               <i data-lucide="shield-alert" style="width: 13px;"></i> 🛡️ Auto-Containment / Firewall Rules
             </button>
-            <button class="primary-btn" onclick="exportCourtDocketPDF()" style="font-size: 11px; padding: 6px 12px; background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(37,99,235,0.35);">
+            
+            <button class="primary-btn" id="btn-download-analyzed-file" onclick="downloadCurrentEvidenceFile()" style="font-size: 11px; padding: 6px 14px; background: linear-gradient(135deg, #10b981, #059669); font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(16,185,129,0.35);" title="Download Original File Evidence (.eml / raw stream)">
+              <i data-lucide="download" style="width: 13px;"></i> 📥 Download File (<span id="txt-download-filename">evidence.eml</span>)
+            </button>
+<button class="primary-btn" onclick="exportCourtDocketPDF()" style="font-size: 11px; padding: 6px 12px; background: linear-gradient(135deg, #2563eb, #1d4ed8); font-weight: 800; border-radius: 6px; display: inline-flex; align-items: center; gap: 6px; box-shadow: 0 4px 14px rgba(37,99,235,0.35);">
               <i data-lucide="file-check" style="width: 13px;"></i> 📜 Export Section 65B Court Docket (PDF)
             </button>
           </div>
@@ -2304,9 +1917,11 @@
               <button class="primary-btn" onclick="downloadFirewallScript()" style="padding: 6px 12px; font-size: 11px; background: #16a34a;">
                 <i data-lucide="download" style="width: 12px;"></i> Download (.sh)
               </button>
-              <button class="ghost-btn" onclick="closeSocFirewallModal()" style="padding: 6px 12px; font-size: 11px; color: #f87171; border-color: rgba(239,68,68,0.4); font-weight: 800;">
-                ✕ Close
-              </button>
+              <div class="mac-window-controls" style="margin-left: 8px;">
+                <button class="mac-btn mac-close" title="Cut / Close Modal" onclick="closeSocFirewallModal()">✕</button>
+                <button class="mac-btn mac-min" title="Minimize / Close Modal" onclick="closeSocFirewallModal()">–</button>
+                <button class="mac-btn mac-max" title="Maximize Modal Fullscreen" onclick="toggleModalFullscreen('modal-soc-containment')">⤢</button>
+              </div>
             </div>
           </div>
 
@@ -2376,9 +1991,11 @@
               <button class="primary-btn" onclick="exportActorSTIX()" style="padding: 6px 12px; font-size: 11px; background: #7e22ce;">
                 <i data-lucide="download" style="width: 12px;"></i> Export STIX 2.1
               </button>
-              <button class="ghost-btn" onclick="closeThreatActorModal()" style="padding: 6px 12px; font-size: 11px; color: #f87171; border-color: rgba(239,68,68,0.4); font-weight: 800;">
-                ✕ Close
-              </button>
+              <div class="mac-window-controls" style="margin-left: 8px;">
+                <button class="mac-btn mac-close" title="Cut / Close Modal" onclick="closeThreatActorModal()">✕</button>
+                <button class="mac-btn mac-min" title="Minimize / Close Modal" onclick="closeThreatActorModal()">–</button>
+                <button class="mac-btn mac-max" title="Maximize Modal Fullscreen" onclick="toggleModalFullscreen('modal-threat-actor-dossier')">⤢</button>
+              </div>
             </div>
           </div>
 
@@ -2449,9 +2066,11 @@
               <button class="ghost-btn" onclick="window.print()" style="padding: 6px 12px; font-size: 11px; color: #38bdf8; border-color: rgba(56,189,248,0.4);">
                 <i data-lucide="printer" style="width: 12px;"></i> Print Ledger
               </button>
-              <button class="ghost-btn" onclick="closeSignalsModal()" style="padding: 6px 12px; font-size: 11px; color: #f87171; border-color: rgba(239,68,68,0.4); font-weight: 800;">
-                ✕ Close
-              </button>
+              <div class="mac-window-controls" style="margin-left: 8px;">
+                <button class="mac-btn mac-close" title="Cut / Close Modal" onclick="closeSignalsModal()">✕</button>
+                <button class="mac-btn mac-min" title="Minimize / Close Modal" onclick="closeSignalsModal()">–</button>
+                <button class="mac-btn mac-max" title="Maximize Modal Fullscreen" onclick="toggleModalFullscreen('modal-signals-ledger')">⤢</button>
+              </div>
             </div>
           </div>
 
@@ -3415,6 +3034,10 @@
         // Fallback to in-browser client parser
         if (!data || !data.threat) {
           const rawContent = await file.text();
+          window.currentLoadedFileContent = rawContent;
+          window.currentLoadedFileName = file.name;
+          const dlBtnText = document.getElementById('txt-download-filename');
+          if (dlBtnText) dlBtnText.innerText = file.name;
           const { headers, body } = parseRawEmailHeaders(rawContent);
           const sender = headers['from'] || 'Unknown Sender';
           const recipient = headers['to'] || 'Target Recipient';
@@ -3603,6 +3226,10 @@
 
       try {
         const rawBytes = await file.arrayBuffer();
+        window.currentAttachmentFileBlob = file;
+        window.currentAttachmentFileName = file.name;
+        const attDlName = document.getElementById('att-download-filename');
+        if (attDlName) attDlName.innerText = file.name;
         const byteLen = file.size;
         const sha256 = await computeSHA256(rawBytes);
         const u8 = new Uint8Array(rawBytes);
@@ -4582,6 +4209,12 @@
     // 1-Click Forensic Sample Loader for Instant Geodesic Demonstrations
     async function loadForensicSample(sampleType) {
       showLoader(true);
+      if (SAMPLE_FIXTURES_EML[sampleType]) {
+        window.currentLoadedFileContent = SAMPLE_FIXTURES_EML[sampleType];
+        window.currentLoadedFileName = sampleType + '.eml';
+        const dlBtnText = document.getElementById('txt-download-filename');
+        if (dlBtnText) dlBtnText.innerText = sampleType + '.eml';
+      }
       try {
         let sampleData = null;
         if (sampleType === 'emkei') {
@@ -7410,8 +7043,11 @@ Integrity Seal: Certified Immutable & Court Admissible`;
           const h = window.location.hash.replace('#', '').toLowerCase();
           if (['emkei', 'apt_tor', 'bec_wire', 'clean_mta'].includes(h)) sample = h;
         }
-        if (sample && ['emkei', 'apt_tor', 'bec_wire', 'clean_mta'].includes(sample)) {
+        if (sample && ['emkei', 'apt_tor', 'bec_wire', 'clean_mta', 'hindi_scam'].includes(sample)) {
           selectCorridor(sample);
+        } else if (!sample && !auto) {
+          // Auto-load Emkei sample corridor so map, hops, and forensic analysis show immediately on load!
+          selectCorridor('emkei');
         }
       } catch (e) {
         console.warn('URL param parse error:', e);
@@ -7424,6 +7060,186 @@ Integrity Seal: Certified Immutable & Court Admissible`;
       checkBackendHealth();
     }
 
-  </script>
+  
+    // =========================================================================
+    // 📁 COMPREHENSIVE FILE DOWNLOADER & FORENSIC SAMPLE PRESETS
+    // =========================================================================
+    window.currentLoadedFileContent = null;
+    window.currentLoadedFileName = null;
+    window.currentAttachmentFileBlob = null;
+    window.currentAttachmentFileName = null;
+
+    const SAMPLE_FIXTURES_EML = {
+      'emkei': `From: "Google Security" <no-reply@accounts.google.com>
+To: "Target User" <victim@corporate.com>
+Subject: Security Alert: Unauthorized sign-in attempt detected
+Date: Mon, 21 Sep 2026 05:20:00 +0000
+Message-ID: <123456.forged@emkei.cz>
+Return-Path: <nobody@emkei.cz>
+X-Mailer: Emkei's Fake Mailer v1.0
+Received: from emkei.cz (109.123.219.162) by mx.google.com with ESMTP; Mon, 21 Sep 2026 05:20:05 +0000
+Authentication-Results: mx.google.com; spf=fail (emkei.cz does not designate 109.123.219.162); dkim=none; dmarc=fail action=reject
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Someone attempted to sign in to your Google Account from an unknown browser in Moscow, Russia.
+Verify your password immediately: http://google-security-verify.ru/login
+`,
+      'bec_wire': `From: "Satya Nadella" <ceo-office@micros0ft-support.com>
+To: "Finance Department" <accounts@enterprise.in>
+Subject: URGENT: Wire Transfer Approval for Project Acquisition
+Date: Mon, 21 Sep 2026 04:15:00 +0000
+Message-ID: <202609210415.wire@micros0ft-support.com>
+Reply-To: wire-escrow@hacker-vault.ru
+Return-Path: <spoof@compromised-relay.cz>
+Received: from mail.compromised-relay.cz (185.220.101.5) by mx.enterprise.in with ESMTP; Mon, 21 Sep 2026 04:15:10 +0000
+Authentication-Results: mx.enterprise.in; spf=softfail (mail.compromised-relay.cz: domain does not designate 185.220.101.5 as permitted sender); dkim=none; dmarc=fail action=quarantine
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Please approve immediate wire transfer of $250,000 to escrow account.
+This transaction is strictly confidential. Do not call my cell phone.
+`,
+      'apt_tor': `From: "Microsoft 365 Admin Center" <admin@login.microsoftonline-portal.cc>
+To: "Executive Director" <exec@company.org>
+Subject: ACTION REQUIRED: Your Microsoft 365 Session Token Has Expired
+Date: Mon, 21 Sep 2026 06:10:00 +0000
+Message-ID: <session.aitm.9981@microsoftonline-portal.cc>
+Return-Path: <bounce@microsoftonline-portal.cc>
+Received: from proxy01.reverse-aitm.net (193.142.146.33) by mx.company.org with ESMTP; Mon, 21 Sep 2026 06:10:08 +0000
+Authentication-Results: mx.company.org; spf=fail; dkim=fail; dmarc=fail
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+
+<p>Your session cookie has timed out due to conditional access enforcement.</p>
+<p><a href="https://auth-portal.evilginx-login.xyz/sess?id=8823">Re-authenticate Session Here</a></p>
+`,
+      'macro_malware': `From: "Vendor Invoicing" <billing@contractor-services.com>
+To: "Accounts Payable" <payables@enterprise.in>
+Subject: Overdue Invoice INV-88921.xlsm
+Date: Mon, 21 Sep 2026 06:40:00 +0000
+Message-ID: <inv.attach.4412@contractor-services.com>
+Return-Path: <billing@contractor-services.com>
+Received: from relay.fastmail.com (66.111.4.25) by mx.enterprise.in with ESMTP; Mon, 21 Sep 2026 06:40:05 +0000
+Authentication-Results: mx.enterprise.in; spf=pass; dkim=pass; dmarc=pass
+MIME-Version: 1.0
+Content-Type: multipart/mixed; boundary="BOUNDARY_INVOICE"
+
+--BOUNDARY_INVOICE
+Content-Type: text/plain; charset=UTF-8
+
+Please review the attached macro-enabled invoice and execute macro to release payment.
+
+--BOUNDARY_INVOICE
+Content-Type: application/vnd.ms-excel.sheet.macroEnabled.12; name="Invoice_Q3.xlsm"
+Content-Transfer-Encoding: base64
+Content-Disposition: attachment; filename="Invoice_Q3.xlsm"
+
+UEsDBBQAAAAIAAAAAAAAAAAAAAAAAAAA...AAEAAQAAA=
+--BOUNDARY_INVOICE--
+`,
+      'hindi_scam': `From: "Electricity Dept Notice" <alerts@state-power-distribution.in>
+To: "Resident" <citizen@delhi-residence.in>
+Subject: बिजली बिल सूचना: रात 9:30 बजे बिजली काट दी जाएगी (Urgent Disconnection Notice)
+Date: Mon, 21 Sep 2026 07:00:00 +0000
+Message-ID: <bijli.scam.2026@state-power-distribution.in>
+Return-Path: <alerts@state-power-distribution.in>
+Received: from mta.bulk-sms-gate.in (103.21.244.18) by mx.citizen.in with ESMTP; Mon, 21 Sep 2026 07:00:05 +0000
+Authentication-Results: mx.citizen.in; spf=neutral; dkim=none; dmarc=none
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+प्रिय उपभोक्ता, 
+आपका बिजली बिल ₹4,850 बकाया है। यदि आपने तुरंत भुगतान नहीं किया तो आज रात 9:30 बजे बिजली काट दी जाएगी।
+सेवा बहाल रखने के लिए तत्काल हमारे बिजली अधिकारी से 9876543210 पर संपर्क करें अथवा UPI ID: bijlibill@oksbi पर भुगतान करें।
+अपना आधार कार्ड संख्या: 2345 6789 0123 और पैन कार्ड ABCDE1234F दर्ज करें।
+`
+    };
+
+    function downloadFile(content, filename, mimeType) {
+      mimeType = mimeType || 'text/plain';
+      const blob = (content instanceof Blob) ? content : new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      setTimeout(() => {
+        document.body.removeChild(a);
+        URL.revokeObjectURL(url);
+      }, 150);
+    }
+
+    function downloadSamplePreset(sampleType) {
+      const content = SAMPLE_FIXTURES_EML[sampleType];
+      if (!content) {
+        alert("Sample file not found.");
+        return;
+      }
+      const fnameMap = {
+        'emkei': '02_emkei_cz_forgery.eml',
+        'bec_wire': '01_bec_wire_fraud.eml',
+        'apt_tor': '03_aitm_reverse_proxy.eml',
+        'macro_malware': '04_macro_excel_malware.eml',
+        'hindi_scam': '05_hindi_electricity_phishing.eml'
+      };
+      downloadFile(content, fnameMap[sampleType] || (sampleType + '.eml'), 'message/rfc822');
+    }
+
+    function downloadCurrentEvidenceFile() {
+      if (!window.currentLoadedFileContent) {
+        alert("No evidence file currently loaded.");
+        return;
+      }
+      downloadFile(window.currentLoadedFileContent, window.currentLoadedFileName || 'evidence.eml', 'message/rfc822');
+    }
+
+    function downloadCurrentAttachmentFile() {
+      if (!window.currentAttachmentFileBlob) {
+        alert("No attachment file loaded.");
+        return;
+      }
+      downloadFile(window.currentAttachmentFileBlob, window.currentAttachmentFileName || 'attachment.bin', 'application/octet-stream');
+    }
+
+    function closeSandboxWindow() {
+      const frame = document.querySelector('.chromium-browser-frame');
+      if (frame && frame.classList.contains('is-fullscreen')) {
+        toggleSandboxFullscreen();
+      }
+      setMode('eml');
+    }
+
+    function minimizeSandboxWindow() {
+      const vp = document.querySelector('.chromium-viewport');
+      const bar = document.querySelector('.chromium-bottom-bar');
+      if (vp) {
+        const isHidden = (vp.style.display === 'none');
+        vp.style.display = isHidden ? 'block' : 'none';
+        if (bar) bar.style.display = isHidden ? 'flex' : 'none';
+      }
+    }
+
+    function toggleModalFullscreen(modalId) {
+      const m = document.getElementById(modalId);
+      if (!m) return;
+      const inner = m.firstElementChild;
+      if (!inner) return;
+      if (inner.dataset.maximized === 'true') {
+        inner.dataset.maximized = 'false';
+        inner.style.maxWidth = inner.dataset.oldMaxWidth || '960px';
+        inner.style.height = 'auto';
+        inner.style.margin = '20px auto';
+      } else {
+        inner.dataset.maximized = 'true';
+        inner.dataset.oldMaxWidth = inner.style.maxWidth || '960px';
+        inner.style.maxWidth = '98vw';
+        inner.style.height = '94vh';
+        inner.style.margin = '10px auto';
+      }
+    }
+
+</script>
 </body>
 </html>
