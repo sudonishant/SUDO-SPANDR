@@ -1,0 +1,8 @@
+session.screen0.toolbar.visible: true
+session.screen0.toolbar.tools: workspacename, iconbar, systemtray, clock
+session.screen0.workspaces: 1
+session.screen0.focusModel: ClickFocus
+session.screen0.autoRaise: false
+session.screen0.defaultDeco: NORMAL
+session.screen0.rootCommand: /usr/bin/xsetroot -solid #080e18
+session.styleFile: /usr/share/fluxbox/styles/bora_black/theme.cfg

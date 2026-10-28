@@ -26,12 +26,14 @@
 
 ### Virtual Web Computer
 
-- Replaced the old sandbox status surface with an honest on-demand local mail-triage runtime in `src/pages/SandboxPage.jsx`.
-- Start opens a workspace-style **guest desktop** with dark desktop chrome, Mail Intake and Triage Report windows, desktop icons, Start menu and taskbar. Windows can be closed/reopened without leaving the workspace; mobile stacks the same apps without horizontal overflow.
-- Manual **Start/Stop** controls the runtime. Optional **Active-tab auto-resume** starts it when the visible Web Computer tab is active and pauses it when the tab is hidden; it does not provide background mailbox monitoring.
-- User-supplied `.eml` and `.msg` files can be selected or dropped into Mail intake. The existing local analyzer automatically parses, scores, generates a recommendation plan and saves the resulting case when device storage is available.
-- The result panel links to the full case/report and exports the actual result. Runtime activity lists real start, intake, completion and failure events from the current view; no incoming mail is fabricated.
-- The integration panel explicitly states that real mailbox/IMAP, remote isolated VM and autonomous quarantine/reply/delete actions are not connected. No links or attachments are executed and no message is declared safe from a low score.
+- Replaced the simulated workspace desktop with two explicit real-runtime modes in `src/pages/SandboxPage.jsx`.
+- **Browser Node.js** boots StackBlitz WebContainers in the browser tab, mounts a virtual filesystem, connects an xterm.js `jsh` terminal and provides editable workspace files. It is not represented as a full Linux OS, Chromium desktop or host shell.
+- Browser workspace snapshots use their own IndexedDB database (`src/lib/browserComputerStorage.js`), with memory-only fallback when device storage is unavailable. Evidence/workspace file contents are not written to `localStorage`.
+- **Hosted Linux (optional)** connects to the local authenticated control proxy in `scripts/agent-computer-server.mjs`. Start/Stop manages actual Xvfb, Fluxbox, Chromium, xterm, PCManFM, x11vnc and websockify processes as the dedicated `spandrvm` user. The host workspace is not mounted and noVNC binds to localhost.
+- Manual **Start/Stop** controls the selected runtime. Optional **Active-tab auto-resume** starts it while the tab is visible and stops it when hidden; it does not provide background mailbox monitoring.
+- User-supplied `.eml` and `.msg` files use the separate submitted-mail automation panel. The existing local analyzer parses, scores, generates a recommendation plan and saves the resulting case when device storage is available.
+- WebContainers requires COOP/COEP cross-origin isolation and initial StackBlitz runtime network access. Commercial production use may require a WebContainer API license; these requirements are shown rather than hidden.
+- No mailbox/IMAP, autonomous quarantine/reply/delete action or hardware VM is claimed. Hosted Linux is a local POC, not an air-gapped production multi-tenant runtime.
 
 ### Honest capabilities and safety
 
@@ -43,12 +45,24 @@
 
 ## Validation performed
 
-- `npm run build` — passed; **1,627 modules transformed**. Final bundle report: CSS 233.16 KB raw / 98.84 KB gzip; main JS 312.63 KB / 94.02 KB gzip; secondary JS 57.34 KB / 15.24 KB gzip.
-- `npm run lint` — forensic-claim string lint passed for **31 active source files**.
-- Production `npm audit --omit=dev` — **0 known vulnerabilities** at validation time; dependency changes were not made for this feature.
+### Current real-runtime checks
+
+- Browser WebContainer reached `running` with `crossOriginIsolated` and `SharedArrayBuffer` available. An edited program generated the actual terminal output `PLAYWRIGHT_REAL_EXECUTION 42`; this was not a canned terminal string.
+- Graceful browser shell exit, WebContainer teardown and reload completed with zero page errors. The saved program was restored from IndexedDB, no workspace-file fallback was written to `localStorage`, and storage-unavailable behavior showed memory-only status.
+- Active-tab auto-resume performed actual visible start → hidden stop → visible restart. Submitted `sample-phishing.eml` then completed automatic triage and restored its saved Web Computer case after reload.
+- The production bundle was also served with Vercel-equivalent CSP/COOP/COEP headers; real WebContainer execution and graceful stop passed. `Referrer-Policy: strict-origin-when-cross-origin` is required because StackBlitz's headless endpoint rejects referrer-less requests.
+- Hosted Linux noVNC reported `Connected` through local and same-origin proxy tests. Stop closed VNC and the hardened control plane verified zero remaining `spandrvm` processes before returning.
+- Fixed browser editor/terminal sizing removed an xterm resize-observer growth loop. Desktop layout remained stable at a 560px workspace, mobile had no horizontal overflow, and current light/dark/mobile axe scans detected zero violation rules.
+- Direct automated access to the external E2B preview URL returned the platform's **403 traffic-access-token-required** page. This is not counted as an external user-browser validation; that confirmation remains pending.
+
+### Earlier workspace and backend checks
+
+- `npm run build` — passed with Vite 6.4.5; **1,648 modules transformed**. Bundle report: CSS 244.84 KB raw / 102.05 KB gzip; main JS 662.50 KB / 184.58 KB gzip; secondary chunks 57.34 KB / 15.24 KB gzip and 19.95 KB / 7.52 KB gzip. Vite reports a large-chunk warning.
+- `npm run lint` — forensic-claim string lint passed for **35 active source files**, including the new runtime components.
+- `npm audit` — **0 known vulnerabilities** after non-breaking dependency updates at validation time.
 - Browser smoke suite — **2/2 passed** for sample → analysis → report → cases, static URL inspection with zero target requests, theme persistence, Alt+N and mobile navigation/focus management.
 - Sample corpus smoke — **11/11** samples analyzed, 11 device cases listed and clear-device-cases completed without runtime errors.
-- Dedicated persistence/Web Computer smoke (`/home/user/persistence-webcomputer-smoke.cjs`) — passed reload restore, close/reopen of a persistent browser profile, individual deletion, clear-all persistence, guest-window close/reopen and Start-menu recovery, EML automatic triage/case creation, saved Web Computer result restore, opt-in reload auto-resume and visibility pause/resume.
+- Earlier persistence smoke covered case restore/delete/clear, EML automatic triage and auto-resume on the previous local mail-desktop UI. The new browser/hosted runtime UI has separate real-execution checks listed above; the retired guest-window/Start-menu assertions no longer apply.
 - IndexedDB-unavailable fallback smoke — passed: analysis remained usable, memory-only status was shown and no reload persistence was claimed.
 - Automated axe scans over WCAG 2/2.1/2.2 A/AA rules — final scans detected **zero violation rules** on tested empty/intake/library/settings routes, actual high-risk analysis, reports, light/dark themes, mobile overview/open drawer, and active Web Computer desktop/mobile states. This is not a substitute for a full manual accessibility audit.
 - Backend API/category/parser/score-ledger/attachment smoke, 7 feature tests, security script and 4 category cases — previously passed from the repository root; no backend behavior was changed for this branding/persistence phase. The optional EML regression fixture was absent and remained **SKIP**, not a pass.
@@ -63,3 +77,4 @@
 5. Re-run upload, API, CSP, cross-origin, AI-review, persistence and optional backend integration tests against the actual deployment configuration.
 6. Review remaining legacy/report source and unsupported legal/certification claims before re-enabling those workflows.
 7. Complete manual keyboard, screen-reader, zoom/reflow, browser-matrix and real-evidence regression testing.
+8. Confirm WebContainer API licensing for the intended open-source/POC/commercial deployment and verify StackBlitz engine/preview domains under the production CSP and embedding model.

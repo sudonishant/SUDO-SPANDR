@@ -1,0 +1,7 @@
+[begin] (SUDO Agent Computer)
+  [exec] (Agent Terminal) {/usr/bin/xterm -title "Agent Terminal" -e /bin/bash}
+  [exec] (File Manager) {/usr/bin/pcmanfm /var/lib/spandrvm/share}
+  [exec] (Chromium Browser) {/usr/bin/chromium --disable-dev-shm-usage --no-first-run --disable-session-crashed-bubble --hide-crash-restore-bubble --user-data-dir=/var/lib/spandrvm/.config/chromium}
+  [separator]
+  [exec] (Refresh Desktop) {/usr/bin/fluxbox-remote reconfigure}
+[end]

@@ -6,7 +6,11 @@ const activeFiles = [
   // Frontend
   'src/App.jsx',
   'src/components/Dropzone.jsx',
+  'src/components/BrowserComputer.jsx',
+  'src/components/HostedLinuxComputer.jsx',
+  'src/pages/SandboxPage.jsx',
   'src/store/useForensicStore.jsx',
+  'src/lib/browserComputerStorage.js',
   'src/lib/forensics.js',
   'src/styles/os.css',
   'src/styles/app.css',
