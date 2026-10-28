@@ -610,7 +610,7 @@ export async function buildEmailAnalysis(parsed) {
     attachment_analysis: attachments,
     authorship_analysis: { classification: 'NOT ASSESSED', ai_likeness_percent: null, confidence: 'N/A', observed_indicators: [], explanation: 'AI-generated text detection is intentionally not claimed by this web-only heuristic flow.' },
     header_findings: headerFindings,
-    evidence: { sha256: rawHash, raw_size_bytes: parsed.rawBytes?.byteLength || null, preservation: 'Browser session only; upload to an immutable evidence vault is not performed by this static web app.' },
+    evidence: { sha256: rawHash, raw_size_bytes: parsed.rawBytes?.byteLength || null, preservation: 'Parsed case data is stored in this browser profile when IndexedDB is available; original bytes are not uploaded to an immutable evidence vault by this static web app.' },
     limitations: [parsed.input_note, 'Risk score is heuristic triage, not a probability.', 'No external threat-intelligence, DNS, sandbox, AV, YARA, or cryptographic verification was performed in browser mode.'],
   };
 }
@@ -623,7 +623,7 @@ export async function analyzeStandaloneAttachment(file) {
     attachment_analysis: [report], category_analysis: categoryAnalysis, threat: { risk_score: report.risk_score, status: report.risk_level === 'HIGH' ? 'HIGH RISK' : report.risk_level === 'MEDIUM' ? 'REVIEW' : 'NO HIGH-RISK MARKER OBSERVED', signals: report.findings, score_breakdown: { positive_contributors: report.risk_score > 0 ? [{ label: 'Static attachment marker(s)', points: report.risk_score, evidence: report.findings.join('; '), source: 'attachment-static-check' }] : [], deductions: [], positive_total: report.risk_score, adjustment_total: 0, final_score: report.risk_score, formula: `${report.risk_score} observed attachment points plus 0 adjustments = ${report.risk_score} final triage score` }, note: 'Static browser check only; absence of a marker is not a clean-malware verdict.' },
     parsed: { meta: { filename: file.name, size_bytes: report.size_bytes }, sha256_hash: report.sha256 },
     geo_data: { status: 'NOT APPLICABLE', note: 'Standalone file has no email transport route.' }, dns_auth: null, relay_info: null, aitm_analysis: [], authorship_analysis: null,
-    evidence: { sha256: report.sha256, raw_size_bytes: report.size_bytes, preservation: 'Browser session only; not an immutable forensic archive.' }, limitations: [report.scanner],
+    evidence: { sha256: report.sha256, raw_size_bytes: report.size_bytes, preservation: 'Parsed case data is stored in this browser profile when IndexedDB is available; this is not an immutable forensic archive.' }, limitations: [report.scanner],
   };
 }
 

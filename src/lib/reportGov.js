@@ -177,7 +177,7 @@ export function buildGovReport({ analysis, ai, overall, analyst, role, notes }) 
   <div class="chain">
     CHAIN OF CUSTODY: SHA-256 generated at ingestion in the analyst's browser session.<br/>
     VERIFICATION HASH (report binding): ${esc(verification)}<br/>
-    PRESERVATION: ${esc(analysis?.evidence?.preservation || 'browser session only')}
+    PRESERVATION: ${esc(analysis?.evidence?.preservation || 'browser-generated case data; not an immutable evidence vault')}
   </div>
 
   <h2><span class="num">3.</span> FINDINGS (निष्कर्ष)</h2>

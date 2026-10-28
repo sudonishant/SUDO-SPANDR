@@ -10,6 +10,8 @@ scratch_chrome/
 cloudflared
 *.pptx
 *.swp
+test-results/
+playwright-report/
 
 # Credential hygiene: never commit local secrets or generated key stores.
 .env

@@ -584,14 +584,26 @@ def sandbox_detonate(req: DetonateUrlRequest) -> Dict[str, Any]:
 
 @app.get(f"{settings.API_V1_STR}/sandbox/preview-frame", response_class=HTMLResponse)
 def sandbox_preview_frame(url: str) -> HTMLResponse:
-    res = inspect_url_dom_and_headers(url)
+    """Disable the legacy same-origin active-content proxy.
+
+    A sanitized document mounted in an iframe does not make a separately
+    exposed proxy endpoint safe. Live browsing must run in an isolated worker,
+    not in the API or application origin. No target fetch is performed here.
+    """
+    del url  # The target is intentionally neither fetched nor reflected.
     headers = {
-        "X-Frame-Options": "ALLOWALL",
-        "Content-Security-Policy": "frame-ancestors *",
-        "Access-Control-Allow-Origin": "*",
-        "Cache-Control": "no-cache"
+        "X-Frame-Options": "DENY",
+        "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'; sandbox",
+        "X-Content-Type-Options": "nosniff",
+        "Referrer-Policy": "no-referrer",
+        "Cache-Control": "no-store",
     }
-    return HTMLResponse(content=res.get("sanitized_html", ""), status_code=200, headers=headers)
+    return HTMLResponse(
+        content='{"error":"remote_preview_disabled","remote_fetch_performed":false}',
+        status_code=410,
+        headers=headers,
+        media_type="application/json",
+    )
 
 
 DIST_DIR = os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "..", "dist"))

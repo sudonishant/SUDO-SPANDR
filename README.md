@@ -404,7 +404,7 @@ python3 backend/security_test.py
 | `GET` | `/api/v1/blockchain/verify/{tx_hash}` | Cryptographic verification of on-chain Section 65B notarized digest | Polygon Amoy (Chain ID 80002) |
 | `POST` | `/api/v1/attachment` | Dedicated static byte disassembly & container-aware entropy | Magic-Byte Container Analysis |
 | `POST` | `/api/v1/sandbox/detonate` | Safe URL inspection, DOM redirect tracing & security headers | Sandboxed Chromium Inspector |
-| `GET` | `/api/v1/sandbox/preview-frame` | Sanitised HTML preview of a detonated target (SSRF-guarded, `frame-ancestors *`) | Sandboxed Chromium Inspector |
+| `GET` | `/api/v1/sandbox/preview-frame` | **Disabled (410):** legacy same-origin remote-HTML proxy; no target fetch is performed | Use an authenticated, isolated detonation worker instead |
 | `POST` | `/api/v1/sandbox/lab/portscan` | CyberLab port scan (real nmap or builtin TCP connect engine) | CyberLab Toolbox |
 | `POST` | `/api/v1/sandbox/lab/recon` | CyberLab DNS/whois/ping/traceroute/header reconnaissance | CyberLab Toolbox |
 | `POST` | `/api/v1/sandbox/lab/hashcrack` | Hash identification + cracking (John the Ripper / builtin engine) | CyberLab Toolbox |
@@ -418,52 +418,33 @@ python3 backend/security_test.py
 
 ---
 
-## 🖥️ Desktop shell UI map (React app in `src/`)
+## 🖥️ React analyst workspace UI map
 
-### The desktop
+The served entry point is a responsive, hash-routed React workspace with a white/black/blue visual
+system and the supplied SUDO SPANDR emblem (`public/spandr-mark.png`). It has a desktop sidebar,
+mobile navigation drawer and bottom navigation; the older fixed desktop-window shell is not the
+current workspace UI.
 
-![SUDO SPANDR desktop](docs/ui/desktop.jpg)
-
-![Sandbox VM window](docs/ui/sandbox.jpg)
-
-![Phone layout](docs/ui/phone.jpg)
-
-![Report window](docs/ui/report.jpg)
-
-The landing screen is the desktop itself: four large app icons — **Analyse**, **Sandbox**, **Files**,
-**Terminal** — sit in the middle of the screen like a desktop launcher, with MITRE, Dossier and About
-kept one click away (dock, right-click menu and the app menu, so nothing was dropped).
-
-The document never scrolls: windows, the dock and the menu bar live inside a fixed viewport,
-and only each window body scrolls. Drag a title bar to move a window, drag the bottom-right corner
-to resize, double-click a title bar to maximise, and right-click the wallpaper for a context menu.
-
-
-The front-end is a fixed-viewport desktop, not a scrolling page: a boot overlay, a menu bar with
-dropdowns and a clock, desktop file tiles, draggable / resizable windows, and a dock. The document
-never scrolls — only window bodies do. On screens under 780 px the shell switches to a phone layout: a status bar, a home grid of app
-icons, one full-screen app at a time with a back button, and the same apps — intake, report, sandbox
-VM, files, terminal, MITRE and dossier — fully working. Inside the sandbox VM the guest switches to
-one window at a time so the virtual PC stays usable on a phone.
-
-| Surface | Where | What it calls |
+| Surface | Where | Behavior / boundary |
 |---|---|---|
-| Boot + session lock / restart | `src/App.jsx`, `src/os/Window.jsx` | Local state only |
-| Desktop file tiles (`.eml`, `.pdf`, `.json`, `.md`) | `src/App.jsx` → `FilesApp` | Opens the matching window |
-| Intake (`.eml`, `.msg`, pasted headers, attachment) | `src/apps/WorkspaceApp.jsx` | Browser parsers only — no upload |
-| Static URL checks + detonation telemetry | `src/apps/SandboxApp.jsx` | `POST /api/v1/sandbox/detonate` (falls back to browser checks only) |
-| Sandbox VM (guest desktop) | `src/apps/SandboxApp.jsx` | Guest apps (chromium, system monitor, guest shell) run inside a draggable VM screen with its own taskbar, start menu and reboot |
-| Isolated preview frame | `src/apps/SandboxApp.jsx` → “Render” | `GET /api/v1/sandbox/preview-frame` (fetched, then mounted as `srcDoc` with a script-only sandbox) |
-| Report tabs (Overview, Headers, Auth, Relay, URLs, Files) | `src/apps/Report.jsx` | Browser result object |
-| Files explorer + preview pane | `src/apps/FilesApp.jsx` | Static, read-only evidence samples |
-| Terminal (`help`, `status`, `ls`, `open <app>`, `analyze`) | `src/apps/TerminalApp.jsx` | Shell commands open real windows |
-| MITRE window | `src/apps/CaseApps.jsx` | `GET /api/v1/mitre/navigator-layer` — labelled as a reference layer when the API is unreachable |
-| Dossier window | `src/apps/CaseApps.jsx` | Browser result + locally generated containment drafts (iptables, Cisco, FortiGate, DNS sinkhole, Suricata) |
-| AI second opinion | Overview panel, toolbar | `POST /api/v1/ai-review` |
+| Overview | `src/pages/DashboardPage.jsx` | Real case counts, current case, capability status and local-analysis notice |
+| Intake (`.eml`, `.msg`, pasted headers, attachment) | `src/apps/WorkspaceApp.jsx` | Browser parsers and deterministic scoring; no evidence upload by this workflow |
+| Cases | `src/pages/CasesPage.jsx`, `src/lib/caseDatabase.js` | Reopen, export, remove and clear cases saved in this browser profile’s IndexedDB |
+| Device retention | `src/store/useForensicStore.jsx` | Hydrates on startup, persists creates/updates/deletes, and retains the newest 50 cases; unavailable IndexedDB falls back to memory-only with an explicit notice |
+| Web Computer | `src/pages/SandboxPage.jsx` | Workspace guest desktop with Mail Intake/Triage windows, Start menu and taskbar; manual Start/Stop plus opt-in active-tab auto-resume; local EML/MSG intake → analysis → triage plan → saved case and actual runtime events |
+| Mailbox / remote VM | Web Computer integration panel | Not connected in this static UI; no fake incoming mail, remote Chromium, quarantine, reply or delete action is claimed |
+| Network-free URL inspection | `src/pages/UrlLabPage.jsx` → “Inspect” | Browser-only URL parsing; the legacy same-origin remote-preview proxy returns 410 and performs no fetch |
+| Report tabs and dossier | `src/apps/Report.jsx`, `src/components/Dossier.jsx` | Actual browser result object, JSON export and print/save-PDF |
+| Sample library | `src/pages/SamplesPage.jsx`, `src/data/samples.js` | 11 clearly labelled synthetic fixtures run through the real analyzer |
+| AI second opinion | Analysis overview / toolbar | Optional `POST /api/v1/ai-review`; content leaves the browser only after this explicit action |
 
-Each app reacts to its own window width through container queries, so a narrow window reflows
-instead of overlapping. Every panel above falls back to an explicit "unavailable / not configured"
-state rather than showing an invented verdict.
+Case evidence is kept out of `localStorage`; only non-evidence preferences such as theme and the
+Web Computer auto-resume choice use that storage. IndexedDB is device/profile-local, not an
+immutable evidence vault or a remote synchronized database. Anyone with access to the same browser
+profile may be able to reopen saved cases, so export and clear them before using a shared device.
+
+All panels use responsive layouts and explicit unavailable/not-configured states rather than
+invented verdicts. See `docs/UI_PRODUCTION_UPDATE.md` for the latest validation and release limits.
 
 ---
 
