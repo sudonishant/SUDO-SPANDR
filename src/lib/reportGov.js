@@ -1,270 +1,73 @@
-/*
- * Government-style forensic analysis report (Indian CERT-In / NCIIPC flavour)
- * with analyst signature block. Generated ONLY for HIGH-risk findings.
- *
- * The report is produced as a self-contained printable HTML document with a
- * chain-of-custody verification hash so the output can be archived verbatim.
+import { buildDossierModel, formatBytes, networkPlace, text, validCoordinates } from './dossierModel';
+
+const esc = (value) => String(value ?? '—')
+  .replace(/&/g, '&amp;')
+  .replace(/</g, '&lt;')
+  .replace(/>/g, '&gt;')
+  .replace(/"/g, '&quot;');
+
+const detailRows = (rows) => rows.map((row) => `<tr><th>${esc(row.label)}</th><td class="${row.mono ? 'mono' : ''}">${esc(text(row.value))}</td></tr>`).join('');
+const listItems = (items, empty = 'None recorded.') => items?.length ? items.map((item) => `<li>${esc(item)}</li>`).join('') : `<li>${esc(empty)}</li>`;
+
+/**
+ * Self-contained, non-governmental analyst working report. The historical
+ * function name is retained for callers; no official seal, signature, fixed
+ * risk verdict, place of issue, or legal certification is generated.
  */
-
-const esc = (s) => String(s ?? '—')
-  .replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
-
-function todayLong() {
-  return new Date().toLocaleDateString('en-IN', { day: '2-digit', month: 'long', year: 'numeric' });
-}
-
-function refNo(caseId) {
-  const y = new Date().getFullYear();
-  return `SUDO SPANDR/CERT-FA/${y}/${String(caseId || '').replace(/[^A-Z0-9-]/gi, '').slice(-12) || 'CASE'}`;
-}
-
-/* simple deterministic "signature" flourish + cursive name rendering */
-function signatureSvg(name) {
-  const seed = [...String(name || 'Analyst')].reduce((a, c) => a + c.charCodeAt(0), 0);
-  const w = 210;
-  let d = `M 8 ${52 - (seed % 12)}`;
-  for (let i = 0; i < 7; i += 1) {
-    const x1 = 20 + i * 28;
-    const x2 = x1 + 22;
-    const y1 = 30 + ((seed + i * 13) % 26);
-    const y2 = 24 + ((seed + i * 7) % 30);
-    d += ` C ${x1} ${y1}, ${(x1 + x2) / 2} ${y2}, ${x2} ${34 + ((seed + i * 5) % 18)}`;
-  }
-  return `
-    <svg width="${w}" height="64" viewBox="0 0 ${w} 64" xmlns="http://www.w3.org/2000/svg" aria-label="analyst signature">
-      <path d="${d}" fill="none" stroke="#1a2a6c" stroke-width="2.1" stroke-linecap="round"/>
-      <text x="${w / 2}" y="60" text-anchor="middle" font-family="'Segoe Script','Brush Script MT',cursive"
-            font-size="15" fill="#1a2a6c" opacity="0.9">${esc(name || 'Analyst')}</text>
-    </svg>`;
-}
-
-function sealSvg() {
-  return `
-    <svg width="92" height="92" viewBox="0 0 92 92" xmlns="http://www.w3.org/2000/svg" aria-label="office seal">
-      <circle cx="46" cy="46" r="43" fill="none" stroke="#1a2a6c" stroke-width="2.4"/>
-      <circle cx="46" cy="46" r="36" fill="none" stroke="#1a2a6c" stroke-width="1"/>
-      <path id="sealArc" d="M 46 88 A 42 42 0 1 1 46 4" fill="none"/>
-      <text font-size="8.2" fill="#1a2a6c" letter-spacing="1.6" font-family="serif">
-        <textPath href="#sealArc" startOffset="6%">SUDO SPANDR • CYBER FORENSIC CELL • भारत</textPath>
-      </text>
-      <text x="46" y="42" text-anchor="middle" font-size="12" fill="#1a2a6c" font-family="serif">फोरेंसिक</text>
-      <text x="46" y="56" text-anchor="middle" font-size="9.5" fill="#1a2a6c" font-family="serif">FORENSIC CELL</text>
-    </svg>`;
-}
-
-export function buildGovReport({ analysis, ai, overall, analyst, role, notes }) {
-  const subject = analysis?.parsed?.subject || analysis?.filename || 'Suspicious email evidence';
-  const sender = analysis?.parsed?.sender || 'unavailable';
-  const caseId = analysis?.case_id || 'CS-0000';
-  const sha = analysis?.evidence?.sha256 || '';
-  const threat = analysis?.threat || {};
-  const signals = (threat.signals || []).slice(0, 12);
-  const category = analysis?.category_analysis?.category_label || 'Unclassified';
-  const findings = (analysis?.attachment_analysis || []).map((a) => ({
-    obs: `Attachment ${a.filename}: ${a.findings?.slice(0, 2).join('; ') || 'static markers inspected'}`,
-    sev: (a.risk_score || 0) >= 70 ? 'HIGH' : (a.risk_score || 0) >= 40 ? 'MEDIUM' : 'LOW',
-    ev: `sha256 ${String(a.sha256 || '').slice(0, 16)}… · ${a.size_bytes || 0} bytes`,
-  }));
-  signals.forEach((s) => findings.push({
-    obs: typeof s === 'string' ? s : s.label || JSON.stringify(s),
-    sev: Number(s?.weight || 0) >= 14 ? 'HIGH' : 'MEDIUM',
-    ev: s?.evidence || 'Observed in submitted evidence',
-  }));
-
-  const verification = sha ? `${sha.slice(0, 32)}…${sha.slice(-8)}` : 'not computed';
-  const ref = refNo(caseId);
+export function buildGovReport({ analysis, notes }) {
+  const model = buildDossierModel(analysis || {});
+  const findings = model.findings.length ? model.findings.map((item, index) => `<tr><td>${index + 1}</td><td>${esc(item.label)}</td><td>${esc(item.evidence)}</td><td>${esc(item.weight === null ? 'Recorded' : `+${item.weight}`)}</td></tr>`).join('') : '<tr><td colspan="4">No positive threat signal was recorded. This is not a clean or safe verdict.</td></tr>';
+  const relays = model.relays.length ? model.relays.map((item, index) => `<tr><td>${index + 1}</td><td class="mono">${esc(item.ip)}</td><td>${esc(text(item.field))}</td></tr>`).join('') : '<tr><td colspan="3">No public IP was extracted.</td></tr>';
+  const network = model.networkResults.length ? model.networkResults.map((item) => `<tr><td class="mono">${esc(item.ip)}</td><td>${esc(networkPlace(item))}</td><td class="mono">${esc(validCoordinates(item) ? `${item.latitude ?? item.approximate_location?.latitude}, ${item.longitude ?? item.approximate_location?.longitude}` : 'Not returned')}</td><td>${esc(text(item.organization || item.network_name))}</td><td>${esc(text(item.status))}<br><small>Registration: ${esc(text(item.registration_status))} · Location: ${esc(text(item.location_status))}</small><br><small>${esc(text(item.message || item.approximate_location?.accuracy, 'Approximate estimate; no accuracy radius supplied.'))}</small></td></tr>`).join('') : `<tr><td colspan="5">${esc(model.networkStatus)} — ${esc(model.networkNote)}</td></tr>`;
+  const urls = model.urls.length ? model.urls.map((item) => `<tr><td class="mono wrap">${esc(item.url)}</td><td>${esc(text(item.risk))}</td><td>${esc(item.reasons?.join(' · ') || 'No structural warning observed; reputation was not queried.')}</td></tr>`).join('') : '<tr><td colspan="3">No URL was extracted.</td></tr>';
+  const attachments = model.attachments.length ? model.attachments.map((item) => `<tr><td>${esc(text(item.filename))}<br><small>${esc(text(item.detected_type))}</small></td><td>${esc(formatBytes(item.size_bytes))}<br><small>Entropy ${esc(text(item.entropy))}</small></td><td>${esc(item.findings?.join(' ') || 'No static marker recorded; not a clean verdict.')}</td><td class="mono wrap">${esc(text(item.sha256))}</td></tr>`).join('') : '<tr><td colspan="4">No attachment was extracted or separately submitted.</td></tr>';
+  const reaLanes = model.rea?.lanes?.length ? model.rea.lanes.map((lane) => `<div class="lane"><strong>${esc(text(lane.operation || lane.id))} · ${esc(text(lane.status))}</strong><p>Provider: ${esc(text(lane.provider?.name || lane.summary?.provider?.name))}</p>${lane.message ? `<p>${esc(lane.message)}</p>` : ''}<ul>${listItems(lane.limitations || lane.summary?.limitations || [], 'No lane limitation text returned.')}</ul></div>`).join('') : `<p>${esc(model.rea ? text(model.rea.message, 'No completed REA lane was recorded.') : 'REA deep inspection was not run for this case.')}</p>`;
 
   return `<!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<title>${esc(ref)} — Cyber Forensic Analysis Report</title>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="color-scheme" content="light">
+<title>${esc(model.documentNumber)} — Cyber Forensic Analysis Report</title>
 <style>
-  @page { size: A4; margin: 16mm 14mm; }
-  * { box-sizing: border-box; }
-  body { font-family: 'Georgia','Noto Serif',serif; color: #10151f; margin: 0; padding: 26px 34px; background: #fff; }
-  .class-bar { text-align: center; font-weight: 700; letter-spacing: 3px; color: #8c1007; border: 2px solid #8c1007; padding: 4px; font-size: 12px; }
-  .masthead { display: flex; gap: 16px; align-items: center; border-bottom: 3px double #1a2a6c; padding: 14px 4px 10px; }
-  .masthead img { height: 74px; }
-  .masthead .gov { flex: 1; text-align: center; }
-  .masthead .gov .hi { font-size: 21px; font-weight: 700; color: #1a2a6c; }
-  .masthead .gov .en { font-size: 13px; letter-spacing: 2.5px; color: #1a2a6c; }
-  .masthead .gov .doc { margin-top: 4px; font-size: 12.5px; font-weight: 700; letter-spacing: 1.2px; color: #8c1007; }
-  table.meta { width: 100%; border-collapse: collapse; margin: 12px 0; font-size: 12px; }
-  table.meta td { border: 1px solid #9aa4b8; padding: 5px 8px; }
-  table.meta td.k { width: 120px; background: #eef1f8; font-weight: 700; color: #1a2a6c; }
-  h2 { font-size: 13.5px; color: #1a2a6c; border-bottom: 1.5px solid #1a2a6c; padding-bottom: 3px; margin: 18px 0 8px; letter-spacing: 0.6px; }
-  h2 .num { color: #8c1007; }
-  p, li, td, th { font-size: 11.8px; line-height: 1.55; }
-  table.grid { width: 100%; border-collapse: collapse; margin: 6px 0 10px; }
-  table.grid th { background: #1a2a6c; color: #fff; font-size: 10.5px; letter-spacing: 0.8px; padding: 5px 7px; text-align: left; }
-  table.grid td { border: 1px solid #b7c0d4; padding: 5px 7px; vertical-align: top; }
-  .sev-HIGH { color: #8c1007; font-weight: 700; }
-  .sev-MEDIUM { color: #9a5b00; font-weight: 700; }
-  .sev-LOW { color: #14532d; font-weight: 700; }
-  .scorebox { display: flex; gap: 10px; margin: 8px 0; }
-  .scorebox .cell { flex: 1; border: 1.4px solid #1a2a6c; border-radius: 6px; padding: 8px 10px; text-align: center; }
-  .scorebox .cell b { display: block; font-size: 20px; color: #8c1007; }
-  .scorebox .cell span { font-size: 9.5px; letter-spacing: 1px; color: #1a2a6c; text-transform: uppercase; }
-  .chain { background: #f4f6fb; border: 1px solid #c3ccdf; padding: 8px 10px; font-family: 'Consolas',monospace; font-size: 10px; word-break: break-all; }
-  .sign-row { display: flex; justify-content: space-between; align-items: flex-end; margin-top: 30px; gap: 20px; }
-  .sign-block { text-align: center; min-width: 240px; }
-  .sign-line { border-top: 1.6px solid #10151f; margin-top: 2px; padding-top: 4px; font-size: 11px; }
-  .sign-line b { display: block; font-size: 12px; }
-  .note { font-size: 9.5px; color: #444; margin-top: 10px; line-height: 1.5; }
-  .foot { margin-top: 16px; border-top: 1px solid #1a2a6c; padding-top: 6px; display: flex; justify-content: space-between; font-size: 9px; color: #445; letter-spacing: 0.5px; }
-  .warn { color: #8c1007; font-weight: 700; }
-  .no-print { margin: 10px 0; text-align: center; }
-  .no-print button { background: #1a2a6c; color: #fff; border: 0; padding: 8px 22px; border-radius: 5px; font-size: 12px; cursor: pointer; }
-  @media print { .no-print { display: none; } }
+@page{size:A4;margin:13mm 12mm}*{box-sizing:border-box}html{background:#eee9df}body{max-width:1080px;margin:24px auto;padding:34px 38px;background:#fff;color:#292b2a;font:13px/1.5 Inter,ui-sans-serif,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;-webkit-print-color-adjust:exact;print-color-adjust:exact}.no-print{text-align:center;color:#5e625f;margin:0 0 18px}.classbar{padding:7px;border:1px solid #9e4c3d;background:#fff4ee;color:#813a2d;text-align:center;font-size:10px;font-weight:800;letter-spacing:.15em}.mast{display:grid;grid-template-columns:1fr auto;gap:18px;padding:22px 0 18px;border-bottom:3px double #28594d}.brand{font-size:22px;font-weight:900;letter-spacing:.08em;color:#234d43}.brand small{display:block;margin-top:4px;font-size:10px;font-weight:600;letter-spacing:.04em;color:#6c746f}.docno{text-align:right;font-size:10px;color:#6c746f}.docno strong{display:block;max-width:360px;color:#333;word-break:break-word}.title{padding:22px 0;text-align:center}.title p{margin:0 0 8px;color:#8a4b37;font-size:10px;font-weight:800;letter-spacing:.12em}.title h1{margin:0;color:#213f38;font:700 25px/1.25 Georgia,"Noto Serif Devanagari",serif}.title h2{margin:5px 0;color:#315e52;font-size:14px;letter-spacing:.12em}.title span{color:#737873;font-size:11px}.ledger{display:flex;flex-wrap:wrap;justify-content:space-between;gap:8px;padding:9px 12px;background:#f2f5f2;border:1px solid #d8dfda;font-size:10px}.summary{display:grid;grid-template-columns:1.4fr repeat(4,1fr);margin:18px 0;border:1px solid #d6dcd7}.summary>div{padding:12px;border-right:1px solid #d6dcd7}.summary>div:last-child{border:0}.summary span{display:block;color:#656565;font-size:8px;font-weight:800;letter-spacing:.08em}.summary strong{display:block;margin:5px 0;font-size:13px}.summary small{color:#626b66;font-size:9px}.summary .risk{background:#fff1eb;color:#8d3527}h2{display:flex;gap:10px;align-items:center;margin:24px 0 8px;padding-bottom:7px;border-bottom:1px solid #b9c8c1;color:#28594d;font-size:14px}h2 b{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#28594d;color:#fff;font-size:10px}h3{margin:16px 0 7px;color:#4b5550;font-size:11px;text-transform:uppercase;letter-spacing:.08em}table{width:100%;border-collapse:collapse;margin:7px 0 12px;table-layout:fixed}th,td{padding:7px 8px;border:1px solid #d6dcd8;text-align:left;vertical-align:top;overflow-wrap:anywhere}thead th{background:#eaf0ec;color:#294b42;font-size:9px;letter-spacing:.05em;text-transform:uppercase}tbody th{width:30%;background:#f5f6f4;color:#4d5551;font-size:10px}td{font-size:11px}.mono{font-family:ui-monospace,SFMono-Regular,Consolas,monospace;font-size:9px}.wrap{word-break:break-all}.notice{padding:11px 13px;border-left:3px solid #a56a43;background:#fbf5ed;color:#5e4b3c}.legal{padding:13px;border:1px solid #d9c9a9;background:#fffbef}.lane{margin:8px 0;padding:10px;border:1px solid #d6dcd8;background:#f7f9f7}.muted,small{color:#636d67}.table-scroll:focus-visible{outline:2px solid #7d9f8f;outline-offset:3px}.signoff{display:grid;grid-template-columns:1fr 1fr;gap:28px;margin-top:28px}.signoff div{padding-top:34px;border-bottom:1px solid #59625d;font-size:10px;color:#6b726e}.foot{display:flex;justify-content:space-between;gap:12px;margin-top:25px;padding-top:9px;border-top:2px solid #28594d;color:#6d7570;font-size:8px;letter-spacing:.05em}ul,ol{padding-left:20px}li{margin:4px 0}section{break-inside:auto}table,.notice,.legal,.lane{break-inside:avoid}@media(max-width:760px){body{margin:0;padding:18px}.summary{grid-template-columns:1fr 1fr}.summary>div{border-bottom:1px solid #d6dcd7}.mast{grid-template-columns:1fr}.docno{text-align:left}.table-scroll{overflow-x:auto}table{min-width:650px}.formal-details{min-width:0}}@media print{html{background:#fff}body{max-width:none;margin:0;padding:0}.no-print{display:none}.summary,.classbar,.lane,.legal{-webkit-print-color-adjust:exact;print-color-adjust:exact}.foot{position:static}}
 </style>
 </head>
 <body>
-  <div class="no-print"><button onclick="window.print()">Print / Save as PDF</button></div>
-  <div class="class-bar">गोपनीय &nbsp;•&nbsp; RESTRICTED &nbsp;•&nbsp; FOR OFFICIAL USE ONLY</div>
-  <div class="masthead">
-    <img src="/logo.jpg" alt="SUDO SPANDR"/>
-    <div class="gov">
-      <div class="hi">भारत सरकार &nbsp;|&nbsp; साइबर सुरक्षा विश्लेषण एवं प्रतिक्रिया</div>
-      <div class="en">GOVERNMENT OF INDIA &nbsp;|&nbsp; CYBER SECURITY ANALYSIS &amp; RESPONSE</div>
-      <div class="doc">CYBER FORENSIC ANALYSIS REPORT &nbsp;(साइबर फोरेंसिक विश्लेषण रिपोर्ट)</div>
-    </div>
-    <img src="/logo.jpg" alt="SUDO SPANDR"/>
-  </div>
-
-  <table class="meta">
-    <tr>
-      <td class="k">Reference No.</td><td>${esc(ref)}</td>
-      <td class="k">Date</td><td>${esc(todayLong())}</td>
-    </tr>
-    <tr>
-      <td class="k">Case ID</td><td>${esc(caseId)}</td>
-      <td class="k">Classification</td><td class="warn">HIGH RISK — ACTION REQUIRED</td>
-    </tr>
-    <tr>
-      <td class="k">Subject</td><td colspan="3">${esc(subject)}</td>
-    </tr>
-    <tr>
-      <td class="k">Reported Sender</td><td colspan="3">${esc(sender)}</td>
-    </tr>
-    <tr>
-      <td class="k">Category</td><td>${esc(category)}</td>
-      <td class="k">Overall Risk</td><td class="warn">${esc(overall)}/100 — HIGH</td>
-    </tr>
-  </table>
-
-  <h2><span class="num">1.</span> EXECUTIVE SUMMARY (कार्यपालक सारांश)</h2>
-  <p>
-    The submitted evidence was subjected to deterministic email-forensic analysis
-    (header reconstruction, authentication result review, link/attachment static
-    inspection) and AI-assisted triage (keyword lexicon, NLP style analysis and a
-    distilled semantic model). The combined assessment is
-    <b class="warn">HIGH RISK (score ${esc(overall)}/100)</b> under category
-    <b>${esc(category)}</b>. This report is issued for analyst review and onward
-    action under the organization's incident-response process.
-  </p>
-
-  <h2><span class="num">2.</span> EVIDENCE INVENTORY (साक्ष्य सूची) &amp; CHAIN OF CUSTODY</h2>
-  <table class="grid">
-    <tr><th>#</th><th>Evidence</th><th>SHA-256 (ingestion)</th><th>Size</th></tr>
-    <tr>
-      <td>1</td>
-      <td>${esc(analysis?.filename || 'submitted message')}</td>
-      <td style="font-family:Consolas,monospace;font-size:9px;word-break:break-all">${esc(sha || 'not computed')}</td>
-      <td>${esc(analysis?.evidence?.raw_size_bytes ?? '—')} bytes</td>
-    </tr>
-  </table>
-  <div class="chain">
-    CHAIN OF CUSTODY: SHA-256 generated at ingestion in the analyst's browser session.<br/>
-    VERIFICATION HASH (report binding): ${esc(verification)}<br/>
-    PRESERVATION: ${esc(analysis?.evidence?.preservation || 'browser-generated case data; not an immutable evidence vault')}
-  </div>
-
-  <h2><span class="num">3.</span> FINDINGS (निष्कर्ष)</h2>
-  <table class="grid">
-    <tr><th>#</th><th>Observation</th><th>Severity</th><th>Evidence</th></tr>
-    ${findings.length
-      ? findings.slice(0, 16).map((f, i) => `<tr><td>${i + 1}</td><td>${esc(f.obs)}</td><td class="sev-${esc(f.sev)}">${esc(f.sev)}</td><td>${esc(f.ev)}</td></tr>`).join('')
-      : '<tr><td>1</td><td>Automated signals recorded in the analysis workspace</td><td class="sev-MEDIUM">MEDIUM</td><td>see workspace case file</td></tr>'}
-  </table>
-
-  <h2><span class="num">4.</span> AI RISK ASSESSMENT (एआई जोखिम मूल्यांकन)</h2>
-  <div class="scorebox">
-    <div class="cell"><b>${esc(overall)}</b><span>Overall / 100</span></div>
-    <div class="cell"><b>${esc(ai?.keyword?.score ?? '—')}</b><span>Keyword lane</span></div>
-    <div class="cell"><b>${esc(ai?.nlp?.score ?? '—')}</b><span>NLP lane</span></div>
-    <div class="cell"><b>${esc(ai?.semantic?.score ?? '—')}</b><span>Semantic (BERT-distilled)</span></div>
-    <div class="cell"><b>${esc(threat.risk_score ?? '—')}</b><span>Structural lane</span></div>
-  </div>
-  <p><b>Detected intents:</b> ${(ai?.intents || []).length
-      ? esc(ai.intents.map((i) => `${i.label} (${i.confidence}%)`).join(' · '))
-      : 'none beyond triage thresholds'}</p>
-  <p><b>AI lane note:</b> semantic lane uses 256-dimensional distilled embeddings computed offline
-  in the analyst's browser; no evidence is uploaded to third-party AI services.</p>
-
-  <h2><span class="num">5.</span> MITRE ATT&amp;CK MAPPING</h2>
-  <p>
-    <b>T1566 — Phishing</b> (T1566.001 Spearphishing Attachment · T1566.002 Spearphishing Link),
-    consistent with the observed credential-harvest / payment-diversion tradecraft.
-    Suggested detection engineering: sender-auth enforcement (DMARC reject), attachment
-    detonation for macro-enabled documents, and user reporting of urgent payment requests.
-  </p>
-
-  <h2><span class="num">6.</span> RECOMMENDATIONS (सिफारिशें)</h2>
-  <ul>
-    <li>Quarantine the message and any attachments; do not open on an administrative workstation.</li>
-    <li>Block the sending domain/IP and the embedded URLs at the mail gateway and web proxy.</li>
-    <li>If credentials were submitted, force password reset and revoke active sessions/MFA tokens.</li>
-    <li>Preserve the original message with full headers for legal/evidentiary purposes.</li>
-    <li>Escalate to the incident-response lead under the organization's IR plan (NIST SP 800-61 aligned).</li>
-  </ul>
-
-  <h2><span class="num">7.</span> LIMITATIONS (सीमाएं)</h2>
-  <p>
-    Scores are heuristic triage aids, not proof of guilt or a probability of compromise.
-    Authentication results are reported as received, not independently re-verified.
-    ${notes ? esc(notes) : 'Missing data is never guessed; unobserved fields are marked unavailable.'}
-  </p>
-
-  <div class="sign-row">
-    <div class="sign-block">
-      <div class="sign-line">
-        <b>${esc(analyst || 'Name of Analyst')}</b>
-        ${esc(role || 'Cyber Forensic Analyst')}
-        SUDO SPANDR — Forensic Analysis Cell
-      </div>
-      <div style="margin-top:6px;font-size:10px">Analyst Signature (हस्ताक्षर)</div>
-    </div>
-    <div class="sign-block">
-      ${signatureSvg(analyst)}
-      <div class="sign-line">Digitally generated signature block</div>
-    </div>
-    <div class="sign-block">
-      ${sealSvg()}
-      <div class="sign-line">Office Seal &amp; Date: ${esc(todayLong())}<br/>Place: Purnia, Bihar (IN)</div>
-    </div>
-  </div>
-
-  <p class="note">
-    This report is system-generated by the SUDO SPANDR forensic workspace and digitally bound to the
-    evidence hash recorded above. Any alteration of the evidence file invalidates the binding.
-    <b>Report issued because the combined risk score reached the HIGH threshold (≥ 70).</b>
-    Compliant in spirit with IT Act 2000 evidentiary guidance and NIST SP 800-61 handling practice.
-  </p>
-  <div class="foot">
-    <span>${esc(ref)}</span>
-    <span class="warn">गोपनीय • RESTRICTED • FOR OFFICIAL USE ONLY</span>
-    <span>Page generated ${esc(new Date().toLocaleString('en-IN'))}</span>
-  </div>
-</body>
-</html>`;
+<p class="no-print">Self-contained working report. Use your browser’s Print command to save it as PDF.</p>
+<div class="classbar">NON-GOVERNMENTAL · RESTRICTED HANDLING · ANALYST WORKING COPY · NOT A CERTIFICATE</div>
+<header class="mast"><div class="brand">SUDO SPANDR<small>SentinelMail · Evidence analysis workbench</small></div><div class="docno">Document number<strong>${esc(model.documentNumber)}</strong></div></header>
+<div class="title"><p>${esc(model.handling)}</p><h1 lang="hi">${esc(model.title)}</h1><h2>${esc(model.subtitle)}</h2><span>Indian-format documentation layout · independent analyst review required</span></div>
+<div class="ledger"><span>Case: <strong>${esc(model.caseId)}</strong></span><span>Generated: <strong>${esc(model.generatedLabel)}</strong></span><span>${esc(model.documentStatus)}</span></div>
+<div class="summary"><div class="risk"><span>TRIAGE ASSESSMENT</span><strong>${esc(model.threatStatus)}</strong><small>${model.score}/100 · heuristic, not probability</small></div><div><span>CATEGORY</span><strong>${esc(text(model.category.category_label))}</strong><small>${esc(text(model.category.confidence, '0'))}% evidence coverage</small></div><div><span>SUBMITTED SIZE</span><strong>${esc(formatBytes(analysis?.evidence?.raw_size_bytes ?? analysis?.parsed?.meta?.size_bytes))}</strong><small>Original bytes not embedded</small></div><div><span>FILES</span><strong>${model.attachments.length}</strong><small>Static inspection</small></div><div><span>PUBLIC IPs</span><strong>${model.relays.length}</strong><small>${model.networkResults.length} context result(s)</small></div></div>
+<section><h2><b>01</b>Case and evidence identification</h2><table class="formal-details"><tbody>${detailRows(model.metadata)}</tbody></table></section>
+<section><h2><b>02</b>Evidence integrity and handling record</h2><table class="formal-details"><tbody>${detailRows(model.integrity)}</tbody></table><div class="notice">The digest supports later comparison. It does not prove custodian identity, acquisition time, or continuous custody. No independent verification or write-once preservation is claimed.</div></section>
+<section><h2><b>03</b>Triage assessment and observed findings</h2><p><strong>${esc(text(model.category.category_label))}:</strong> ${esc(text(model.category.description))}</p><p>${esc(model.threatNote)}</p>${model.scoreBreakdown?.formula ? `<p class="mono">Score formula: ${esc(model.scoreBreakdown.formula)}</p>` : ''}<div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable evidence table"><table><thead><tr><th>#</th><th>Finding</th><th>Evidence / explanation</th><th>Weight</th></tr></thead><tbody>${findings}</tbody></table></div></section>
+<section><h2><b>04</b>Email authentication evidence</h2>${model.authentication ? `<table class="formal-details"><tbody>${detailRows([{ label: 'SPF / DKIM / DMARC / ARC', value: model.authentication.values.map((row) => row.join(' ')).join(' · ') }, { label: 'Reported header', value: model.authentication.reportedHeader }, { label: 'Evidence fields', value: model.authentication.sources.join(' · ') || 'None recognised' }, { label: 'Reported value', value: model.authentication.raw, mono: true }])}</tbody></table><p>${esc(model.authentication.note)}</p>` : '<p>Not applicable to a standalone attachment. No authentication conclusion is made.</p>'}</section>
+<section><h2><b>05</b>IP evidence and approximate network context</h2><table><thead><tr><th>#</th><th>Extracted IP</th><th>Header field</th></tr></thead><tbody>${relays}</tbody></table><p>${esc(model.relayStatus)}. ${esc(model.relayNote)}</p><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable evidence table"><table><thead><tr><th>IP</th><th>Approximate provider place</th><th>Coordinates</th><th>Network</th><th>Status</th></tr></thead><tbody>${network}</tbody></table></div><div class="notice">${esc(model.networkNote)} ${esc(model.networkPrivacy)} The case workspace contains the vector map when valid coordinates are returned. Points are not a geographic relay route.</div></section>
+<section><h2><b>06</b>URL and attachment observations</h2><h3>Extracted URLs</h3><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable evidence table"><table><thead><tr><th>URL</th><th>Assessment</th><th>Reason</th></tr></thead><tbody>${urls}</tbody></table></div><h3>Files</h3><div class="table-scroll" tabindex="0" role="region" aria-label="Scrollable evidence table"><table><thead><tr><th>Filename / type</th><th>Size / entropy</th><th>Findings</th><th>SHA-256</th></tr></thead><tbody>${attachments}</tbody></table></div></section>
+<section><h2><b>07</b>REA deep-inspection record</h2><p>Engine: <strong>${esc(text(model.rea?.engine?.name, 'REA not run'))} ${esc(model.rea?.engine?.version || '')}</strong> ${esc(model.rea?.engine?.package || '')} · Status: ${esc(text(model.rea?.status, 'NOT RUN'))}</p>${model.rea ? `<p>Matched evidence: <strong>${esc(text(model.rea.matched_evidence))}</strong><br>Submitted SHA-256: <span class="mono wrap">${esc(text(model.rea.file?.sha256 || model.rea.file_sha256))}</span><br>Requested: ${esc(text(model.rea.requested_at || model.rea.completed_at))}</p>` : ''}${reaLanes}<ul>${listItems(model.rea?.limitations || [], model.rea ? 'No additional engine limitation was recorded.' : 'No REA result is claimed.')}</ul></section>
+<section><h2><b>08</b>Analyst recommendations and limitations</h2><h3>Recommended handling</h3><ol>${listItems(model.recommendations)}</ol><h3>Recorded limitations</h3><ul>${listItems(model.limitations, 'No additional limitation text was recorded; static triage limitations still apply.')}</ul>${notes ? `<div class="notice">${esc(notes)}</div>` : ''}</section>
+<section><h2><b>09</b>Legal-use and analyst-review record</h2><div class="legal"><strong>Document status and legal-use notice</strong><p>${esc(model.legalNote)}</p></div><table class="formal-details"><tbody>${detailRows(model.reviewFields.map(([label, value]) => ({ label, value })))}</tbody></table><div class="signoff"><div>Analyst remarks</div><div>Human signature / date (if separately authorised)</div></div></section>
+<footer class="foot"><span>${esc(model.documentNumber)}</span><span>Verify against preserved original evidence</span><span>END OF WORKING REPORT</span></footer>
+</body></html>`;
 }
 
-export function openGovReport(html) {
-  const win = window.open('', '_blank', 'noopener,width=980,height=1100');
-  if (!win) return false;
-  win.document.write(html);
-  win.document.close();
+/** Open a complete Blob document rather than writing into a noopener popup. */
+export function openGovReport(html, caseId = 'case-report') {
+  const blob = new Blob([html], { type: 'text/html;charset=utf-8' });
+  const href = URL.createObjectURL(blob);
+  const anchor = document.createElement('a');
+  anchor.href = href;
+  anchor.target = '_blank';
+  anchor.rel = 'noopener noreferrer';
+  anchor.setAttribute('aria-label', `Open standalone formal report ${String(caseId)}`);
+  document.body.appendChild(anchor);
+  anchor.click();
+  anchor.remove();
+  // Keep the URL alive long enough for the new tab to read the Blob.
+  setTimeout(() => URL.revokeObjectURL(href), 60_000);
   return true;
 }
 

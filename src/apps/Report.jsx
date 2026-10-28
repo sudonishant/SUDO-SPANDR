@@ -1,11 +1,13 @@
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, Bot, CheckCircle2, ChevronRight, Download, FileCode2, Globe, Hash, Info, LayoutDashboard,
-  Link2, Mail, MapPin, Network, Paperclip, Printer, Radar, RefreshCw, Shield, ShieldAlert, Tag, XCircle,
+  Link2, Mail, MapPin, Network, Paperclip, Printer, Radar, RefreshCw, ScanSearch, Shield, ShieldAlert, Tag, XCircle,
 } from 'lucide-react';
 import { useForensicStore } from '../store/useForensicStore';
 import MitrePanel from '../components/MitrePanel';
 import { DossierView } from '../components/Dossier';
+import NetworkMap, { approximatePlace, hasApproximateCoordinates } from '../components/NetworkMap';
+import ReaAnalysisPanel from '../components/ReaAnalysisPanel';
 
 
 function Panel({ icon: Icon, eyebrow, title, children, full = false }) {
@@ -225,9 +227,9 @@ function RelayPanel({ relay, onLookup, geoLoading }) {
       <div className="ip-context-action">
         <button type="button" className="app-btn app-btn--sm" onClick={onLookup} disabled={!ips.length || geoLoading} style={{ width: 'fit-content' }}>
           <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#5aa8f5,#2f7fe0)' }}><Globe size={12} /></span>
-          {geoLoading ? 'Looking up registration context…' : 'Check approximate network context'}
+          {geoLoading ? 'Looking up network and approximate location…' : 'Check IP + approximate location'}
         </button>
-        <small>Uses public RDAP registration data only. It may indicate a cloud/hosting or access network, but it cannot identify a person or exact location.</small>
+        <small>On this explicit click, extracted public IPs go to rdap.org for registration context and ipwho.is for approximate coordinates. Neither source can identify a person or exact sender location.</small>
       </div>
       <p className="disclaimer" style={{ marginTop: 8 }}>{relay.note} The order shown is extracted evidence order, not a geographic route.</p>
     </div>
@@ -301,6 +303,7 @@ function AttachmentPanel({ attachments }) {
 
 function AnalysisResultView({ data }) {
   const [active, setActive] = useState('overview');
+  useEffect(() => { setActive('overview'); }, [data.case_id]);
   const {
     resetResult, aiReview, aiQuestion, setAiQuestion, runAiReview, geoLoading, lookupIpContext,
   } = useForensicStore();
@@ -314,7 +317,7 @@ function AnalysisResultView({ data }) {
     if (['eml', 'msg', 'text-headers', 'text'].includes(data.mode)) {
       base.push(['headers', 'Headers', FileCode2], ['auth', 'Auth checks', Shield], ['route', 'Relay path', Network], ['links', 'URLs', Link2]);
     }
-    if (['eml', 'msg', 'attachment'].includes(data.mode)) base.push(['files', 'Files', Paperclip]);
+    if (['eml', 'msg', 'attachment'].includes(data.mode)) base.push(['files', 'Files', Paperclip], ['deep', 'Deep inspection', ScanSearch]);
     base.push(['mitre', 'MITRE', Radar], ['dossier', 'Dossier', Printer]);
     return base;
   }, [data.mode]);
@@ -423,17 +426,26 @@ function AnalysisResultView({ data }) {
             <div className="geo-card">
               <MapPin size={15} />
               <div>
-                <strong>{data.geo_data?.status || 'NOT AVAILABLE'}</strong>
-                <p>{data.geo_data?.note}</p>
-                {data.geo_data?.results?.map((item) => (
-                  <div className="geo-result" key={item.ip}>
-                    <code>{item.ip}</code>
-                    <strong>{item.network_type || 'NETWORK TYPE NOT DETERMINED'}</strong>
-                    <span>{[item.organization, item.network_name, item.country].filter(Boolean).join(' · ') || item.message || 'Registration context unavailable'}</span>
+                <strong>{data.geo_data?.status || 'NOT LOOKED UP'}</strong>
+                <p>{data.geo_data?.note || 'Run the explicit lookup to request registration and approximate provider coordinates for the extracted public IPs.'}</p>
+                <small>{data.geo_data?.privacy || 'No lookup has run yet. The map never invents a fallback point from the analyst or device IP.'}</small>
+              </div>
+            </div>
+            <NetworkMap results={data.geo_data?.results || []} />
+            <div className="network-context-results">
+              {data.geo_data?.results?.map((item, index) => (
+                <article className="network-context-result" key={`${item.ip}-${index}`}>
+                  <span className="network-context-result__number">{index + 1}</span>
+                  <div>
+                    <div className="network-context-result__title"><code>{item.ip}</code><span className="mini-badge neutral">{item.status || 'unavailable'}</span></div>
+                    <strong>{approximatePlace(item) || 'Approximate place not returned'}</strong>
+                    <span>{[item.organization, item.network_name, item.network_type].filter(Boolean).join(' · ') || item.message || 'Network registration context unavailable'}</span>
+                    <small>Registration: {item.registration_status || 'not reported'} · Approximate location: {item.location_status || 'not reported'}. {item.message || ''}</small>
+                    <small>{hasApproximateCoordinates(item) ? `Approximate coordinates: ${item.latitude}, ${item.longitude}` : 'No valid coordinates returned; no map marker was created.'} {item.approximate_location?.accuracy || ''}</small>
                     <small>{item.note || item.network_type_basis}</small>
                   </div>
-                ))}
-              </div>
+                </article>
+              ))}
             </div>
           </Panel>
         </div>
@@ -451,6 +463,15 @@ function AnalysisResultView({ data }) {
         <div className="report-grid">
           <Panel icon={Paperclip} eyebrow="Static file inspection" title="Attachments and file markers" full>
             <AttachmentPanel attachments={data.attachment_analysis} />
+            <button type="button" className="ui-button ui-button--secondary rea-open-button" onClick={() => setActive('deep')}><ScanSearch size={15} />Open optional REA deep inspection</button>
+          </Panel>
+        </div>
+      )}
+
+      {active === 'deep' && (
+        <div className="report-grid">
+          <Panel icon={ScanSearch} eyebrow="Bounded provider evidence" title="REA artifact and JavaScript analysis" full>
+            <ReaAnalysisPanel />
           </Panel>
         </div>
       )}
