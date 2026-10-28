@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { FileText, FileUp, Mail, MessageSquareText, Paperclip, Play, Radar, ShieldAlert } from 'lucide-react';
+import { FileText, FileUp, Mail, MessageSquareText, MonitorPlay, Paperclip, Play, ShieldAlert } from 'lucide-react';
 import { useForensicStore } from '../store/useForensicStore';
 
 const MODES = [
@@ -50,13 +50,10 @@ export default function Dropzone() {
           <button
             type="button"
             className="app-btn app-btn--sm"
-            onClick={() => {
-              const el = document.getElementById('sandbox');
-              if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
-            }}
+            onClick={() => { window.location.hash = '/sandbox'; }}
           >
-            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#ff8a7a,#e4392f)' }}><Radar size={13} /></span>
-            Safe URL detonator
+            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#8fc3a7,#0d6257)' }}><MonitorPlay size={13} /></span>
+            Open Agent PC
           </button>
         </div>
       </div>
@@ -105,7 +102,7 @@ export default function Dropzone() {
           <div className="form-actions">
             <span className="form-note">No DNS, reputation, sandbox or geolocation lookup runs in this flow. You get an observed-value reading of what you pasted.</span>
             <button className="app-btn" type="button" onClick={() => analyzeText()} disabled={loading || !body.trim()}>
-              <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)' }}><Play size={14} /></span>
+              <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#8fc3a7,#0d6257)' }}><Play size={14} /></span>
               {loading ? 'Analysing…' : 'Analyse pasted input'}
             </button>
           </div>
@@ -126,7 +123,7 @@ export default function Dropzone() {
               : 'The file is inspected statically. It is not executed, detonated, or declared clean by this browser app.'}
           </p>
           <button className="app-btn" type="button" onClick={() => inputRef.current?.click()} disabled={loading}>
-            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)' }}><FileUp size={14} /></span>
+            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#d99a68,#a95335)' }}><FileUp size={14} /></span>
             {loading ? 'Analysing…' : 'Select file'}
           </button>
           <input
