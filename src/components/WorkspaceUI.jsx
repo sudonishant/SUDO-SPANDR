@@ -3,7 +3,7 @@ import { AlertTriangle, ArrowRight, CheckCircle2, Info } from 'lucide-react';
 import { riskLabel, riskTone } from '../lib/workspaceUtils';
 
 export function BrandMark({ size = 36 }) {
-  return <img className="brand-mark-image" src="/spandr-mark-warm.png" width={size} height={size} alt="" aria-hidden="true" />;
+  return <img className="brand-mark-image" src="/spandr-mark.png" width={size} height={size} alt="" aria-hidden="true" />;
 }
 
 export function PageHeader({ eyebrow, title, description, actions, meta }) {

@@ -2,6 +2,8 @@
 
 Updated: 2026-10-28
 
+> Subsequent evidence-workbench update: see [Evidence map, formal dossier and REA deep inspection](./EVIDENCE_DOSSIER_REA.md). The current interface uses the original blue/white emblem; the earlier warm-recolored emblem variant is no longer referenced.
+
 ## Product scope
 
 SUDO SPANDR remains an email/BEC analysis and forensic-review workspace. The existing local
@@ -20,7 +22,7 @@ quarantine, immutable evidence, court admissibility or a connected live mailbox.
 - Kept submitted EML/MSG local triage, explainable plans, case export and IndexedDB persistence.
 - Introduced the Fieldwork theme: warm sand/parchment surfaces, forest teal, copper and plum.
   Light mode is not pure white and dark mode is not pure black; application actions are not blue.
-- Recolored the existing emblem without changing its shape. Updated favicon and touch icon.
+- Themed application chrome and runtime surfaces. The subsequent evidence update restores and preserves the original emblem colours and favicon.
 - Themed the application, runtime chrome, noVNC controls, Fluxbox root and xterm. Actual web content
   inside Chromium keeps its own colors.
 - Added keyboard focus for the scrollable runtime-activity list and accessible terminal ANSI colors.

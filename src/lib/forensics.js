@@ -535,6 +535,9 @@ export async function parseEmlFile(file) {
 
 export async function parseMsgFile(file) {
   const buffer = await file.arrayBuffer();
+  // Hash the original MSG container even when parsing succeeds. Previously a
+  // successful parse could accidentally hash only the reconstructed headers.
+  const containerReport = await inspectAttachment({ filename: file.name, buffer });
   try {
     const msgModule = await import('@kenjiuno/msgreader');
     // CJS/ESM interop differs between bundlers (vite, esbuild, node) — resolve
@@ -577,12 +580,13 @@ export async function parseMsgFile(file) {
       attachments: attachments.map((a) => ({ filename: a.filename, buffer: a.content })),
       urls: extractUrls(`${headersText}\n${subject}\n${bodyText}`),
       rawBytes: buffer,
+      rawHash: containerReport.sha256,
+      fileReport: containerReport,
       input_note: 'Outlook MSG container parsed with a dedicated MSG reader. Embedded transport headers are shown when present; browser mode does not re-run DNS/cryptographic verification.',
     };
     return merged;
   } catch (error) {
-    const report = await inspectAttachment({ filename: file.name, buffer });
-    return { sourceMode: 'msg', filename: file.name, rawBytes: buffer, rawHash: report.sha256, sender: '', recipient: '', subject: '', body: '', headers: {}, headerEntries: [], ips: [], urls: [], attachments: [], fileReport: report, parseError: `MSG parsing failed: ${error?.message || 'unknown parser error'}`, input_note: 'This is a binary Outlook MSG file that could not be parsed. No sender, body, route, or attachment claims were invented.' };
+    return { sourceMode: 'msg', filename: file.name, rawBytes: buffer, rawHash: containerReport.sha256, sender: '', recipient: '', subject: '', body: '', headers: {}, headerEntries: [], ips: [], urls: [], attachments: [], fileReport: containerReport, parseError: `MSG parsing failed: ${error?.message || 'unknown parser error'}`, input_note: 'This is a binary Outlook MSG file that could not be parsed. No sender, body, route, or attachment claims were invented.' };
   }
 }
 

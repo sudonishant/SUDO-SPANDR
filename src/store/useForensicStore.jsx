@@ -42,6 +42,9 @@ export function ForensicProvider({ children }) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [analysisData, setAnalysisData] = useState(null);
+  // Raw File objects remain memory-only and are never written to IndexedDB.
+  // REA requires an explicit second action and verifies the selected bytes.
+  const [evidenceFile, setEvidenceFile] = useState(null);
   const [cases, setCases] = useState([]);
   const [storageStatus, setStorageStatus] = useState('loading');
   const [storageError, setStorageError] = useState('');
@@ -92,6 +95,7 @@ export function ForensicProvider({ children }) {
 
   const resetResult = () => {
     setAnalysisData(null);
+    setEvidenceFile(null);
     setAiReview(null);
     setAiQuestion('');
     setGeoLoading(false);
@@ -133,6 +137,7 @@ export function ForensicProvider({ children }) {
       if (!rawResult) throw new Error('Analysis did not return a result.');
       const result = withWorkspaceMeta(rawResult, meta);
       setAnalysisData(result);
+      setEvidenceFile(meta.evidenceFile || null);
       setCases((current) => {
         const remaining = current.filter((item) => item.case_id !== result.case_id);
         return [result, ...remaining].slice(0, MAX_DEVICE_CASES);
@@ -144,6 +149,7 @@ export function ForensicProvider({ children }) {
       return result;
     } catch (analysisError) {
       setAnalysisData(null);
+      setEvidenceFile(null);
       setError(analysisError?.message || 'Analysis failed. No result was generated.');
       return null;
     } finally {
@@ -154,7 +160,7 @@ export function ForensicProvider({ children }) {
   const analyzeFile = async (file, meta = {}) => {
     if (!file) return null;
     const extension = file.name.toLowerCase().split('.').pop();
-    const sourceMeta = { ...meta, sourceLabel: meta.sourceLabel || file.name };
+    const sourceMeta = { ...meta, sourceLabel: meta.sourceLabel || file.name, evidenceFile: file };
     if (EMAIL_EXTENSIONS.includes(extension)) {
       return runAnalysis(async () => {
         const parsed = extension === 'eml' ? await parseEmlFile(file) : await parseMsgFile(file);
@@ -188,6 +194,7 @@ export function ForensicProvider({ children }) {
     const selected = cases.find((item) => item.case_id === caseId);
     if (!selected) return null;
     setAnalysisData(selected);
+    setEvidenceFile(null);
     setAiReview(null);
     setAiQuestion('');
     setError('');
@@ -296,6 +303,7 @@ export function ForensicProvider({ children }) {
       loading,
       error,
       analysisData,
+      evidenceFile,
       cases,
       storageStatus,
       storageError,

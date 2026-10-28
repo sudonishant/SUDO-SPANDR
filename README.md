@@ -1,4 +1,7 @@
 # 🛡️ SUDO SPANDR — SentinelMail Forensic Ecosystem
+
+> **Current React workspace:** read [Evidence map, formal dossier and REA deep inspection](docs/EVIDENCE_DOSSIER_REA.md) and [Agent PC and Fieldwork UI redesign](docs/AGENT_PC_REDESIGN.md) for the implemented, tested behavior and deployment boundaries. Older legacy narrative below is not, by itself, evidence that a capability is configured, certified, or available in the current deployment.
+
 ### Advanced Multi-Vector Email Forensics, Geodesic Trajectory Radar, Threat Attribution Graph & Air-Gapped Sandbox
 **Smart India Hackathon (SIH) 2026 | Problem Statement #26106**
 

@@ -1,5 +1,6 @@
 import React, { useMemo, useState } from 'react';
-import { ClipboardCheck, Copy, Download, Printer, ShieldAlert, Terminal } from 'lucide-react';
+import { ClipboardCheck, Copy, Download, ShieldAlert, Terminal } from 'lucide-react';
+import FormalDossier from './FormalDossier';
 
 function unique(list) {
   return Array.from(new Set((list || []).filter(Boolean)));
@@ -157,7 +158,7 @@ export function ContainmentPanel({ ips, domains, caseId }) {
         ))}
       </div>
 
-      <pre className="containment__code">{rules}</pre>
+      <pre className="containment__code" tabIndex={0} role="region" aria-label="Containment rule draft">{rules}</pre>
       <p className="disclaimer">
         Generated from {unique(ips).length} IP(s) and {unique(domains).length} domain(s) present in this result.
         Review with your network owner before applying — a rule does not prove the value is malicious.
@@ -167,63 +168,11 @@ export function ContainmentPanel({ ips, domains, caseId }) {
 }
 
 export function DossierView({ data }) {
-  const parsed = data.parsed || {};
-  const threat = data.threat || {};
-  const category = data.category_analysis || {};
-  const auth = data.dns_auth || {};
   const ips = (data.relay_info?.ips || []).map((item) => item.ip);
   const domains = (data.aitm_analysis || []).map((item) => item.domain);
-  const rows = [
-    ['Case reference', data.case_id],
-    ['Source format', data.format_type],
-    ['Filename', data.filename || 'not applicable (pasted input)'],
-    ['SHA-256', data.evidence?.sha256 || parsed.sha256_hash || 'not available'],
-    ['Retained size', data.evidence?.raw_size_bytes ? `${data.evidence.raw_size_bytes} bytes` : 'not retained in browser result'],
-    ['From', parsed.sender || 'not available'],
-    ['To', parsed.recipient || 'not available'],
-    ['Subject', parsed.subject || 'not available'],
-    ['Category', category.category_label ? `${category.category_label} (${category.points} points, ${category.confidence}% coverage)` : 'not available'],
-    ['Triage score', `${threat.risk_score ?? 0}/100 — ${threat.status || 'not available'}`],
-    ['Authentication', data.dns_auth ? `SPF ${auth.spf} · DKIM ${auth.dkim} · DMARC ${auth.dmarc} · ARC ${auth.arc}` : 'not applicable to a standalone attachment'],
-    ['Relay IPs', ips.length ? ips.join(', ') : 'none extracted'],
-    ['Extracted links', data.aitm_analysis?.length ? `${data.aitm_analysis.length} link(s)` : 'none extracted'],
-    ['Generated', new Date().toISOString()],
-  ];
-
   return (
-    <div className="dossier">
-      <div className="dossier__head">
-        <div className="panel__head">
-          <span className="panel__icon"><Printer size={14} /></span>
-          <div><small>Browser-generated output</small><h3>Dossier snapshot</h3></div>
-        </div>
-        <button type="button" className="app-btn app-btn--sm" onClick={() => window.print()}>
-          <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#3a3a3a,#0b0b0b)' }}><Printer size={13} /></span>
-          Print / save PDF
-        </button>
-      </div>
-
-      <table className="dossier__table">
-        <tbody>
-          {rows.map(([label, value]) => (
-            <tr key={label}>
-              <th>{label}</th>
-              <td>{value || 'not available'}</td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-
-      <div className="dossier__legal">
-        <strong>What this document is</strong>
-        <p>
-          A snapshot of the values this browser session observed while parsing the submitted evidence. Hashes are computed
-          locally, but this is not a certified court exhibit, not an immutable archive, and not a chain-of-custody record.
-          Preserve the original file with a write-once store and record the analyst, device and time separately.
-        </p>
-      </div>
-
+    <FormalDossier data={data}>
       <ContainmentPanel ips={ips} domains={domains} caseId={data.case_id} />
-    </div>
+    </FormalDossier>
   );
 }
