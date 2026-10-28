@@ -104,7 +104,7 @@ export default function Dropzone() {
           </label>
           <div className="form-actions">
             <span className="form-note">No DNS, reputation, sandbox or geolocation lookup runs in this flow. You get an observed-value reading of what you pasted.</span>
-            <button className="app-btn" type="button" onClick={analyzeText} disabled={loading || !body.trim()}>
+            <button className="app-btn" type="button" onClick={() => analyzeText()} disabled={loading || !body.trim()}>
               <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#7cc0ff,#2e7cf6)' }}><Play size={14} /></span>
               {loading ? 'Analysing…' : 'Analyse pasted input'}
             </button>

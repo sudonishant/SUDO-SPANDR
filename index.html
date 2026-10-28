@@ -1,16 +1,19 @@
 <!doctype html>
-<html lang="en">
+<html lang="en" data-theme="light">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <meta name="theme-color" content="#08080a" />
-    <meta name="description" content="SUDO SPANDR — SentinelMail, a browser desktop for email forensics: header reconstruction, authentication checks, isolated URL sandbox, MITRE mapping and containment dossiers. Evidence is parsed locally." />
-    <link rel="icon" type="image/jpeg" href="/logo.jpg" />
-    <link rel="apple-touch-icon" href="/logo.jpg" />
+    <meta name="theme-color" content="#f4f6fb" />
+    <meta name="description" content="SUDO SPANDR SentinelMail — a local-first email forensics workspace for transparent EML, MSG, header, URL and attachment analysis." />
+    <meta name="application-name" content="SUDO SPANDR SentinelMail" />
+    <link rel="icon" type="image/png" href="/spandr-favicon.png" />
+    <link rel="apple-touch-icon" href="/spandr-mark.png" />
+    <script src="/theme-init.js"></script>
     <title>SUDO SPANDR — SentinelMail Forensic Workspace</title>
   </head>
   <body>
     <div id="root"></div>
+    <noscript>SUDO SPANDR needs JavaScript for local evidence parsing. No evidence is uploaded by the static intake workflow.</noscript>
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

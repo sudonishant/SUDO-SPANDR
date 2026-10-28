@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import {
-  AlertTriangle, Bot, CheckCircle2, ChevronRight, Download, FileCode2, Hash, Info, LayoutDashboard,
-  Link2, Mail, MapPin, Network, Paperclip, Printer, Radar, Shield, ShieldAlert, Tag, XCircle,
+  AlertTriangle, Bot, CheckCircle2, ChevronRight, Download, FileCode2, Globe, Hash, Info, LayoutDashboard,
+  Link2, Mail, MapPin, Network, Paperclip, Printer, Radar, RefreshCw, Shield, ShieldAlert, Tag, XCircle,
 } from 'lucide-react';
 import { useForensicStore } from '../store/useForensicStore';
 import MitrePanel from '../components/MitrePanel';
@@ -41,7 +41,7 @@ function CategoryPanel({ category }) {
     <div className={`category-panel ${category.alert_level}`}>
       <div className="category-topline">
         <div><small>PRIMARY CATEGORY</small><h4>{category.category_label}</h4></div>
-        <div className="alert-badge">{category.alert_level.toUpperCase()}</div>
+        <div className="alert-badge">{(category.alert_level || 'review').toUpperCase()}</div>
       </div>
       <p className="category-description">{category.description}</p>
       <div className="category-metrics">
@@ -349,7 +349,7 @@ function AnalysisResultView({ data }) {
           <span>No fake pass/fail claims are generated.</span>
         </div>
         <div className="report-toolbar__actions">
-          <button type="button" className="app-btn app-btn--sm" onClick={runAiReview}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#b18cf7,#7a45e0)' }}><Bot size={13} /></span>AI second opinion</button>
+          <button type="button" className="app-btn app-btn--sm" onClick={() => runAiReview()}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#b18cf7,#7a45e0)' }}><Bot size={13} /></span>AI second opinion</button>
           <button type="button" className="app-btn app-btn--sm" onClick={downloadJSON}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#63e08a,#18a34a)' }}><Download size={13} /></span>Export JSON</button>
           <button type="button" className="app-btn app-btn--sm" onClick={resetResult}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#ff8a7a,#e4392f)' }}><XCircle size={13} /></span>Clear</button>
         </div>

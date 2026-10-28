@@ -40,7 +40,7 @@ export default function WorkspaceApp() {
           <FileSearch size={18} />
           <div>
             <strong>No evidence loaded</strong>
-            <p>Pick a mode above, or drag a file onto the intake panel. Results stay in this session.</p>
+            <p>Pick a mode above, or drag a file onto the intake panel. Results are saved on this device when storage is available.</p>
           </div>
         </div>
       )}

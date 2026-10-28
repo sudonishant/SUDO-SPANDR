@@ -63,12 +63,14 @@ export default async function handler(req, res) {
     risk_score: riskScore,
     heuristic_flags: flags,
     threat_verdict: riskScore >= 60
-      ? '⚠️ SUSPICIOUS: URL pattern matches credential-harvesting indicators'
+      ? 'REVIEW: URL pattern matches configured credential-harvesting indicators'
       : riskScore >= 30
-        ? '🟡 MODERATE: Some suspicious URL characteristics detected'
-        : '🟢 LOW RISK: No obvious phishing URL patterns detected',
-    note: 'This is edge-only URL pattern analysis. No real HTTP fetch, DNS resolution, DOM inspection, or screenshot capture was performed. For full air-gapped Chromium detonation with DOM analysis, form detection, and screenshot capture, deploy the Docker sandbox container (see docker-compose.yml).',
-    preview_available: `/api/v1/sandbox/preview-frame?url=${encodeURIComponent(url)}`,
+        ? 'REVIEW: Some observable URL characteristics matched configured patterns'
+        : 'NO STRUCTURAL WARNING: No configured URL pattern matched; safety is not established',
+    note: 'This is edge-only URL pattern analysis. No real HTTP fetch, DNS resolution, DOM inspection, reputation lookup, or screenshot capture was performed. A low score does not establish that a destination is safe.',
+    live_detonation_available: false,
+    preview_available: null,
+    preview_disabled_reason: 'The unsafe same-origin remote-HTML proxy is disabled. Use an authenticated isolated worker for live detonation.',
     timestamp: new Date().toISOString()
   });
 }

@@ -195,7 +195,7 @@ export function DossierView({ data }) {
       <div className="dossier__head">
         <div className="panel__head">
           <span className="panel__icon"><Printer size={14} /></span>
-          <div><small>Browser session output</small><h3>Dossier snapshot</h3></div>
+          <div><small>Browser-generated output</small><h3>Dossier snapshot</h3></div>
         </div>
         <button type="button" className="app-btn app-btn--sm" onClick={() => window.print()}>
           <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#3a3a3a,#0b0b0b)' }}><Printer size={13} /></span>
