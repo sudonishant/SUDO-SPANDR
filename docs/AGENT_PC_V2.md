@@ -230,13 +230,14 @@ Result: **12/12 functions**, all required routes resolved, legacy URLs preserved
 - `npm run check:functions` → `12/12 functions, all required routes routed`.
 - `npm run lint` (52 files) and `npm run build` pass.
 
-## Not verified
+## Confirmed on Vercel
 
-The actual Vercel deploy. The suspected cause is well supported (function count 14 > 12, plus the
-author's earlier commit about the same limit), but the only way to be certain is the deployment log:
+The suspicion was right: with 14 functions the deployment failed, and with 12 it succeeds. Evidence
+from the branch `agent-pc-v2` preview deployment
+(`cybersquadsce-git-agent-pc-v2-sudonishant-1654s-projects.vercel.app`):
 
-```bash
-npx vercel inspect dpl_5dKsUexcPe9kubELJE637HuXErHh --logs
-```
-
-If a deploy still fails after this change, the log — not the function count — is the next thing to read.
+- Vercel status on the fix commit: **`success` — "Deployment has completed"**
+- `npm run verify:headers` → **10/10** (pinned `frame-src`, `wasm-unsafe-eval`, COEP `credentialless`)
+- `npm run smoke:agent-pc` → **14/14 on the deployed URL**, i.e. the in-page x86 desktop boots on
+  real Vercel infrastructure, not just on localhost
+- GitHub Actions `test-and-verify` → success; Cloudflare `Workers Builds` → success
