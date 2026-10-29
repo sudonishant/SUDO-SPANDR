@@ -1,0 +1,847 @@
+/* ==========================================================================
+   Agent PC v2 — session bar, runtime cards, preflight, dialogs.
+   Loaded after agent-theme.css so it can refine the dark screen area without
+   fighting the Fieldwork palette.
+   ========================================================================== */
+
+.hosted-computer {
+  position: relative;
+}
+
+.agent-pc__icon-btn {
+  width: 34px;
+  height: 34px;
+  padding: 0;
+  justify-content: center;
+}
+
+/* ---------- live session bar --------------------------------------------- */
+
+.agent-pc__sessionbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 9px 16px;
+  border-bottom: 1px solid rgba(251, 241, 220, .1);
+  background: linear-gradient(100deg, #2c4237, #332c3b);
+  color: #e6d8c2;
+  font-size: 11px;
+}
+
+.agent-pc__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 9px;
+  border: 1px solid rgba(181, 221, 189, .35);
+  border-radius: 999px;
+  background: rgba(169, 216, 184, .12);
+  color: #b5ddbd;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.agent-pc__chip i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #a9d8b8;
+  box-shadow: 0 0 0 3px rgba(169, 216, 184, .18);
+}
+
+.agent-pc__meta {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #c8b9a5;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  white-space: nowrap;
+}
+
+.agent-pc__meta b {
+  color: #f2e7d0;
+  font-weight: 700;
+  letter-spacing: .04em;
+}
+
+.agent-pc__meta code {
+  color: #e6d8c2;
+  font-size: 10px;
+}
+
+.agent-pc__meta--id {
+  margin-left: auto;
+}
+
+.agent-pc__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+
+.agent-pc__tool {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid rgba(251, 241, 220, .18);
+  border-radius: 7px;
+  background: rgba(251, 241, 220, .07);
+  color: #e9dcc6;
+  font-size: 10px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: background .15s ease, border-color .15s ease, color .15s ease;
+}
+
+.agent-pc__tool:hover {
+  border-color: rgba(251, 241, 220, .38);
+  background: rgba(251, 241, 220, .15);
+  color: #fbf1dc;
+}
+
+.agent-pc__tool:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- screen + overlays -------------------------------------------- */
+
+.agent-pc__spin {
+  animation: agent-pc-spin 1.1s linear infinite;
+}
+
+@keyframes agent-pc-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .agent-pc__spin { animation-duration: 3s; }
+}
+
+.hosted-computer__loading {
+  flex-direction: column;
+  gap: 6px;
+  text-align: center;
+}
+
+.hosted-computer__loading small {
+  color: #b7a893;
+  font-size: 10px;
+}
+
+.agent-pc__frame-hint {
+  position: absolute;
+  right: 16px;
+  bottom: 16px;
+  left: 16px;
+  z-index: 4;
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  border: 1px solid rgba(226, 181, 109, .45);
+  border-radius: 12px;
+  background: rgba(38, 36, 44, .94);
+  color: #f0e2cc;
+  box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+
+.agent-pc__frame-hint svg {
+  flex: 0 0 auto;
+  color: #e2b56d;
+}
+
+.agent-pc__frame-hint strong {
+  display: block;
+  font-size: 12px;
+}
+
+.agent-pc__frame-hint p {
+  margin: 3px 0 8px;
+  color: #cbbcab;
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+/* ---------- launchpad cards ---------------------------------------------- */
+
+.agent-pc__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(196px, 1fr));
+  gap: 10px;
+  width: 100%;
+  max-width: 980px;
+  margin: 4px auto 16px;
+  text-align: left;
+}
+
+.agent-pc__card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 12px;
+  border: 1px solid rgba(251, 241, 220, .16);
+  border-radius: 13px;
+  background: rgba(251, 241, 220, .05);
+  color: #eddfc8;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease, transform .15s ease;
+}
+
+.agent-pc__card:hover {
+  border-color: rgba(251, 241, 220, .34);
+  background: rgba(251, 241, 220, .09);
+}
+
+.agent-pc__card:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.agent-pc__card.is-active {
+  border-color: #c78e64;
+  background: rgba(199, 142, 100, .16);
+  box-shadow: inset 0 0 0 1px rgba(199, 142, 100, .3);
+}
+
+.agent-pc__card.is-unavailable {
+  opacity: .72;
+}
+
+.agent-pc__card-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 6px;
+}
+
+.agent-pc__card-head strong {
+  font-family: var(--font-display);
+  font-size: 12.5px;
+  letter-spacing: -.01em;
+}
+
+.agent-pc__card p {
+  margin: 0;
+  color: #c2b2a0;
+  font-size: 10.5px;
+  line-height: 1.5;
+}
+
+.agent-pc__caps {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 4px 8px;
+  margin: 0;
+}
+
+.agent-pc__caps > div {
+  min-width: 0;
+}
+
+.agent-pc__caps dt {
+  color: #a4968a;
+  font-family: var(--font-mono);
+  font-size: 8px;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.agent-pc__caps dd {
+  margin: 1px 0 0;
+  overflow: hidden;
+  color: #eddfc8;
+  font-size: 10px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.agent-pc__card-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-top: auto;
+  padding-top: 6px;
+  border-top: 1px solid rgba(251, 241, 220, .12);
+  color: #b8a893;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  letter-spacing: .05em;
+  text-transform: uppercase;
+}
+
+.agent-pc__card-foot > span:first-child {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: #c78e64;
+  font-weight: 700;
+}
+
+.agent-pc__card-warn {
+  color: #e2b56d;
+  font-size: 9.5px;
+}
+
+/* ---------- preflight ----------------------------------------------------- */
+
+.agent-pc__preflight {
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto 16px;
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 241, 220, .14);
+  border-radius: 12px;
+  background: rgba(20, 30, 26, .5);
+  text-align: left;
+}
+
+.agent-pc__preflight-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.agent-pc__preflight-head strong {
+  color: #f2e7d0;
+  font-size: 11.5px;
+}
+
+.agent-pc__tone {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-family: var(--font-mono);
+  font-size: 8.5px;
+  font-weight: 700;
+  letter-spacing: .07em;
+  text-transform: uppercase;
+}
+
+.agent-pc__tone--ready {
+  background: rgba(169, 216, 184, .16);
+  color: #b5ddbd;
+}
+
+.agent-pc__tone--caution {
+  background: rgba(226, 181, 109, .16);
+  color: #e2b56d;
+}
+
+.agent-pc__tone--blocked {
+  background: rgba(237, 160, 170, .16);
+  color: #eda0aa;
+}
+
+.agent-pc__tone--neutral {
+  background: rgba(251, 241, 220, .1);
+  color: #cbbcab;
+}
+
+.agent-pc__preflight ul {
+  margin: 0;
+  padding-left: 16px;
+  color: #b6a693;
+  font-size: 10.5px;
+  line-height: 1.6;
+}
+
+.agent-pc__preflight li + li {
+  margin-top: 3px;
+}
+
+.agent-pc__device-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 7px 9px;
+  border-radius: 8px;
+  background: rgba(226, 181, 109, .12);
+  color: #e8cf9f;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.agent-pc__backend-missing {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+  max-width: 560px;
+  margin: 0 auto;
+}
+
+.agent-pc__backend-missing p {
+  margin: 0;
+  color: #c2b2a0;
+  font-size: 11px;
+}
+
+.agent-pc__backend-missing code {
+  display: block;
+  padding: 8px 10px;
+  border: 1px solid rgba(251, 241, 220, .18);
+  border-radius: 8px;
+  background: rgba(251, 241, 220, .07);
+  color: #e8d8be;
+  font-family: var(--font-mono);
+  font-size: 10px;
+  text-align: left;
+  word-break: break-all;
+}
+
+.agent-pc__reco {
+  margin: 12px 0 0;
+  color: #a4968a;
+  font-size: 10px;
+}
+
+.agent-pc__reco b {
+  color: #d8c9b4;
+}
+
+/* ---------- help dialog --------------------------------------------------- */
+
+.agent-pc__dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 90;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+  background: rgba(24, 18, 26, .62);
+}
+
+.agent-pc__dialog {
+  width: min(560px, 100%);
+  max-height: 82vh;
+  overflow: auto;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 16px;
+  background: var(--panel);
+  color: var(--ink);
+  box-shadow: var(--shadow-lifted);
+}
+
+.agent-pc__dialog-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--hairline);
+}
+
+.agent-pc__dialog-head h2 {
+  margin: 0;
+  font-family: var(--font-display);
+  font-size: 14px;
+}
+
+.agent-pc__dialog-head .agent-pc__tool {
+  border-color: var(--hairline);
+  background: var(--soft);
+  color: var(--ink);
+}
+
+.agent-pc__dialog-body {
+  padding: 14px 18px 18px;
+  font-size: 12px;
+  line-height: 1.62;
+}
+
+.agent-pc__dialog-body h3 {
+  margin: 14px 0 5px;
+  color: var(--ink);
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  font-weight: 800;
+  letter-spacing: .09em;
+  text-transform: uppercase;
+}
+
+.agent-pc__dialog-body h3:first-child {
+  margin-top: 0;
+}
+
+.agent-pc__dialog-body ul {
+  margin: 0;
+  padding-left: 17px;
+  color: var(--ink-dim);
+}
+
+.agent-pc__dialog-body li + li {
+  margin-top: 4px;
+}
+
+.agent-pc__dialog-body kbd {
+  padding: 1px 5px;
+  border: 1px solid var(--hairline-strong);
+  border-radius: 4px;
+  background: var(--soft);
+  font-family: var(--font-mono);
+  font-size: 10px;
+}
+
+/* ---------- responsive ---------------------------------------------------- */
+
+@media (max-width: 900px) {
+  .agent-pc__grid {
+    grid-template-columns: 1fr;
+    max-width: 460px;
+  }
+
+  .agent-pc__meta--id {
+    margin-left: 0;
+  }
+
+  .agent-pc__sessionbar {
+    gap: 6px 10px;
+  }
+}
+
+@media (max-width: 640px) {
+  .agent-pc__tool span {
+    display: none;
+  }
+
+  .agent-pc__tool {
+    padding: 6px 8px;
+  }
+}
+
+/* ==========================================================================
+   SUDO Desktop — in-page x86 PC (v86)
+   ========================================================================== */
+
+.native-pc {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #10161a;
+  color: #dbe6e2;
+}
+
+.native-pc__screen-wrap {
+  position: relative;
+  flex: 1 1 auto;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  min-height: 420px;
+  padding: 10px;
+  overflow: auto;
+  background:
+    radial-gradient(circle at 50% 0%, rgba(13, 98, 87, .28), transparent 42%),
+    #0d1215;
+}
+
+/* v86 writes text-mode output into this div and graphics into the canvas. */
+.native-pc__screen {
+  position: relative;
+  margin: auto;
+  outline: none;
+}
+
+.native-pc__screen:focus-visible {
+  box-shadow: 0 0 0 2px var(--focus);
+}
+
+.native-pc__text {
+  white-space: pre;
+  color: #d7e7dd;
+  font-family: var(--font-mono), monospace;
+  font-size: 14px;
+  line-height: 14px;
+}
+
+.native-pc__canvas {
+  display: none;
+  background: #000;
+  image-rendering: pixelated;
+}
+
+.native-pc__overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 22px;
+  background: rgba(10, 16, 20, .82);
+  color: #cfdcd6;
+  text-align: center;
+}
+
+.native-pc__overlay svg {
+  color: #8fd0b4;
+}
+
+.native-pc__overlay strong {
+  font-family: var(--font-display);
+  font-size: 14px;
+  color: #eef4f0;
+}
+
+.native-pc__overlay span {
+  max-width: 460px;
+  font-size: 11px;
+  line-height: 1.55;
+  color: #a9bab3;
+}
+
+.native-pc__overlay small {
+  color: #7f918a;
+  font-size: 10px;
+}
+
+.native-pc__bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 7px 10px;
+  padding: 8px 12px;
+  border-top: 1px solid rgba(251, 241, 220, .1);
+  background: linear-gradient(100deg, #24372f, #2d2733);
+}
+
+.native-pc__chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 8px;
+  border: 1px solid rgba(251, 241, 220, .16);
+  border-radius: 999px;
+  background: rgba(251, 241, 220, .06);
+  color: #d9c9b2;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  white-space: nowrap;
+}
+
+.native-pc__chip--off {
+  border-color: rgba(226, 181, 109, .38);
+  background: rgba(226, 181, 109, .12);
+  color: #e6c890;
+}
+
+.native-pc__hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #9d8f80;
+  font-size: 10px;
+}
+
+.native-pc__tools {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  margin-left: auto;
+  flex-wrap: wrap;
+}
+
+.native-pc__scale {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  color: #b8a893;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+}
+
+.native-pc__scale select {
+  padding: 3px 5px;
+  border: 1px solid rgba(251, 241, 220, .2);
+  border-radius: 6px;
+  background: rgba(251, 241, 220, .08);
+  color: #eddfc8;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+}
+
+.native-pc__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 14px;
+  padding: 7px 12px;
+  border-top: 1px solid rgba(251, 241, 220, .08);
+  background: #1b2622;
+  color: #9d8f80;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+}
+
+.native-pc__meta code {
+  color: #cfc0a8;
+}
+
+.native-pc__meta-shot {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.native-pc__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 1px 6px;
+  border: 1px solid rgba(251, 241, 220, .18);
+  border-radius: 5px;
+  background: transparent;
+  color: #c78e64;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  cursor: pointer;
+}
+
+.native-pc__link:hover {
+  color: #e0a47e;
+}
+
+/* ---------- guest picker in the launchpad --------------------------------- */
+
+.agent-pc__guest {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 620px;
+  margin: 0 auto 14px;
+  padding: 12px 14px;
+  border: 1px solid rgba(251, 241, 220, .14);
+  border-radius: 12px;
+  background: rgba(20, 30, 26, .5);
+  text-align: left;
+}
+
+.agent-pc__guest-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 12px;
+}
+
+.agent-pc__guest-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 104px;
+  color: #cbbcab;
+  font-family: var(--font-mono);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+}
+
+.agent-pc__guest-choices {
+  display: flex;
+  flex: 1 1 260px;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-pc__guest-btn {
+  display: flex;
+  flex: 1 1 180px;
+  flex-direction: column;
+  gap: 2px;
+  padding: 7px 10px;
+  border: 1px solid rgba(251, 241, 220, .16);
+  border-radius: 9px;
+  background: rgba(251, 241, 220, .05);
+  color: #eddfc8;
+  font-size: 10.5px;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color .15s ease, background .15s ease;
+}
+
+.agent-pc__guest-btn small {
+  color: #a4968a;
+  font-size: 9px;
+}
+
+.agent-pc__guest-btn:hover {
+  border-color: rgba(251, 241, 220, .34);
+  background: rgba(251, 241, 220, .09);
+}
+
+.agent-pc__guest-btn.is-active {
+  border-color: #c78e64;
+  background: rgba(199, 142, 100, .16);
+}
+
+.agent-pc__guest-btn:focus-visible,
+.agent-pc__memory-btn:focus-visible {
+  outline: 2px solid var(--focus);
+  outline-offset: 2px;
+}
+
+.agent-pc__memory {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-pc__memory-btn {
+  padding: 5px 10px;
+  border: 1px solid rgba(251, 241, 220, .16);
+  border-radius: 7px;
+  background: rgba(251, 241, 220, .05);
+  color: #d9c9b2;
+  font-family: var(--font-mono);
+  font-size: 9.5px;
+  cursor: pointer;
+}
+
+.agent-pc__memory-btn.is-active {
+  border-color: #c78e64;
+  background: rgba(199, 142, 100, .18);
+  color: #f3e4cd;
+}
+
+.agent-pc__guest-warn {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 0;
+  color: #e2b56d;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+@media (max-width: 720px) {
+  .native-pc__tools {
+    margin-left: 0;
+  }
+
+  .native-pc__hint {
+    display: none;
+  }
+}
+
+.native-pc__error {
+  margin: 0;
+  padding: 7px 12px;
+  border-top: 1px solid rgba(226, 181, 109, .3);
+  background: rgba(226, 181, 109, .12);
+  color: #e6c890;
+  font-size: 10.5px;
+}
