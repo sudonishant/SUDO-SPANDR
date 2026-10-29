@@ -513,7 +513,7 @@ HTML_CONTENT = """<!DOCTYPE html>
     @media print {
       body { background: #fff !important; color: #000 !important; }
       .topbar, .mode-bar, .nav-tabs, #alert-banner-box, .dropzone-box, .sample-corridor-drawer,
-      #mode-text-view, #mode-attach-view, #mode-sandbox-view, .primary-btn, .ghost-btn {
+      #mode-text-view, #mode-attach-view, #mode-sandbox-view, #mode-agentpc-view, .primary-btn, .ghost-btn {
         display: none !important;
       }
       #results-view, #tab-dossier, .dossier-wrap {
@@ -669,7 +669,376 @@ HTML_CONTENT = """<!DOCTYPE html>
       line-height: 1.5;
       color: rgba(0, 0, 0, 0.58);
     }
-</style>
+
+    /* --- Real Agent PC TryHackMe-Style Split Screen Lab --- */
+    .agent-pc-container {
+      display: flex;
+      flex-direction: column;
+      border: 1px solid #1e293b;
+      border-radius: 10px;
+      overflow: hidden;
+      background: #0b0f19;
+      margin-top: 10px;
+      box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+    }
+    .thm-navbar {
+      background: #0d121d;
+      border-bottom: 1px solid #1a2333;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 13px;
+      z-index: 10;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+    .thm-nav-left {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .thm-logo {
+      background: #dc2626;
+      color: white;
+      font-weight: 800;
+      font-size: 12px;
+      padding: 4px 8px;
+      border-radius: 4px;
+      letter-spacing: -0.5px;
+    }
+    .btn-attackbox-connected {
+      background: #152233;
+      color: #38bdf8;
+      border: 1px solid #1e3a5f;
+      padding: 5px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .btn-attackbox-connected::before {
+      content: '';
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: #10b981;
+      box-shadow: 0 0 8px #10b981;
+    }
+    .split-container-lab {
+      display: flex;
+      min-height: 620px;
+      height: 70vh;
+      overflow: hidden;
+      background: #0a0f1d;
+    }
+    .left-pane-lab {
+      width: 44%;
+      min-width: 340px;
+      background: #0f172a;
+      border-right: 2px solid #1e293b;
+      display: flex;
+      flex-direction: column;
+      overflow-y: auto;
+    }
+    .active-machines-bar {
+      background: #182235;
+      border-bottom: 1px solid #23314d;
+      padding: 8px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .active-machines-title {
+      font-size: 12px;
+      font-weight: 700;
+      color: #cbd5e1;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .ip-pills-group {
+      display: flex;
+      gap: 8px;
+    }
+    .ip-pill {
+      font-family: 'JetBrains Mono', 'DM Mono', monospace;
+      font-size: 11px;
+      padding: 3px 8px;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+    }
+    .ip-pill-lab {
+      background: rgba(220, 38, 38, 0.15);
+      border: 1px solid rgba(220, 38, 38, 0.4);
+      color: #f87171;
+    }
+    .ip-pill-lab::before { content: '■'; color: #ef4444; font-size: 9px; }
+    .ip-pill-attacker {
+      background: rgba(14, 165, 233, 0.15);
+      border: 1px solid rgba(14, 165, 233, 0.4);
+      color: #38bdf8;
+    }
+    .ip-pill-attacker::before { content: '■'; color: #0284c7; font-size: 9px; }
+    .task-bar-lab {
+      background: #1e293b;
+      border-bottom: 1px solid #334155;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 12.5px;
+      font-weight: 700;
+      color: #f8fafc;
+    }
+    .task-num-lab { color: #f43f5e; font-weight: 800; }
+    .task-content-lab {
+      padding: 14px;
+      display: flex;
+      flex-direction: column;
+      gap: 12px;
+      flex: 1;
+    }
+    .virtual-env-card-lab {
+      background: #172338;
+      border: 1px solid #253856;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .env-title-lab {
+      font-size: 13.5px;
+      font-weight: 700;
+      color: #fff;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      margin-bottom: 3px;
+    }
+    .env-title-lab .check { color: #10b981; }
+    .env-subtitle-lab { font-size: 11px; color: #94a3b8; margin-bottom: 10px; }
+    .connection-grid-lab {
+      display: grid;
+      grid-template-columns: 50px 1fr;
+      gap: 10px;
+      align-items: center;
+    }
+    .diagram-graphic-lab {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+    .screen-icon-lab {
+      width: 38px;
+      height: 30px;
+      background: #0284c7;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #e0f2fe;
+      font-size: 14px;
+    }
+    .dotted-line-lab {
+      width: 2px;
+      height: 22px;
+      border-left: 2px dashed #10b981;
+    }
+    .server-icon-lab {
+      width: 38px;
+      height: 32px;
+      background: #1e293b;
+      border: 1px solid #475569;
+      border-radius: 4px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #f87171;
+      font-size: 14px;
+    }
+    .machine-status-box-lab {
+      background: #0f172a;
+      border: 1px solid #1e293b;
+      border-radius: 6px;
+      padding: 7px 10px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+    .machine-name-lab { font-weight: 700; color: #f1f5f9; }
+    .btn-connection-methods-lab {
+      background: #a3e635;
+      color: #14532d;
+      font-weight: 800;
+      font-size: 10.5px;
+      border: none;
+      padding: 3px 8px;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .ai-agent-section-lab {
+      background: #162032;
+      border: 1px solid #23314d;
+      border-radius: 8px;
+      display: flex;
+      flex-direction: column;
+      height: 340px;
+      overflow: hidden;
+    }
+    .agent-header-lab {
+      background: #1c273d;
+      padding: 8px 12px;
+      border-bottom: 1px solid #283754;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .agent-title-lab {
+      font-size: 12px;
+      font-weight: 800;
+      color: #38bdf8;
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    .agent-status-badge-lab {
+      font-size: 9.5px;
+      background: rgba(16, 185, 129, 0.15);
+      color: #34d399;
+      border: 1px solid rgba(16, 185, 129, 0.3);
+      padding: 2px 6px;
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+    .chat-messages-lab {
+      flex: 1;
+      padding: 10px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      font-size: 11.5px;
+      background: #0f172a;
+    }
+    .msg-lab {
+      max-width: 90%;
+      padding: 7px 11px;
+      border-radius: 6px;
+      line-height: 1.45;
+      word-wrap: break-word;
+    }
+    .msg-agent-lab {
+      background: #1e293b;
+      border: 1px solid #334155;
+      color: #e2e8f0;
+      align-self: flex-start;
+    }
+    .msg-user-lab {
+      background: #0284c7;
+      color: white;
+      align-self: flex-end;
+    }
+    .quick-actions-lab {
+      padding: 6px 10px;
+      background: #111827;
+      border-top: 1px solid #1f2937;
+      display: flex;
+      gap: 6px;
+      overflow-x: auto;
+      white-space: nowrap;
+    }
+    .action-pill-lab {
+      background: #1f2937;
+      border: 1px solid #374151;
+      color: #cbd5e1;
+      padding: 3px 8px;
+      border-radius: 12px;
+      font-size: 10.5px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .action-pill-lab:hover {
+      background: #38bdf8;
+      color: #0b0f19;
+      font-weight: 700;
+    }
+    .chat-input-bar-lab {
+      display: flex;
+      border-top: 1px solid #23314d;
+      background: #172033;
+    }
+    .chat-input-lab {
+      flex: 1;
+      background: transparent;
+      border: none;
+      padding: 9px 12px;
+      color: white;
+      font-size: 11.5px;
+      outline: none;
+      font-family: inherit;
+    }
+    .chat-send-btn-lab {
+      background: #0284c7;
+      border: none;
+      color: white;
+      padding: 0 14px;
+      cursor: pointer;
+      font-size: 11.5px;
+      font-weight: 700;
+      transition: background 0.15s;
+    }
+    .chat-send-btn-lab:hover { background: #0369a1; }
+    .right-pane-lab {
+      width: 56%;
+      background: #000;
+      position: relative;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+    }
+    .attackbox-header-bar {
+      height: 38px;
+      background: #111827;
+      border-bottom: 1px solid #1f2937;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0 12px;
+      font-size: 11.5px;
+      color: #cbd5e1;
+    }
+    .attackbox-iframe-wrap {
+      flex: 1;
+      width: 100%;
+      height: 100%;
+      position: relative;
+    }
+    .attackbox-iframe-wrap iframe {
+      width: 100%;
+      height: 100%;
+      border: none;
+      display: block;
+    }
+    .pane-divider-lab {
+      width: 5px;
+      background: #1e293b;
+      cursor: col-resize;
+      transition: background 0.2s;
+    }
+    .pane-divider-lab:hover { background: #0284c7; }
+
+  </style>
 </head>
 <body>
 
@@ -781,6 +1150,14 @@ HTML_CONTENT = """<!DOCTYPE html>
           </div>
           <p class="eg-card-sub">Statutory certificate under Sec 65B IEA & Sec 63 BSA with certified PDF export.</p>
         </div>
+        <!-- Feature 7: Real Agent PC Desktop & REA Lab -->
+        <div class="eg-card-primary" style="border-color: rgba(56, 189, 248, 0.4); background: linear-gradient(180deg, rgba(56, 189, 248, 0.12) 0%, rgba(56, 189, 248, 0.03) 100%); cursor: pointer;" onclick="setMode('agentpc')">
+          <div class="eg-card-title">
+            <span>🖥️ Agent PC (Desktop & REA)</span>
+            <span class="hop-pill cyan" style="font-size: 8.5px;">REAL LINUX GUI</span>
+          </div>
+          <p class="eg-card-sub">Real Linux Desktop (noVNC), AirLink, REA Binary Analysis, and Interactive AI Controller.</p>
+        </div>
       </div>
 
     <div class="mode-bar">
@@ -788,6 +1165,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       <button class="mode-tab" id="tab-text" onclick="setMode('text')"><i data-lucide="file-text"></i> 2. Text / Headers</button>
       <button class="mode-tab" id="tab-attach" onclick="setMode('attach')"><i data-lucide="paperclip"></i> 3. Attachment</button>
       <button class="mode-tab" id="tab-sandbox-intake" onclick="setMode('sandbox')"><i data-lucide="shield-alert"></i> 4. Safe URL Detonator</button>
+      <button class="mode-tab" id="tab-agentpc-intake" onclick="setMode('agentpc')"><i data-lucide="monitor"></i> 5. 🖥️ Agent PC Desktop</button>
     </div>
 
     <!-- Scanning Radar -->
@@ -1287,6 +1665,7 @@ HTML_CONTENT = """<!DOCTYPE html>
         <button class="nav-tab" onclick="switchTab('urls', this)"><i data-lucide="link" style="width: 12px;"></i> URLs</button>
         <button class="nav-tab" onclick="switchTab('files', this)"><i data-lucide="paperclip" style="width: 12px;"></i> Files</button>
         <button class="nav-tab" onclick="switchTab('dossier', this)"><i data-lucide="file-check" style="width: 12px;"></i> 📜 Dossier</button>
+        <button class="nav-tab" id="tab-btn-agentpc" onclick="switchTab('agentpc', this)"><i data-lucide="monitor" style="width: 12px;"></i> 🖥️ Agent PC</button>
       </div>
 
       <!-- Tab: Overview -->
@@ -2125,6 +2504,25 @@ HTML_CONTENT = """<!DOCTYPE html>
       </div>
 
 
+
+      <!-- Tab: Agent PC Desktop inside Results -->
+      <div id="tab-agentpc" style="display: none;">
+        <div class="card" style="border-left: 3px solid #38bdf8; padding: 0; overflow: hidden;">
+          <div class="attackbox-header-bar" style="background:#0f172a; padding: 10px 16px;">
+            <div style="display:flex; align-items:center; gap:8px;">
+              <span style="font-size:16px;">🖥️</span>
+              <strong style="color:#f1f5f9; font-size:13px;">Agent PC Live Workstation & Interactive Lab</strong>
+            </div>
+            <div style="display:flex; align-items:center; gap:8px;">
+              <button class="ghost-btn" style="padding: 3px 10px; font-size: 11px; color:#38bdf8;" onclick="window.open('http://localhost:6080', '_blank')">⛶ Open Standalone Tab</button>
+            </div>
+          </div>
+          <div style="height: 650px; width: 100%; background: #000;">
+            <iframe src="http://localhost:6080/" style="width: 100%; height: 100%; border: none;" allow="clipboard-read; clipboard-write; fullscreen"></iframe>
+          </div>
+        </div>
+      </div>
+
       <!-- Modal: Automated SOC Containment & Firewall Rule Generator (SOAR) -->
       <div id="modal-soc-containment" style="display: none; position: fixed; inset: 0; z-index: 999999; background: rgba(3, 7, 18, 0.88); backdrop-filter: blur(8px); padding: 20px; overflow-y: auto;">
         <div style="max-width: 960px; margin: 20px auto; background: #0b1329; border: 1px solid #334155; border-radius: 12px; box-shadow: 0 25px 60px rgba(0,0,0,0.85); overflow: hidden;">
@@ -2397,13 +2795,15 @@ HTML_CONTENT = """<!DOCTYPE html>
 
     function setMode(mode) {
       document.querySelectorAll('.mode-tab').forEach(b => b.classList.remove('active'));
-      const activeTabId = mode === 'sandbox' ? 'tab-sandbox-intake' : ('tab-' + mode);
+      const activeTabId = mode === 'sandbox' ? 'tab-sandbox-intake' : (mode === 'agentpc' ? 'tab-agentpc-intake' : ('tab-' + mode));
       document.getElementById(activeTabId)?.classList.add('active');
       
       document.getElementById('mode-eml-view').style.display = mode === 'eml' ? 'block' : 'none';
       document.getElementById('mode-text-view').style.display = mode === 'text' ? 'block' : 'none';
       document.getElementById('mode-attach-view').style.display = mode === 'attach' ? 'block' : 'none';
       document.getElementById('mode-sandbox-view').style.display = mode === 'sandbox' ? 'block' : 'none';
+      const agentPcView = document.getElementById('mode-agentpc-view');
+      if (agentPcView) agentPcView.style.display = mode === 'agentpc' ? 'block' : 'none';
 
       if (mode === 'sandbox') {
         const iframe = document.getElementById('web-sandbox-iframe');
@@ -2417,7 +2817,7 @@ HTML_CONTENT = """<!DOCTYPE html>
       document.querySelectorAll('.nav-tab').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
       
-      ['overview', 'geomap', 'graph', 'nlp', 'mitre', 'intel', 'auth', 'urls', 'files', 'dossier'].forEach(t => {
+      ['overview', 'geomap', 'graph', 'nlp', 'mitre', 'intel', 'auth', 'urls', 'files', 'dossier', 'agentpc'].forEach(t => {
         const el = document.getElementById('tab-' + t);
         if (el) el.style.display = (t === tabName) ? 'block' : 'none';
       });
@@ -7470,6 +7870,94 @@ Content-Type: text/plain; charset=UTF-8
         inner.style.margin = '10px auto';
       }
     }
+
+
+
+    // --- AGENT PC CONTROLLER FUNCTIONS ---
+    function appendAgentPcMessage(sender, text) {
+      const box = document.getElementById('agentPcChatBox');
+      if (!box) return;
+      const div = document.createElement('div');
+      div.className = 'msg-lab ' + (sender === 'user' ? 'msg-user-lab' : 'msg-agent-lab');
+      div.innerHTML = text.replace(/\n/g, '<br>');
+      box.appendChild(div);
+      box.scrollTop = box.scrollHeight;
+    }
+
+    async function sendAgentPcMessage(text) {
+      if (!text || !text.trim()) return;
+      appendAgentPcMessage('user', text);
+
+      const box = document.getElementById('agentPcChatBox');
+      const loadingDiv = document.createElement('div');
+      loadingDiv.className = 'msg-lab msg-agent-lab';
+      loadingDiv.id = 'agentPcLoadingMsg';
+      loadingDiv.innerText = '⚡ Executing command on Agent PC...';
+      if (box) {
+        box.appendChild(loadingDiv);
+        box.scrollTop = box.scrollHeight;
+      }
+
+      try {
+        const res = await fetch('/api/v1/agent-pc/chat', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ message: text })
+        });
+        const data = await res.json();
+        loadingDiv.remove();
+        appendAgentPcMessage('agent', data.reply || 'Action completed.');
+      } catch (err) {
+        loadingDiv.remove();
+        appendAgentPcMessage('agent', '❌ Error connecting: ' + err.message);
+      }
+    }
+
+    function handleAgentPcChatSubmit(e) {
+      e.preventDefault();
+      const input = document.getElementById('agentPcUserInput');
+      if (!input) return;
+      const val = input.value;
+      input.value = '';
+      sendAgentPcMessage(val);
+    }
+
+    function reloadAgentPcIframe() {
+      const iframe = document.getElementById('agentPcAttackboxFrame');
+      if (iframe) iframe.src = 'http://localhost:6080/?t=' + Date.now();
+    }
+
+    function toggleAgentPcFullscreen() {
+      const el = document.getElementById('agentPcIframeWrap') || document.getElementById('mode-agentpc-view');
+      if (!el) return;
+      if (!document.fullscreenElement) {
+        el.requestFullscreen().catch(() => {});
+      } else {
+        document.exitFullscreen().catch(() => {});
+      }
+    }
+
+    // Draggable Lab Resizer
+    (function initLabDivider() {
+      const divider = document.getElementById('labPaneDivider');
+      const leftPane = document.getElementById('labLeftPane');
+      const rightPane = document.getElementById('labRightPane');
+      if (!divider || !leftPane || !rightPane) return;
+      let isDragging = false;
+      divider.addEventListener('mousedown', () => { isDragging = true; document.body.style.cursor = 'col-resize'; });
+      window.addEventListener('mousemove', (e) => {
+        if (!isDragging) return;
+        const container = document.getElementById('labSplitContainer');
+        if (!container) return;
+        const containerWidth = container.offsetWidth;
+        const leftWidthPercent = (e.clientX / containerWidth) * 100;
+        if (leftWidthPercent > 20 && leftWidthPercent < 80) {
+          leftPane.style.width = leftWidthPercent + '%';
+          rightPane.style.width = (100 - leftWidthPercent) + '%';
+        }
+      });
+      window.addEventListener('mouseup', () => { isDragging = false; document.body.style.cursor = 'default'; });
+    })();
 
 </script>
 </body>
