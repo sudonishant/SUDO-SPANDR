@@ -7,8 +7,10 @@ import { File } from 'node:buffer';
 import test, { after } from 'node:test';
 import { build } from 'esbuild';
 import ipContextHandler, { isPublicIp } from '../api/v1/ip-context.js';
+import analyzeEmlHandler from '../api/v1/analyze-eml.js';
 import { buildDossierModel } from '../src/lib/dossierModel.js';
 import { buildGovReport } from '../src/lib/reportGov.js';
+import { buildEvidenceGraphProjection } from '../src/lib/evidenceGraph.js';
 
 if (!globalThis.crypto) globalThis.crypto = webcrypto;
 const root = fileURLToPath(new URL('../', import.meta.url));
@@ -82,6 +84,50 @@ test('nested MIME decodes encoded subject, plain/HTML parts, mismatch and attach
 test('ordinary URL query bytes are not blindly quoted-printable decoded', async () => {
   const report = await analyzeFile('public/samples/sample-credential.eml');
   assert.ok(report.aitm_analysis.some((item) => item.url === 'http://microsft-account-verify.com/login?session=ae91&id=8842'));
+});
+
+test('SPF softfail produces one explainable adjustment instead of a zero score', async () => {
+  const report = await analyzeFile('tests/fixtures/spf-softfail.eml');
+  assert.equal(report.threat.risk_score, 16);
+  assert.equal(report.threat.baseline_score, 0);
+  assert.equal(report.threat.adjustments.length, 1);
+  assert.equal(report.threat.score_breakdown.adjustment_total, 16);
+  assert.equal(report.threat.authentication_context.any_fail, false);
+  assert.equal(report.threat.authentication_context.spf_softfail, true);
+  assert.equal(report.threat.authentication_context.spf_softfail_count, 3);
+  assert.equal(report.category_analysis.category_id, 'unknown');
+  assert.equal(report.category_analysis.alert_level, 'review');
+  assert.match(report.dns_auth.spf, /SOFTFAIL/);
+  assert.match(report.threat.adjustments[0].label, /SPF softfail/);
+  assert.match(report.threat.adjustments[0].evidence, /not proof of spoofing/i);
+  assert.match(report.deep_email.top_findings[0].label, /SPF softfail/);
+  assert.ok(report.deep_email.explanations.some((item) => /weaker than SPF fail/i.test(item)));
+  const model = buildDossierModel(report);
+  assert.ok(model.findings.some((item) => /SPF softfail/i.test(item.label) && item.weight === 16));
+});
+
+test('Neo4j payload preserves reported-auth and IP evidence without raw message content', async () => {
+  const report = await analyzeFile('tests/fixtures/spf-softfail.eml');
+  const projection = buildEvidenceGraphProjection(report);
+  assert.equal(projection.case_id, report.case_id);
+  assert.equal(projection.evidence_sha256, report.evidence.sha256);
+  assert.equal(projection.triage_score, 16);
+  assert.equal(projection.reported_auth.length, 3);
+  assert.ok(projection.reported_auth.every((item) => item.method === 'spf' && item.result === 'softfail'));
+  assert.ok(!('body' in projection) && !('headers' in projection) && !('raw_eml' in projection) && !('subject' in projection));
+  assert.ok(!JSON.stringify(projection).includes(report.parsed.body));
+  assert.ok(projection.ips.length > 0);
+  assert.ok(projection.reported_auth.every((item) => !('evidence' in item) && !('properties' in item)));
+});
+
+test('Neo4j URL sanitization removes secrets while analysis retains original evidence', async () => {
+  const report = await analyzeFile('public/samples/sample-credential.eml');
+  const projection = buildEvidenceGraphProjection(report);
+  assert.ok(report.aitm_analysis.some((item) => item.url.includes('session=ae91')));
+  assert.ok(projection.urls.length > 0);
+  assert.ok(projection.urls.every((item) => !item.url.includes('?') && !item.url.includes('#') && !item.url.includes('session=ae91')));
+  assert.ok(projection.urls.every((item) => !item.url.includes('@')));
+  assert.ok(projection.attachments.every((item) => !('content' in item) && !('bytes' in item)));
 });
 
 test('safe EML control remains low-signal rather than being inflated', async () => {
@@ -205,4 +251,37 @@ test('reserved-only API input returns before any provider egress', async () => {
   assert.equal(response.statusCode, 200);
   assert.equal(response.payload.status, 'no_public_ips');
   assert.deepEqual(response.payload.results, []);
+});
+
+test('existing analysis proxy forwards graph metadata without adding Neo4j credentials', async () => {
+  const originalFetch = globalThis.fetch;
+  const originalBackend = process.env.BACKEND_ORIGIN;
+  let captured = null;
+  const projection = { case_id: 'CS-0123456789AB', evidence_sha256: 'a'.repeat(64) };
+  const response = {
+    statusCode: 200,
+    payload: null,
+    setHeader() {},
+    status(code) { this.statusCode = code; return this; },
+    json(payload) { this.payload = payload; return this; },
+    end() { return this; },
+  };
+  try {
+    process.env.BACKEND_ORIGIN = 'https://backend.example.test';
+    globalThis.fetch = async (url, options) => {
+      captured = { url: String(url), options };
+      return new Response(JSON.stringify({ status: 'unavailable', persisted: false, readback: false, graph: { nodes: [], edges: [] } }), { status: 503, headers: { 'Content-Type': 'application/json' } });
+    };
+    await analyzeEmlHandler({ method: 'POST', query: { operation: 'graph' }, headers: { 'content-type': 'application/json' }, body: projection }, response);
+  } finally {
+    globalThis.fetch = originalFetch;
+    if (originalBackend === undefined) delete process.env.BACKEND_ORIGIN;
+    else process.env.BACKEND_ORIGIN = originalBackend;
+  }
+  assert.equal(captured.url, 'https://backend.example.test/api/v1/evidence-graph');
+  assert.deepEqual(JSON.parse(captured.options.body), projection);
+  assert.ok(!JSON.stringify(captured.options.headers).toLowerCase().includes('neo4j'));
+  assert.equal(response.statusCode, 503);
+  assert.equal(response.payload.status, 'unavailable');
+  assert.equal(response.payload.readback, false);
 });

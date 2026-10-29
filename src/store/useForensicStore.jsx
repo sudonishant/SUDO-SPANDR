@@ -7,6 +7,7 @@ import {
   parseTextInput,
   EMAIL_EXTENSIONS,
 } from '../lib/forensics';
+import { buildEvidenceGraphProjection } from '../lib/evidenceGraph';
 import {
   clearDeviceCases,
   deleteDeviceCase,
@@ -51,6 +52,7 @@ export function ForensicProvider({ children }) {
   const [aiReview, setAiReview] = useState(null);
   const [aiQuestion, setAiQuestion] = useState('');
   const [geoLoading, setGeoLoading] = useState(false);
+  const [graphLoading, setGraphLoading] = useState(false);
   const [sender, setSender] = useState('');
   const [recipient, setRecipient] = useState('');
   const [subject, setSubject] = useState('');
@@ -99,6 +101,7 @@ export function ForensicProvider({ children }) {
     setAiReview(null);
     setAiQuestion('');
     setGeoLoading(false);
+    setGraphLoading(false);
     setError('');
     setActiveTab('overview');
   };
@@ -197,6 +200,7 @@ export function ForensicProvider({ children }) {
     setEvidenceFile(null);
     setAiReview(null);
     setAiQuestion('');
+    setGraphLoading(false);
     setError('');
     setActiveTab('overview');
     return selected;
@@ -251,6 +255,66 @@ export function ForensicProvider({ children }) {
       return payload;
     } finally {
       setGeoLoading(false);
+    }
+  };
+
+  const projectEvidenceGraph = async () => {
+    if (!analysisData) return null;
+    setGraphLoading(true);
+    let payload;
+    try {
+      const projection = buildEvidenceGraphProjection(analysisData);
+      const configuredBackend = (import.meta.env.VITE_API_BASE_URL || '').replace(/\/$/, '');
+      const endpoint = configuredBackend
+        ? `${configuredBackend}/api/v1/evidence-graph`
+        : '/api/v1/analyze-eml?operation=graph';
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(projection),
+      });
+      payload = await response.json().catch(() => null);
+      if (!payload || typeof payload !== 'object') throw new Error('Graph service returned an invalid response.');
+      if (!response.ok && !['not_configured', 'unavailable'].includes(payload.status)) {
+        const detail = typeof payload.detail === 'string' ? ` ${payload.detail}` : '';
+        payload = {
+          status: 'unavailable',
+          case_id: analysisData.case_id,
+          persisted: false,
+          readback: false,
+          source: 'none',
+          message: `The backend rejected or could not complete the graph operation (${response.status}).${detail}`,
+          graph: { nodes: [], edges: [] },
+        };
+      }
+      if (payload.status === 'available' && !(payload.persisted && payload.readback && payload.source === 'neo4j_readback')) {
+        payload = {
+          ...payload,
+          status: 'unavailable',
+          persisted: false,
+          readback: false,
+          source: 'none',
+          message: 'The service did not provide verified Neo4j write/readback evidence. The response will not be presented as a synchronized graph.',
+          graph: { nodes: [], edges: [] },
+        };
+      }
+    } catch (graphError) {
+      payload = {
+        status: 'unavailable',
+        case_id: analysisData.case_id,
+        database: 'Neo4j',
+        persisted: false,
+        readback: false,
+        source: 'none',
+        message: graphError?.message || 'Evidence-graph service is unavailable. No graph success is claimed.',
+        graph: { nodes: [], edges: [] },
+      };
+    }
+    try {
+      await updateActiveCase({ neo4j_graph: payload });
+      return payload;
+    } finally {
+      setGraphLoading(false);
     }
   };
 
@@ -325,6 +389,8 @@ export function ForensicProvider({ children }) {
       runAiReview,
       geoLoading,
       lookupIpContext,
+      graphLoading,
+      projectEvidenceGraph,
     }}>
       {children}
     </ForensicContext.Provider>

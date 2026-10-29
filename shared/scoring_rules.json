@@ -1,9 +1,9 @@
 {
-  "version": "3.0.0",
+  "version": "3.1.0",
   "thresholds": { "review": 35, "high": 70 },
   "content_weights": { "urgency": 12, "credential": 20, "financial": 22, "secrecy": 10, "suspicious_url": 18, "attachment": 22, "url_review": 8 },
   "header_weights": { "reply_to_mismatch": 16, "display_name_review": 8, "missing_message_id": 4, "missing_date": 3, "missing_received": 8 },
-  "authentication_adjustments": { "three_or_more_passes": 0, "dmarc_pass": 0, "aligned_from_return_path": 0, "any_fail": 24, "unaligned_pass_with_request": 8 },
+  "authentication_adjustments": { "three_or_more_passes": 0, "dmarc_pass": 0, "aligned_from_return_path": 0, "any_fail": 24, "spf_softfail": 16, "unaligned_pass_with_request": 8 },
   "combination_weights": { "credential_pressure": 8, "payment_pressure": 10, "reply_path_request": 10, "misleading_credential_link": 8, "authority_payment": 10 },
   "benign_context_adjustments": {},
   "limits": { "min": 0, "max": 100 },

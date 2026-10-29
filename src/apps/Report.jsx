@@ -1,13 +1,14 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import {
   AlertTriangle, Bot, CheckCircle2, ChevronRight, Download, FileCode2, Globe, Hash, Info, LayoutDashboard,
-  Link2, Mail, MapPin, Network, Paperclip, Printer, Radar, RefreshCw, ScanSearch, Shield, ShieldAlert, Tag, XCircle,
+  Link2, Mail, MapPin, Network, Paperclip, Printer, Radar, RefreshCw, ScanSearch, Share2, Shield, ShieldAlert, Tag, XCircle,
 } from 'lucide-react';
 import { useForensicStore } from '../store/useForensicStore';
 import MitrePanel from '../components/MitrePanel';
 import { DossierView } from '../components/Dossier';
 import NetworkMap, { approximatePlace, hasApproximateCoordinates } from '../components/NetworkMap';
 import ReaAnalysisPanel from '../components/ReaAnalysisPanel';
+import EvidenceGraphPanel from '../components/EvidenceGraphPanel';
 
 
 function Panel({ icon: Icon, eyebrow, title, children, full = false }) {
@@ -326,7 +327,7 @@ function RelayPanel({ relay, onLookup, geoLoading }) {
           <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#5aa8f5,#2f7fe0)' }}><Globe size={12} /></span>
           {geoLoading ? 'Looking up network and approximate location…' : 'Check IP + approximate location'}
         </button>
-        <small>On this explicit click, extracted public IPs go to rdap.org for registration context and ipwho.is for approximate coordinates. Neither source can identify a person or exact sender location.</small>
+        <small>On this explicit click, extracted public IPs go to rdap.org for registration context and ipwho.is for approximate coordinates. When coordinates are returned, the real Leaflet map also requests OpenStreetMap tiles; that third party can receive browser/request metadata and the viewed tile area. None of these sources can identify a person or exact sender location.</small>
       </div>
       <p className="disclaimer" style={{ marginTop: 8 }}>{relay.note} The order shown is extracted evidence order, not a geographic route.</p>
     </div>
@@ -403,6 +404,7 @@ function AnalysisResultView({ data }) {
   useEffect(() => { setActive('overview'); }, [data.case_id]);
   const {
     resetResult, aiReview, aiQuestion, setAiQuestion, runAiReview, geoLoading, lookupIpContext,
+    graphLoading, projectEvidenceGraph,
   } = useForensicStore();
   const parsed = data.parsed || {};
   const threat = data.threat || {};
@@ -415,7 +417,7 @@ function AnalysisResultView({ data }) {
       base.push(['headers', 'Headers', FileCode2], ['auth', 'Auth checks', Shield], ['route', 'Relay path', Network], ['links', 'URLs', Link2]);
     }
     if (['eml', 'msg', 'attachment'].includes(data.mode)) base.push(['files', 'Files', Paperclip], ['deep', 'Deep inspection', ScanSearch]);
-    base.push(['mitre', 'MITRE', Radar], ['dossier', 'Dossier', Printer]);
+    base.push(['graph', 'Evidence graph', Share2], ['mitre', 'MITRE', Radar], ['dossier', 'Dossier', Printer]);
     return base;
   }, [data.mode]);
 
@@ -581,6 +583,14 @@ function AnalysisResultView({ data }) {
         <div className="report-grid">
           <Panel icon={ScanSearch} eyebrow="Bounded provider evidence" title="REA artifact and JavaScript analysis" full>
             <ReaAnalysisPanel />
+          </Panel>
+        </div>
+      )}
+
+      {active === 'graph' && (
+        <div className="report-grid">
+          <Panel icon={Share2} eyebrow="Actual database write + readback" title="Neo4j evidence graph" full>
+            <EvidenceGraphPanel data={data} onProject={projectEvidenceGraph} loading={graphLoading} />
           </Panel>
         </div>
       )}

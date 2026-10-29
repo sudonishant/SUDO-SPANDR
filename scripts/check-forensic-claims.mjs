@@ -14,6 +14,8 @@ const activeFiles = [
   'public/v86/NOTICE.md',
   'scripts/verify-deploy-headers.mjs',
   'src/components/NetworkMap.jsx',
+  'src/components/EvidenceGraphPanel.jsx',
+  'src/lib/evidenceGraph.js',
   'src/components/FormalDossier.jsx',
   'src/components/ReaAnalysisPanel.jsx',
   'src/pages/SandboxPage.jsx',
@@ -41,6 +43,7 @@ const activeFiles = [
   'backend/app/core/mitre_engine.py',
   'backend/app/core/web_sandbox_engine.py',
   'backend/app/core/nlp_forensic_engine.py',
+  'backend/app/core/neo4j_engine.py',
   'backend/app/static_index.py',
   // Serverless edge functions
   'api/v1/ai-review.js',

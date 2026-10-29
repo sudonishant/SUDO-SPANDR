@@ -1,8 +1,8 @@
 # 🛡️ SUDO SPANDR — SentinelMail Forensic Ecosystem
 
-> **Current React workspace:** read [Evidence map, formal dossier and REA deep inspection](docs/EVIDENCE_DOSSIER_REA.md) and [Agent PC and Fieldwork UI redesign](docs/AGENT_PC_REDESIGN.md) for the implemented, tested behavior and deployment boundaries. Older legacy narrative below is not, by itself, evidence that a capability is configured, certified, or available in the current deployment.
+> **Current React workspace:** read [Neo4j evidence graph and real map](docs/NEO4J_EVIDENCE_GRAPH.md), [Evidence map, formal dossier and REA deep inspection](docs/EVIDENCE_DOSSIER_REA.md) and [Agent PC and Fieldwork UI redesign](docs/AGENT_PC_REDESIGN.md) for the implemented, tested behavior and deployment boundaries. Older legacy narrative below is not, by itself, evidence that a capability is configured, certified, or available in the current deployment.
 
-### Advanced Multi-Vector Email Forensics, Geodesic Trajectory Radar, Threat Attribution Graph & Air-Gapped Sandbox
+### Advanced Multi-Vector Email Forensics, Approximate IP Map, Evidence Graph & Isolated Sandbox
 **Smart India Hackathon (SIH) 2026 | Problem Statement #26106**
 
 🌐 **Live Deployments:** [sudospandrsce.vercel.app](https://sudospandrsce.vercel.app) · [cybersquadsce.vercel.app](https://cybersquadsce.vercel.app)  
@@ -13,7 +13,7 @@
 ![Python: 3.10+](https://img.shields.io/badge/Python-3.10%2B-blue.svg)
 ![FastAPI](https://img.shields.io/badge/Backend-FastAPI-009688.svg)
 ![Legal Compliance](https://img.shields.io/badge/Compliance-Section%2065B%20IEA%20%2F%20BSA%20Sec%2063-emerald.svg)
-![Graph Database](https://img.shields.io/badge/Attribution-Neo4j%20Cypher%20%2B%20STIX%202.1-purple.svg)
+![Graph Database](https://img.shields.io/badge/Evidence-Neo4j%20Write%20%2B%20Readback-purple.svg)
 ![Sandbox](https://img.shields.io/badge/Sandbox-Air--Gapped%20noVNC%20Chromium-orange.svg)
 
 ---
@@ -22,7 +22,7 @@
 
 **SUDO SPANDR SentinelMail** is an enterprise-grade digital email forensics, multi-hop transport tracing, and cyber threat triage ecosystem designed for law enforcement agencies, cyber crime investigation cells (CERT-In / Cyber Cells), and SOC analysts.
 
-Traditional email security tools rely on blackbox cloud lookups or simple keyword matching. SentinelMail provides **deterministic, evidence-based triage** backed by cryptographic chain-of-custody, chronological RFC 5322 header reconstruction, true magic-byte payload carving, high-fidelity real-IP geodesic telemetry, and automated graph campaign correlation.
+Traditional email security tools rely on blackbox cloud lookups or simple keyword matching. SentinelMail provides **deterministic, evidence-based triage** with SHA-256 evidence hashing, submitted-header reconstruction, static payload inspection, explicit approximate IP-provider context and case-scoped Neo4j evidence-graph readback.
 
 ---
 
@@ -142,27 +142,16 @@ SentinelMail renders an interactive, radar-style geospatial trajectory showing t
 
 ---
 
-### 4. Threat Identity Correlation & Campaign Attribution Graph (Component 4)
+### 4. Case-scoped Neo4j Evidence Graph (Component 4)
 
-Component 4 correlates isolated email artifacts into a structured graph database topology:
+The current React workspace provides an explicit **Evidence graph** action rather than treating generated Cypher as a synchronized database:
 
-1. **Interactive SVG Graph Canvas (920 x 460)**:
-   - High-contrast tactical HUD viewport with corner brackets and background telemetry grid.
-   - **Clustered Node Layout**:
-     - **Origin MTA & Relays (Left)**: Origin server IP (`🖥️`) and transit relay nodes (`🔀`).
-     - **Sender & Target (Center)**: Claimed sender identity (`👤`) and recipient target (`🎯`).
-     - **Threat Campaign Cluster (Top)**: Attributed campaign cluster (`☣️`) in radiant purple.
-     - **Payload URLs & Files (Right)**: Embedded links (`🔗`) and carved attachments (`📎`).
-     - **Evidence Digest (Bottom)**: Cryptographic SHA-256 preservation node (`⛓️`).
-2. **Relationship Badges & Directed Markers**:
-   - Connected via glowing dashed directional vectors with arrowheads.
-   - Edge labels: `TRANSMITTED_BY`, `FORWARDED_TO`, `TARGETED`, `ATTRIBUTED_TO`, `ANCHORED_TO`, `EMBEDS_PAYLOAD`, `CARRIES_ATTACHMENT`.
-3. **Selected Graph Entity Deep Dive Inspector**:
-   - Clicking any entity on the canvas highlights the node and updates the Inspector Card in real-time.
-   - Displays Entity Type, Icon, Title, Sub-label, Full Raw Value, Forensic Threat Context, and Cypher Query Label.
-4. **Cypher & STIX 2.1 Exporters**:
-   - **Neo4j Cypher**: Generates production-ready `MERGE` and `CREATE` Cypher statements for ingestion into Neo4j Browser or Bloom.
-   - **STIX 2.1**: Generates standardized JSON threat intelligence bundles containing `threat-actor`, `indicator`, `ipv4-addr`, and `url` objects.
+1. **Strict metadata allowlist**: case ID/hash, claimed sender, recipient, parsed domains, header IP observations, sanitized URLs, attachment metadata and reported authentication summaries. Raw message bodies, EML/MSG bytes, arbitrary headers and attachment content are rejected by the graph model.
+2. **Evidence-scoped relationships**: `HAS_CLAIMED_SENDER`, `HAS_RECIPIENT`, `OBSERVED_DOMAIN`, `OBSERVED_HEADER_IP`, `CONTAINS_URL`, `HAS_ATTACHMENT` and `HAS_REPORTED_AUTH_RESULT`. These do not assert origin, sender control, campaign attribution, ownership or maliciousness.
+3. **Real write + readback**: the backend uses parameterized Neo4j transactions, then queries the committed case subgraph. Only that readback is displayed with returned node/relationship counts and an entity inspector. Re-projection is idempotent and case-scoped.
+4. **Honest degradation**: missing configuration, connection failure or readback mismatch produces no success graph. Neo4j credentials remain server-side, and the existing serverless proxy is reused within the 12-function budget.
+
+See [Neo4j evidence graph and real map](docs/NEO4J_EVIDENCE_GRAPH.md) for configuration, privacy and verification boundaries.
 
 ---
 
@@ -416,7 +405,8 @@ python3 backend/security_test.py
 | `POST` | `/api/v1/sandbox/lab/attachment` | Deep attachment analysis: magic/entropy, macros, PE/PDF/ZIP dives, embedded IOCs | Email Threat Lab |
 | `POST` | `/api/v1/sandbox/lab/url` | Deep link analysis: typosquat heuristics, redirect chain, credential-form sniff, TLS | Email Threat Lab |
 | `POST` | `/api/v1/sandbox/lab/auto-triage` | One-click automation: .eml/files/URLs → carved + scored attachments & links report | Email Threat Lab |
-| `GET` | `/api/v1/export/cypher/{case_id}` | Export Neo4j Cypher statements for entity graph attribution | STIX 2.1 Graph Mapping |
+| `POST` | `/api/v1/evidence-graph` | Explicit sanitized case projection with mandatory Neo4j database readback | Case-scoped evidence graph |
+| `GET` | `/api/v1/export/cypher/{case_id}` | Disabled; no placeholder identities or display-only Cypher presented as a synchronized graph | Use explicit evidence-graph projection |
 | `GET` | `/api/v1/supabase/schema` | Retrieve Supabase PostgreSQL forensic schema & RLS policies | ISO/IEC 27037 Evidence Vault |
 
 ---
@@ -424,7 +414,7 @@ python3 backend/security_test.py
 ## 🖥️ React analyst workspace UI map
 
 The served entry point is a responsive, hash-routed React workspace with a warm sand, forest teal,
-copper and plum visual system and a recolored SUDO SPANDR emblem (`public/spandr-mark-warm.png`).
+copper and plum visual system while preserving the original blue/white SUDO SPANDR emblem.
 It has a desktop sidebar, mobile navigation drawer and bottom navigation; the older fixed
 desktop-window shell is not the current workspace UI.
 

@@ -22,21 +22,32 @@
   margin: 16px 0; overflow: hidden; border: 1px solid #d4dfd8; border-radius: 18px;
   background: #eef4f0; box-shadow: 0 12px 32px rgba(42, 65, 55, .08);
 }
-.network-map svg { display: block; width: 100%; height: auto; }
-.network-map__graticule { fill: none; stroke: #bacbc2; stroke-width: .65; stroke-dasharray: 2 4; opacity: .7; }
-.network-map__land { fill: #d5e0d6; stroke: #aebfb4; stroke-width: .75; }
-.network-map__borders { fill: none; stroke: #f7faf7; stroke-width: .5; opacity: .9; }
-.network-map__marker-ring { fill: rgba(183, 91, 55, .18); stroke: rgba(163, 72, 40, .35); stroke-width: 1; }
-.network-map__marker-dot { fill: #ad5636; stroke: #fffaf2; stroke-width: 2; }
-.network-map__marker text { fill: #fff; font: 800 9px/1 ui-sans-serif, system-ui, sans-serif; pointer-events: none; }
+.network-map__privacy { display: flex; align-items: flex-start; gap: 9px; padding: 11px 14px; border-bottom: 1px solid #d4dfd8; background: #fffaf1; color: #625b4e; }
+.network-map__privacy > svg { flex: 0 0 auto; margin-top: 2px; color: #a06443; }
+.network-map__privacy p { margin: 0; font-size: 10px; line-height: 1.5; }
+.network-map__canvas-wrap { position: relative; background: #dfe9e3; }
+.network-map__canvas { width: 100%; height: 420px; min-height: 240px; z-index: 0; }
+.network-map .leaflet-container { background: #dfe9e3; font-family: inherit; }
+.network-map .leaflet-control-attribution { padding: 2px 6px; background: rgba(255, 255, 255, .88); color: #4f5e55; font-size: 9px; }
+.network-map .leaflet-control-attribution a { color: #315f52; }
+.network-map .leaflet-control-zoom a { color: #315f52; }
+.network-map__tile-status { position: absolute; z-index: 500; top: 12px; left: 50%; width: min(88%, 620px); transform: translateX(-50%); padding: 8px 12px; border: 1px solid rgba(80, 105, 91, .25); border-radius: 9px; background: rgba(255, 255, 255, .94); box-shadow: 0 4px 16px rgba(35, 55, 45, .12); color: #4f6157; text-align: center; font-size: 10px; line-height: 1.4; pointer-events: none; }
+.network-map__tile-status.is-error { border-color: rgba(177, 108, 58, .4); background: rgba(255, 248, 235, .96); color: #795232; }
+.network-map-div-icon { border: 0; background: transparent; }
+.network-map-div-icon span { display: grid; place-items: center; width: 34px; height: 34px; border: 3px solid #fffaf2; border-radius: 50%; background: #ad5636; box-shadow: 0 4px 12px rgba(75, 44, 29, .35); color: #fff; font: 800 12px/1 ui-sans-serif, system-ui, sans-serif; }
+.network-map-popup strong, .network-map-popup span, .network-map-popup small { display: block; }
+.network-map-popup strong { color: #2f453a; font: 700 12px/1.4 var(--font-mono); overflow-wrap: anywhere; }
+.network-map-popup span { margin-top: 4px; color: #4b5e53; font-size: 11px; }
+.network-map-popup small { margin-top: 5px; color: #6b746f; font-size: 9px; line-height: 1.45; }
 .network-map figcaption {
   display: flex; justify-content: space-between; gap: 12px; padding: 10px 14px;
   border-top: 1px solid #d4dfd8; background: rgba(255, 255, 255, .72); color: #5f6e65; font-size: 10px;
 }
 .network-map figcaption span { display: inline-flex; align-items: center; gap: 6px; }
-.network-map figcaption i { width: 7px; height: 7px; border-radius: 50%; background: #ad5636; }
+.network-map figcaption i { flex: 0 0 auto; width: 7px; height: 7px; border-radius: 50%; background: #ad5636; }
+.network-map figcaption a { flex: 0 0 auto; color: #426b5b; text-decoration: underline; text-underline-offset: 2px; }
 .network-map--compact { border-radius: 12px; box-shadow: none; }
-.network-map--compact svg { max-height: 300px; }
+.network-map--compact .network-map__canvas { height: 280px; }
 .network-map--empty { display: flex; align-items: flex-start; gap: 12px; padding: 18px; color: #53665b; }
 .network-map--empty > svg { flex: 0 0 auto; width: 20px; color: #9a684d; }
 .network-map--empty strong { display: block; color: #374b40; font-size: 12px; }
@@ -316,8 +327,9 @@
   .print-area.formal-dossier .formal-table thead th { background: #e8eeea !important; }
   .print-area.formal-dossier .formal-table tbody th { background: #f3f5f1 !important; }
   .print-area.formal-dossier .network-map { break-inside: avoid; box-shadow: none; }
-  .print-area.formal-dossier .network-map--compact svg { max-height: 190px; }
-  .print-area.formal-dossier .network-map__marker text { color: #fff !important; fill: #fff !important; }
+  .print-area.formal-dossier .network-map--compact .network-map__canvas { height: 190px; min-height: 190px; }
+  .print-area.formal-dossier .network-map__privacy { padding: 6px 9px; }
+  .print-area.formal-dossier .network-map__privacy p { font-size: 7px; }
   .print-area.formal-dossier .network-map figcaption { font-size: 7px; }
   .print-area.formal-dossier .formal-notice,
   .print-area.formal-dossier .formal-legal,

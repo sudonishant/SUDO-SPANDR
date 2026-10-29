@@ -297,6 +297,15 @@ function assessTextSignals({ subject, body, sender, urls, attachments, headerFin
     const points = scoringRules.authentication_adjustments.any_fail;
     score += points;
     adjustments.push({ label: `Authentication failure reported${auth.failed_methods.length ? `: ${auth.failed_methods.join(', ')}` : ''}`, points, evidence: 'Receiver-reported fail/permerror/hardfail in submitted headers; independently re-verify before attribution.', source: 'authentication-header-check' });
+  } else if (auth.spf_softfail) {
+    const points = scoringRules.authentication_adjustments.spf_softfail ?? 16;
+    score += points;
+    adjustments.push({
+      label: `SPF softfail reported${auth.spf_softfail_count > 1 ? ` · ${auth.spf_softfail_count} submitted results` : ''}`,
+      points,
+      evidence: 'Receiver-reported SPF softfail is weaker than SPF fail and is not proof of spoofing. Repeated copies of the same submitted disposition are not scored multiple times.',
+      source: 'authentication-header-check',
+    });
   } else if (auth.passes_without_visible_from_alignment && (has('financial') || has('credential') || has('reply-to-mismatch'))) {
     const points = scoringRules.authentication_adjustments.unaligned_pass_with_request ?? 8;
     score += points;
@@ -349,7 +358,7 @@ const CATEGORY_RULES = {
   transactional: [['transaction vocabulary', /\b(receipt|confirmation|booking|statement|order confirmation|appointment|subscription renewal)\b/i, 24]],
 };
 
-function classifyMail({ subject = '', body = '', sender = '', urls = [], attachments = [], threatScore = 0 }) {
+function classifyMail({ subject = '', body = '', sender = '', urls = [], attachments = [], threatScore = 0, authenticationReview = false }) {
   const text = `${subject}\n${body}\n${sender}`;
   const scores = Object.fromEntries(Object.keys(CATEGORY_DEFINITIONS).map((id) => [id, 0]));
   const evidence = [];
@@ -374,7 +383,7 @@ function classifyMail({ subject = '', body = '', sender = '', urls = [], attachm
   });
 
   const bodyWords = text.split(/\s+/).filter(Boolean).length;
-  if (!evidence.length && bodyWords >= 8) {
+  if (!evidence.length && bodyWords >= 8 && !authenticationReview) {
     scores.legitimate = 18;
     evidence.push({ category_id: 'legitimate', label: 'No stronger category signal observed', points: 18, source: 'content review' });
   }
@@ -763,12 +772,16 @@ export async function buildEmailAnalysis(parsed) {
   const dnsAuth = authenticationSnapshot(headers, headerEntries, parsed.sender);
   const categoryCandidate = classifyMail({ subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, threatScore: 0 });
   const threat = assessTextSignals({ subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, headerFindings, contentFindings, headers, headerEntries, categoryId: categoryCandidate.category_id });
-  const categoryAnalysis = classifyMail({ subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, threatScore: threat.risk_score });
+  const categoryAnalysis = classifyMail({
+    subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, threatScore: threat.risk_score,
+    authenticationReview: threat.authentication_context.any_fail || threat.authentication_context.spf_softfail,
+  });
   const rawHash = parsed.rawHash || await sha256Hex(new TextEncoder().encode(parsed.rawText || parsed.body || ''));
   const hops = buildRelayHops(headerEntries);
   const explanations = [];
   if (!dnsAuth.results.length) explanations.push('No supported receiver authentication result was parsed. Missing Authentication-Results is not treated as proof of either legitimacy or spoofing.');
   if (dnsAuth.alignment.reported_dmarc_fail) explanations.push('A submitted receiver header reports DMARC failure for the visible author domain. Independently verify the receiver and original authentication evidence.');
+  if (threat.authentication_context.spf_softfail) explanations.push(`Submitted receiver evidence reports SPF softfail${threat.authentication_context.spf_softfail_count > 1 ? ` in ${threat.authentication_context.spf_softfail_count} result fields` : ''}. This is a review signal weaker than SPF fail; it does not independently prove spoofing or malicious content.`);
   if (dnsAuth.alignment.visible_from_reported_validated) explanations.push('At least one reported result supports visible-From validation or alignment. This addresses an authentication layer only; it does not make the message content, links or requests trustworthy.');
   if (dnsAuth.alignment.passes_without_visible_from_alignment) explanations.push('SPF/DKIM pass evidence is present without demonstrated alignment to the visible From domain. A protocol pass—including HELO-only SPF or a signature for another domain—must not be read as validation of the displayed sender.');
   if (threat.authentication_context.mixed_methods.length) explanations.push(`Conflicting results appear for ${threat.authentication_context.mixed_methods.join(', ')} across submitted headers. All results are retained instead of silently selecting one.`);
@@ -790,7 +803,10 @@ export async function buildEmailAnalysis(parsed) {
     },
     authentication_alignment: dnsAuth.alignment,
     content_findings: contentFindings,
-    top_findings: [...threat.signals].sort((a, b) => Number(b.weight || 0) - Number(a.weight || 0)).slice(0, 6).map((signal) => ({ label: signal.label, weight: signal.weight, evidence: signal.evidence })),
+    top_findings: [
+      ...threat.signals.map((signal) => ({ label: signal.label, weight: Number(signal.weight || 0), evidence: signal.evidence })),
+      ...threat.adjustments.map((adjustment) => ({ label: adjustment.label, weight: Number(adjustment.points || 0), evidence: adjustment.evidence })),
+    ].sort((a, b) => b.weight - a.weight).slice(0, 6),
     explanations,
     score_policy: 'Observed signals are additive. Authentication passes and message-category labels never erase those signals. Scores remain heuristic triage, not probability or a final attribution verdict.',
   };

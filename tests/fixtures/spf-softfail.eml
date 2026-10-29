@@ -1,0 +1,15 @@
+Delivered-To: analyst@example.org
+Received: from relay.example.net (relay.example.net. [192.0.2.25]) by mx.example.org with ESMTPS id softfail1; Mon, 21 Jun 2021 03:40:02 -0700 (PDT)
+ARC-Authentication-Results: i=1; mx.example.org; spf=softfail (domain does not designate 192.0.2.25 as permitted sender) smtp.mailfrom=student@cse.college.example
+Return-Path: <student@cse.college.example>
+Received-SPF: softfail (domain does not designate 192.0.2.25 as permitted sender) client-ip=192.0.2.25;
+Authentication-Results: mx.example.org; spf=softfail (domain does not designate 192.0.2.25 as permitted sender) smtp.mailfrom=student@cse.college.example
+To: analyst@example.org
+Subject: =?UTF-8?B?V2hvYW1pPw==?=
+From: "Student Example" <student@cse.college.example>
+Reply-To: student@cse.college.example
+Content-Type: text/plain; charset=utf-8
+Message-Id: <softfail-fixture@relay.example.net>
+Date: Mon, 21 Jun 2021 12:40:02 +0200 (CEST)
+
+This is a test to learn spoofing.

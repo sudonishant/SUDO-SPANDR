@@ -27,7 +27,7 @@ from app.config import settings
 from app.core.attachment_carver import disassemble_attachment
 from app.core.blockchain_ledger import notarize_evidence_on_chain, verify_chain_record
 from app.core.category_engine import calculate_threat_score, classify_mail
-from app.core.neo4j_engine import generate_cypher_statements, sync_to_neo4j_instance
+from app.core.neo4j_engine import EvidenceGraphProjection, project_evidence_graph
 from app.core.nlp_forensic_engine import analyze_body_paragraphs
 from app.core.openrouter_client import request_ai_second_opinion
 from app.core.parser_engine import parse_eml_stream
@@ -527,8 +527,15 @@ def _build_result(
     result_dict["indic_nlp"] = indic_threats
     result_dict["pii_redaction"] = redact_dpdp_pii(body, redact=True)
 
-    # Neo4j Cypher Graph Ingestion & Supabase Real-time Cloud Sync
-    result_dict["neo4j_graph"] = sync_to_neo4j_instance(result_dict)
+    # Neo4j projection is an explicit, separate metadata-only action. Raw email
+    # analysis must not silently write message-derived data to another service.
+    result_dict["neo4j_graph"] = {
+        "status": "not_requested",
+        "persisted": False,
+        "readback": False,
+        "source": "none",
+        "message": "Use the explicit evidence-graph action to project sanitized case metadata and require Neo4j readback.",
+    }
     result_dict["supabase_sync"] = sync_to_supabase(result_dict)
     return result_dict
 
@@ -538,9 +545,22 @@ def verify_blockchain_record(tx_hash: str) -> Dict[str, Any]:
     return verify_chain_record(tx_hash, "SHA256-VERIFIED")
 
 
+@app.post(f"{settings.API_V1_STR}/evidence-graph")
+def create_evidence_graph_projection(projection: EvidenceGraphProjection) -> Dict[str, Any]:
+    """Project strict metadata and return the graph actually read from Neo4j."""
+    return project_evidence_graph(projection)
+
+
 @app.get(f"{settings.API_V1_STR}/export/cypher/{{case_id}}")
 def export_neo4j_cypher(case_id: str) -> Dict[str, Any]:
-    return generate_cypher_statements({"parsed": {"meta": {"from": "sender@target.com", "to": "victim@org.in"}}})
+    # Do not manufacture example identities or imply that display-only Cypher is
+    # a synchronized database graph. Case visualization uses readback from the
+    # explicit projection endpoint above.
+    return {
+        "status": "disabled",
+        "case_id": case_id,
+        "message": "Standalone generated-Cypher export is disabled. Use the explicit case-scoped Neo4j projection; successful visualizations contain database readback only.",
+    }
 
 
 @app.get(f"{settings.API_V1_STR}/supabase/schema")

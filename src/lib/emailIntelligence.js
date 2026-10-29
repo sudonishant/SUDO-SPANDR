@@ -283,6 +283,7 @@ export function authenticationContext(headers = {}, headerEntries = [], sender =
   const snapshot = authenticationSnapshot(headers, headerEntries, sender);
   const results = snapshot.results;
   const failed = results.filter((item) => ['fail', 'permerror', 'hardfail'].includes(item.result));
+  const spfSoftfail = results.filter((item) => item.method === 'spf' && item.result === 'softfail');
   const states = {};
   results.forEach((item) => {
     states[item.method] ||= new Set();
@@ -293,6 +294,8 @@ export function authenticationContext(headers = {}, headerEntries = [], sender =
     dmarc_pass: snapshot.alignment.reported_dmarc_pass,
     any_fail: failed.length > 0,
     failed_methods: [...new Set(failed.map((item) => item.method.toUpperCase()))],
+    spf_softfail: spfSoftfail.length > 0,
+    spf_softfail_count: spfSoftfail.length,
     mixed_methods: Object.entries(states).filter(([, values]) => values.size > 1).map(([method]) => method.toUpperCase()),
     aligned_from_return_path: domainAlignment(addressDomain(sender), addressDomain(headers['return-path'])).aligned,
     spf_aligned_pass: snapshot.alignment.spf_aligned_pass,

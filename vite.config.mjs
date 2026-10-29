@@ -1,6 +1,47 @@
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import path from 'node:path'
+import ipContextHandler from './api/v1/ip-context.js'
+
+// Run the same real serverless IP provider handler during local development.
+// This avoids mocked browser geolocation while production continues to use the
+// existing api/v1/ip-context.js function.
+function localServerlessHandlers() {
+  const ipContext = async (req, res) => {
+    try {
+      const chunks = []
+      let size = 0
+      for await (const chunk of req) {
+        size += chunk.length
+        if (size > 65_536) {
+          res.statusCode = 413
+          res.setHeader('Content-Type', 'application/json')
+          res.end(JSON.stringify({ status: 'invalid_request', message: 'IP lookup request is too large.' }))
+          return
+        }
+        chunks.push(chunk)
+      }
+      const raw = Buffer.concat(chunks).toString('utf8')
+      req.body = raw ? JSON.parse(raw) : {}
+      res.status = (code) => { res.statusCode = code; return res }
+      res.json = (payload) => {
+        res.setHeader('Content-Type', 'application/json')
+        res.end(JSON.stringify(payload))
+        return res
+      }
+      await ipContextHandler(req, res)
+    } catch {
+      res.statusCode = 400
+      res.setHeader('Content-Type', 'application/json')
+      res.end(JSON.stringify({ status: 'invalid_request', message: 'Expected a valid JSON IP lookup request.' }))
+    }
+  }
+  return {
+    name: 'spandr-local-serverless-handlers',
+    configureServer(server) { server.middlewares.use('/api/v1/ip-context', ipContext) },
+    configurePreviewServer(server) { server.middlewares.use('/api/v1/ip-context', ipContext) },
+  }
+}
 
 const agentTarget = process.env.AGENT_COMPUTER_TARGET || ''
 const agentToken = process.env.AGENT_COMPUTER_TOKEN || ''
@@ -51,11 +92,25 @@ const reaProxy = reaTarget && reaToken ? {
   },
 } : {}
 
+const apiTarget = process.env.API_PROXY_TARGET || 'http://127.0.0.1:8000'
+const analysisProxy = {
+  // Keep local development on the same browser endpoint as the existing
+  // serverless proxy while routing the metadata-only operation to FastAPI.
+  '/api/v1/analyze-eml': {
+    target: apiTarget,
+    changeOrigin: true,
+    rewrite: (requestPath) => requestPath.includes('operation=graph')
+      ? requestPath.replace('/api/v1/analyze-eml', '/api/v1/evidence-graph')
+      : requestPath,
+  },
+}
+
 const localApiProxy = {
   ...agentProxy,
   ...reaProxy,
+  ...analysisProxy,
   '/api': {
-    target: process.env.API_PROXY_TARGET || 'http://127.0.0.1:8000',
+    target: apiTarget,
     changeOrigin: true,
   },
 }
@@ -63,7 +118,7 @@ const localApiProxy = {
 // Dev/preview servers accept the sandbox preview host so the app can be opened
 // from the workspace viewer as well as from localhost.
 export default defineConfig({
-  plugins: [react()],
+  plugins: [react(), localServerlessHandlers()],
   resolve: {
     alias: {
       'iconv-lite': path.resolve('./src/lib/iconv-lite-browser.js'),

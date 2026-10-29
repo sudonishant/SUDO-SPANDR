@@ -599,7 +599,7 @@
   .case-source small { font-size: 9.5px; }
 
   .network-map { border-radius: 16px; }
-  .network-map:not(.network-map--compact) svg { height: clamp(280px, 34vw, 420px); }
+  .network-map:not(.network-map--compact) .network-map__canvas { height: clamp(280px, 34vw, 420px); }
   .network-map figcaption { font-size: 10.5px; }
   .network-context-result { padding: 15px; border-radius: 14px; }
   .network-context-result strong { font-size: 13px; }
@@ -652,7 +652,7 @@
     .deep-section-heading { align-items: flex-start; flex-direction: column; gap: 5px; }
     .deep-section-heading > small { text-align: left; }
     .relay-summary--deep { grid-template-columns: 1fr; }
-    .network-map:not(.network-map--compact) svg { height: 280px; }
+    .network-map:not(.network-map--compact) .network-map__canvas { height: 280px; }
   }
 
   @media (max-width: 540px) {
@@ -675,7 +675,7 @@
     .deep-insight-strip__action { grid-column: 2; }
     .deep-email-hero h4 { font-size: 15px; }
     .deep-explanation-card { padding: 15px; }
-    .network-map:not(.network-map--compact) svg { height: 240px; }
+    .network-map:not(.network-map--compact) .network-map__canvas { height: 240px; }
   }
 
   @media (prefers-reduced-motion: reduce) {

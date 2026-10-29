@@ -1,7 +1,7 @@
 """Security Regression Test Suite for CyberSquad SentinelMail.
 Verifies fixes for:
 1. Zero hardcoded secrets in backend source files.
-2. Cypher query injection hardening and parameterization.
+2. Strict metadata-only Neo4j projection and parameterized case-scoped queries.
 3. Server-Side Request Forgery (SSRF) defense on all internal/cloud metadata targets.
 4. Safe degraded mode for unconfigured external services (Neo4j, Supabase).
 """
@@ -13,7 +13,9 @@ from pathlib import Path
 backend_dir = Path(__file__).resolve().parent
 sys.path.insert(0, str(backend_dir))
 
-from app.core.neo4j_engine import generate_cypher_statements, sync_to_neo4j_instance, CYPHER_INGEST_QUERY
+from pydantic import ValidationError
+
+from app.core.neo4j_engine import EvidenceGraphProjection, project_evidence_graph
 from app.core.supabase_engine import sync_to_supabase, get_supabase_config
 from app.core.web_sandbox_engine import is_safe_public_destination, inspect_url_dom_and_headers
 
@@ -33,50 +35,55 @@ def test_no_hardcoded_secrets():
     print("✓ Passed: Zero hardcoded secrets in backend source files.")
 
 
-def test_cypher_injection_prevention():
-    """Verify that malicious inputs cannot break out of Cypher string literals."""
-    injection_sender = "attacker' OR 1=1 WITH n MATCH (m) DETACH DELETE m //"
-    injection_target = "victim' OR '1'='1"
-    injection_url = "http://phish.example.test/payload' OR 'a'='a"
-
+def test_graph_metadata_validation():
+    """Strict graph inputs reject raw content and unsafe URL credential material."""
+    sha256 = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"
     case_data = {
-        "parsed": {
-            "meta": {
-                "from": injection_sender,
-                "to": injection_target,
-            }
-        },
-        "relay_info": {
-            "origin_node": {
-                "ip": "203.0.113.5",
-                "geo": {"country": "India", "city": "Delhi", "asn": "AS133618"}
-            }
-        },
-        "category_analysis": {"category_label": "Phishing / BEC"},
-        "graph_topology": {"campaign_id": "CAMP' UNION ALL MATCH (x) RETURN x //"},
-        "evidence": {"sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855"},
-        "threat": {"risk_score": 95},
-        "aitm_analysis": [{"url": injection_url, "display_domain": "phish.example.test"}]
+        "case_id": f"CS-{sha256[:12].upper()}",
+        "evidence_sha256": sha256,
+        "source_mode": "eml",
+        "triage_score": 16,
+        "category_id": "unknown",
+        "category_label": "Unknown / insufficient evidence",
+        "sender": "sender@example.test",
+        "recipient": "recipient@example.org",
+        "ips": [{"ip": "192.0.2.10", "field": "Received"}],
+        "urls": [{"url": "https://example.test/review", "risk": "REVIEW", "kind": "actionable link"}],
+        "attachments": [],
+        "reported_auth": [],
     }
+    projection = EvidenceGraphProjection.model_validate(case_data)
+    assert projection.case_id == case_data["case_id"]
 
-    bundle = generate_cypher_statements(case_data)
-    
-    # 1. Parameterized template verification
-    assert "$sender" in bundle["query_template"]
-    assert "$recipient" in bundle["query_template"]
-    assert "$campaign_id" in bundle["query_template"]
-    assert bundle["parameters"]["sender"] == injection_sender
-    assert bundle["parameters"]["recipient"] == injection_target
+    for prohibited_field, value in (("body", "raw body"), ("raw_eml", "From: raw"), ("headers", {"received": "raw"})):
+        invalid = {**case_data, prohibited_field: value}
+        try:
+            EvidenceGraphProjection.model_validate(invalid)
+            raise AssertionError(f"Graph model accepted prohibited field {prohibited_field}")
+        except ValidationError:
+            pass
 
-    # 2. Escaped query display verification: raw unescaped single quote followed by OR must not exist
-    display_query = bundle["cypher_query"]
-    assert "attacker' OR" not in display_query
-    assert "attacker\\' OR" in display_query
+    for unsafe_url in ("https://user:secret@example.test/path", "https://example.test/path?token=secret", "https://example.test/path#secret"):
+        try:
+            EvidenceGraphProjection.model_validate({**case_data, "urls": [{"url": unsafe_url}]})
+            raise AssertionError(f"Graph model accepted unsanitized URL {unsafe_url}")
+        except ValidationError:
+            pass
 
-    # 3. Graceful execution without credentials
-    sync_result = sync_to_neo4j_instance(case_data)
-    assert sync_result["neo4j_status"] in ("CONFIG_PENDING", "LIVE_SYNCED_TO_NEO4J_AURA")
-    print("✓ Passed: Cypher query is properly parameterized and immune to string breakout.")
+    saved = {key: os.environ.get(key) for key in ("NEO4J_URI", "NEO4J_USER", "NEO4J_PASSWORD", "NEO4J_AUTH_DISABLED")}
+    try:
+        os.environ["NEO4J_URI"] = ""
+        os.environ["NEO4J_AUTH_DISABLED"] = "false"
+        result = project_evidence_graph(projection)
+        assert result["status"] == "not_configured"
+        assert result["persisted"] is False and result["readback"] is False
+    finally:
+        for key, value in saved.items():
+            if value is None:
+                os.environ.pop(key, None)
+            else:
+                os.environ[key] = value
+    print("✓ Passed: graph metadata is allowlisted and unconfigured Neo4j degrades honestly.")
 
 
 def test_ssrf_protection():
@@ -133,7 +140,7 @@ def test_supabase_graceful_handling():
 
 if __name__ == "__main__":
     test_no_hardcoded_secrets()
-    test_cypher_injection_prevention()
+    test_graph_metadata_validation()
     test_ssrf_protection()
     test_supabase_graceful_handling()
     print("\n🎉 ALL CRITICAL SECURITY & VULNERABILITY TESTS PASSED SUCCESSFULLY!")

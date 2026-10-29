@@ -68,10 +68,11 @@ def authentication_context(headers: Dict[str, Any] | None = None, sender: str = 
     auth_results = _text(headers.get("authentication-results"))
     pass_matches = re.findall(r"\b(?:spf|dkim|dmarc|arc)\s*=\s*pass\b", auth_results, re.IGNORECASE)
     dmarc_pass = bool(re.search(r"\bdmarc\s*=\s*pass\b", auth_results, re.IGNORECASE))
-    any_fail = bool(re.search(r"\b(?:spf|dkim|dmarc|arc)\s*=\s*(?:fail|permerror)\b", auth_results, re.IGNORECASE))
+    any_fail = bool(re.search(r"\b(?:spf|dkim|dmarc|arc)\s*=\s*(?:fail|permerror|hardfail)\b", auth_results, re.IGNORECASE))
+    spf_softfail = bool(re.search(r"\bspf\s*=\s*softfail\b", auth_results, re.IGNORECASE))
     from_domain = _text(sender).split("@", 1)[-1] if "@" in _text(sender) else ""
     return_domain = _text(headers.get("return-path")).split("@", 1)[-1] if "@" in _text(headers.get("return-path")) else ""
-    return {"pass_count": len(pass_matches), "dmarc_pass": dmarc_pass, "any_fail": any_fail, "aligned_from_return_path": bool(from_domain and return_domain and organization_domain(from_domain) == organization_domain(return_domain))}
+    return {"pass_count": len(pass_matches), "dmarc_pass": dmarc_pass, "any_fail": any_fail, "spf_softfail": spf_softfail, "aligned_from_return_path": bool(from_domain and return_domain and organization_domain(from_domain) == organization_domain(return_domain))}
 
 
 def calculate_threat_score(category_id: str, category_points: float, urls: Iterable[Dict[str, Any]] | None = None, attachments: Iterable[Dict[str, Any]] | None = None, header_findings: Iterable[Dict[str, Any]] | None = None, headers: Dict[str, Any] | None = None, sender: str = "", category_evidence: Iterable[Dict[str, Any]] | None = None) -> Dict[str, Any]:
@@ -102,7 +103,11 @@ def calculate_threat_score(category_id: str, category_points: float, urls: Itera
     if auth["any_fail"]:
         points = auth_adjustments.get("any_fail", 24)
         score += points
-        adjustments.append({"label": "An authentication method reported fail/permerror", "points": points})
+        adjustments.append({"label": "An authentication method reported fail/permerror/hardfail", "points": points})
+    elif auth["spf_softfail"]:
+        points = auth_adjustments.get("spf_softfail", 16)
+        score += points
+        adjustments.append({"label": "SPF softfail reported; weaker than fail and not proof of spoofing", "points": points})
     limits = SCORING.get("limits", {"min": 0, "max": 100})
     final_score = round(max(limits.get("min", 0), min(limits.get("max", 100), score)), 1)
     deduction_total = round(sum(float(item.get("points", 0)) for item in adjustments), 1)
@@ -145,7 +150,9 @@ def classify_mail(subject: str = "", body: str = "", sender: str = "", headers: 
             evidence.append({"category_id": "malware_related", "label": f"attachment requires review: {attachment.get('filename', 'unnamed')}", "points": 25, "source": "static file inspection"})
 
     words = len(text.split())
-    if not evidence and words >= 8:
+    auth = authentication_context(headers, sender)
+    authentication_review = auth["any_fail"] or auth["spf_softfail"]
+    if not evidence and words >= 8 and not authentication_review:
         scores["legitimate"] = scores.get("legitimate", 0) + 18
         evidence.append({"category_id": "legitimate", "label": "No stronger category signal observed", "points": 18, "source": "content review"})
     if not evidence or (words < 8 and not sender and not subject):

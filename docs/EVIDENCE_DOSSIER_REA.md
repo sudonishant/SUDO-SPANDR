@@ -1,9 +1,10 @@
 # Evidence map, formal dossier and REA deep inspection
 
-Updated: 2026-10-28
+Updated: 2026-10-30
 
 ## Current user-facing behavior
 
+- The **Evidence graph** tab now requires real Neo4j write/readback; see [Neo4j evidence graph and real map](NEO4J_EVIDENCE_GRAPH.md).
 - The original blue/white SUDO SPANDR emblem and favicon are restored. The warm Fieldwork interface remains, but the emblem is not recolored.
 - **Case report** now opens the active analysis or the latest saved device case. A saved-case selector allows switching without running a new scan.
 - The formal bilingual dossier is an **independent, non-governmental analyst working document**. It records case metadata, hash scope, handling gaps, reported authentication, IP evidence, approximate network context, URLs/files, optional REA lanes, recommendations, limitations and human-review fields.
@@ -14,14 +15,14 @@ No government seal, generated signature, court-admissibility conclusion, automat
 
 ## IP evidence and approximate map
 
-The Relay path keeps extracted public IP addresses visible independently of lookup success. On the explicit **Check IP + approximate location** action, the serverless endpoint sends only those public IPv4 addresses to:
+The Relay path keeps extracted IP addresses visible independently of lookup success. On the explicit **Check IP + approximate location** action, the existing serverless endpoint sends only eligible public IPv4/IPv6 addresses to:
 
 1. `rdap.org` for public network-registration context;
 2. `ipwho.is` for approximate city/region/country and latitude/longitude estimates.
 
-The map is rendered locally from the Natural Earth `world-atlas` country outline using `d3-geo` and `topojson-client`. It does not request third-party map tiles and does not substitute the analyst/device IP.
+The report now uses a **real interactive Leaflet map with OpenStreetMap tiles**. When the map is displayed, the tile service can receive the browser IP, ordinary request metadata and requested tile/map area; this is disclosed next to the lookup action and map. OpenStreetMap attribution remains visible. Tile failures produce an explicit warning rather than a fabricated map background. The standalone self-contained HTML report does not require external map tiles.
 
-Provider failure is partial and visible: RDAP can fail while approximate coordinates succeed, or vice versa. Missing/invalid coordinates produce an honest empty-map state; the IP list remains. Markers are not connected as a geographic route. Cloud, VPN, proxy and hosting estimates can describe infrastructure rather than an end user. No accuracy radius is invented when the provider does not supply one.
+Provider failure is partial and visible: RDAP can fail while approximate coordinates succeed, or vice versa. A marker is created only for a valid provider coordinate pair. Missing/invalid coordinates produce an honest empty-map state or leave that IP unmapped while its evidence row remains. No analyst/device IP, registration-country centroid or relay-origin fallback is used. Markers are not connected as a geographic route. Cloud, VPN, proxy and hosting estimates can describe infrastructure rather than an end user. No accuracy radius is invented when the provider does not supply one.
 
 ## REA integration architecture
 
@@ -91,9 +92,11 @@ The included Vercel functions return an honest **503 / not_configured** when no 
 
 - Production build and claim lint passed; root frontend and REA-sidecar `npm audit --omit=dev` both reported zero vulnerabilities after the validated Zod override.
 - Real IP handler test: `ipwho.is` returned valid approximate coordinates for a public test IP; RDAP HTTP 403 remained visible as a partial-provider failure.
+- Original-EML browser flow on 2026-10-30: one live provider-coordinate marker was rendered with 17 non-blocked OpenStreetMap tile responses and zero failed tile requests; the second IP remained in the evidence list without coordinates or a marker. A separate aborted-tile test displayed the honest tile-failure state while retaining provider/IP evidence.
+- Graph/map axe scans passed with zero detected violation rules in graph initial/readback light/dark and live-map light/dark/mobile states. Automated scans do not replace manual accessibility review.
 - Real sidecar: unauthenticated status **401**; JavaScript artifact + JavaScript application lanes **completed**; unknown binary returned explicit unsupported output; hash mismatch **400**; oversized upload **413**; temporary-directory count after tests **0**.
 - End-to-end browser: IP + map, no-coordinate fallback with IP evidence retained, detailed Dossier, non-blank standalone HTML, saved-case reload/selector, real REA analysis/export/persistence and mobile overflow checks passed with zero page errors.
-- Print PDF: 4 non-blank pages, 6,947 extracted text characters, with case ID, integrity, IP/network, REA and legal-review sections present.
+- Print PDF refresh with the Leaflet map: 5 non-blank pages, 11,391 extracted text characters, with case ID, integrity, IP/provider context, OpenStreetMap attribution and legal-review sections present. Standalone HTML remained self-contained and made zero OpenStreetMap requests.
 - Legacy UI smoke **2/2**, sample corpus **11/11**, and IndexedDB-unavailable fallback passed.
 - Real hosted Agent PC start → noVNC Connected/canvas/Chromium → Stop passed. Browser Node.js execution, editing, reboot persistence and EML case persistence passed with zero page errors.
 - Axe scans covered general routes, analysis/report light/dark, map light/dark, REA light/dark, mobile Dossier, and standalone HTML desktop/mobile: zero detected violation rules. Automated scans do not replace manual accessibility review.

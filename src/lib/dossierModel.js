@@ -61,9 +61,16 @@ export function buildDossierModel(data, generatedAt = new Date().toISOString()) 
   const score = Number(threat.risk_score) || 0;
   const mode = data?.mode || 'unknown';
   const isFile = ['eml', 'msg', 'attachment'].includes(mode);
-  const findings = (threat.signals || []).map((signal) => typeof signal === 'string'
+  const signalFindings = (threat.signals || []).map((signal) => typeof signal === 'string'
     ? { label: signal, evidence: 'Observed by the local static attachment inspector.', weight: null }
     : { label: signal.label || 'Observed signal', evidence: signal.evidence || 'No additional explanation was returned.', weight: signal.weight ?? null });
+  const recordedAdjustments = Array.isArray(threat.adjustments) ? threat.adjustments : threat.score_breakdown?.deductions || [];
+  const adjustmentFindings = recordedAdjustments.map((adjustment) => ({
+    label: adjustment.label || 'Authentication/context adjustment',
+    evidence: adjustment.evidence || 'Recorded authentication/context adjustment; independently verify the submitted evidence.',
+    weight: adjustment.points ?? null,
+  }));
+  const findings = [...signalFindings, ...adjustmentFindings];
 
   return {
     caseId: text(data?.case_id, 'UNASSIGNED'),
