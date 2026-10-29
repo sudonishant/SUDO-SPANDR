@@ -13,7 +13,7 @@ export default function AnalysisPage({ onNavigate }) {
   };
 
   return (
-    <div className="page-stack">
+    <div className="page-stack analysis-page">
       <PageHeader
         eyebrow={analysisData ? 'Active investigation' : 'Evidence intake'}
         title={analysisData ? analysisData.case_id : 'New analysis'}

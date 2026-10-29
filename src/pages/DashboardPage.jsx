@@ -85,7 +85,7 @@ export default function DashboardPage({ onStart, onNavigate, onViewCase, health 
   const geoReady = Boolean(health?.verification_capability?.geoip?.real);
 
   return (
-    <div className="page-stack">
+    <div className="page-stack dashboard-page">
       <PageHeader
         eyebrow="Forensic command center"
         title="Evidence first. Every score explained."
