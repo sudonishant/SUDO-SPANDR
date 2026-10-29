@@ -237,7 +237,13 @@ from the branch `agent-pc-v2` preview deployment
 (`cybersquadsce-git-agent-pc-v2-sudonishant-1654s-projects.vercel.app`):
 
 - Vercel status on the fix commit: **`success` — "Deployment has completed"**
+- Merged via PR #3 (`ca6dc2c`). The project builds from **both `master` and `main`**; `main` was
+  still pointing at `b3578df`, so production kept redeploying the old tree. `main` was
+  fast-forwarded to `ca6dc2c` and production finally served the new build
+  (fingerprint: `/v86/kolibri.img` went `404` → `200`).
 - `npm run verify:headers` → **10/10** (pinned `frame-src`, `wasm-unsafe-eval`, COEP `credentialless`)
-- `npm run smoke:agent-pc` → **14/14 on the deployed URL**, i.e. the in-page x86 desktop boots on
-  real Vercel infrastructure, not just on localhost
+- `npm run smoke:agent-pc` → **14/14 on the production URL** (`sudospandrsce.vercel.app`), i.e. the
+  in-page x86 desktop boots on real Vercel infrastructure, not just on localhost
+- `npm run verify:headers -- https://sudospandrsce.vercel.app` → **10/10** (was 7/10 before)
+- Production screenshot: `docs/ui/agent-pc-production.png`
 - GitHub Actions `test-and-verify` → success; Cloudflare `Workers Builds` → success
