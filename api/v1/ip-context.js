@@ -1,3 +1,5 @@
+import { isIP } from 'node:net';
+
 const IPV4 = /^(?:(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)\.){3}(?:25[0-5]|2[0-4]\d|1\d{2}|[1-9]?\d)$/;
 
 function isPublicIpv4(ip) {
@@ -6,6 +8,46 @@ function isPublicIpv4(ip) {
   const [a, b] = octets;
   if (a === 0 || a === 10 || a === 127 || a >= 224 || (a === 169 && b === 254) || (a === 172 && b >= 16 && b <= 31) || (a === 192 && b === 168) || (a === 100 && b >= 64 && b <= 127) || (a === 198 && (b === 18 || b === 19)) || (a === 192 && b === 0 && (octets[2] === 0 || octets[2] === 2)) || (a === 192 && b === 88 && octets[2] === 99) || (a === 198 && b === 51 && octets[2] === 100) || (a === 203 && b === 0 && octets[2] === 113)) return false;
   return true;
+}
+
+function isPublicIpv6(ip) {
+  if (isIP(ip) !== 6) return false;
+  let value;
+  try {
+    // URL canonicalisation handles expanded loopback and IPv4-mapped forms;
+    // checking only the submitted string for a leading "::" is bypassable.
+    value = new URL(`http://[${ip}]/`).hostname.slice(1, -1).toLowerCase();
+  } catch {
+    return false;
+  }
+  if (value.startsWith('::')) return false; // Unspecified, loopback, compatible and mapped forms.
+  const convert = (part) => {
+    if (!part.includes('.')) return [Number.parseInt(part || '0', 16)];
+    const octets = part.split('.').map(Number);
+    return [(octets[0] << 8) | octets[1], (octets[2] << 8) | octets[3]];
+  };
+  const [head = '', tail] = value.split('::');
+  const leading = head ? head.split(':').flatMap(convert) : [];
+  const trailing = tail ? tail.split(':').flatMap(convert) : [];
+  const words = [...leading, ...Array(Math.max(0, 8 - leading.length - trailing.length)).fill(0), ...trailing];
+  if (words.length !== 8) return false;
+  const [a, b, c, d] = words;
+  if ((a & 0xfe00) === 0xfc00) return false; // Unique local fc00::/7.
+  if ((a & 0xffc0) === 0xfe80 || (a & 0xffc0) === 0xfec0) return false; // Link-local and deprecated site-local.
+  if ((a & 0xff00) === 0xff00) return false; // Multicast ff00::/8.
+  if (a === 0x2001 && b === 0x0db8) return false; // Documentation 2001:db8::/32.
+  if (a === 0x3fff && b <= 0x0fff) return false; // Documentation 3fff::/20.
+  if (a === 0x2001 && b === 0x0002 && c === 0) return false; // Benchmarking 2001:2::/48.
+  if (a === 0x2001 && b >= 0x0010 && b <= 0x001f) return false; // ORCHID 2001:10::/28.
+  if (a === 0x0100 && b === 0 && c === 0 && d === 0) return false; // Discard-only 100::/64.
+  if (a === 0x0064 && b === 0xff9b) return false; // NAT64 translation prefixes, not observed public relay addresses.
+  if (a === 0x5f00) return false; // SRv6 special-purpose 5f00::/16.
+  return true;
+}
+
+export function isPublicIp(ip) {
+  const version = isIP(ip);
+  return version === 4 ? isPublicIpv4(ip) : version === 6 ? isPublicIpv6(ip) : false;
 }
 
 function vcardValue(entity, key) {
@@ -130,11 +172,11 @@ export default async function handler(req, res) {
   let ips;
   try {
     const input = req.body || {};
-    ips = Array.isArray(input?.ips) ? [...new Set(input.ips.map((ip) => String(ip).trim()).filter(isPublicIpv4))].slice(0, 5) : [];
+    ips = Array.isArray(input?.ips) ? [...new Set(input.ips.map((ip) => String(ip).trim()).filter(isPublicIp))].slice(0, 5) : [];
   } catch {
     return res.status(400).json({ status: 'invalid_request', message: 'Expected a JSON body with an ips array.' });
   }
-  if (!ips.length) return res.status(200).json({ status: 'no_public_ips', results: [], message: 'No public IPv4 address from submitted email headers was available for lookup.' });
+  if (!ips.length) return res.status(200).json({ status: 'no_public_ips', results: [], message: 'No public IPv4 or IPv6 address from submitted email headers was available for lookup.' });
   const results = await Promise.all(ips.map(lookup));
   return res.status(200).json({
     status: 'available',

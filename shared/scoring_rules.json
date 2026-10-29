@@ -1,10 +1,11 @@
 {
-  "version": "2.0.0",
-  "thresholds": {"review": 35, "high": 70},
-  "content_weights": {"urgency": 12, "credential": 18, "financial": 22, "secrecy": 10, "suspicious_url": 18, "attachment": 22, "url_review": 8},
-  "header_weights": {"reply_to_mismatch": 16, "display_name_review": 8, "missing_message_id": 4, "missing_date": 3, "missing_received": 8},
-  "authentication_adjustments": {"three_or_more_passes": -24, "dmarc_pass": -8, "aligned_from_return_path": -8, "any_fail": 24},
-  "benign_context_adjustments": {"otp_security": -10, "transactional": -8, "promotional": -6, "newsletter": -6, "social": -4, "corporate": -4, "support": -4, "delivery_order": -4, "legitimate": -6},
-  "limits": {"min": 0, "max": 100},
-  "confidence_note": "Risk score is a transparent heuristic triage score, not a probability. Authentication passes reduce risk of spoofing but do not prove the message content is safe."
+  "version": "3.0.0",
+  "thresholds": { "review": 35, "high": 70 },
+  "content_weights": { "urgency": 12, "credential": 20, "financial": 22, "secrecy": 10, "suspicious_url": 18, "attachment": 22, "url_review": 8 },
+  "header_weights": { "reply_to_mismatch": 16, "display_name_review": 8, "missing_message_id": 4, "missing_date": 3, "missing_received": 8 },
+  "authentication_adjustments": { "three_or_more_passes": 0, "dmarc_pass": 0, "aligned_from_return_path": 0, "any_fail": 24, "unaligned_pass_with_request": 8 },
+  "combination_weights": { "credential_pressure": 8, "payment_pressure": 10, "reply_path_request": 10, "misleading_credential_link": 8, "authority_payment": 10 },
+  "benign_context_adjustments": {},
+  "limits": { "min": 0, "max": 100 },
+  "confidence_note": "Risk score is transparent heuristic triage, not a probability. Reported authentication passes and benign-looking categories never erase observed threat signals; authentication, content safety and sender attribution are separate questions."
 }

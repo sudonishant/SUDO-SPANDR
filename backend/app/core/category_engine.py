@@ -97,17 +97,12 @@ def calculate_threat_score(category_id: str, category_points: float, urls: Itera
     score = baseline
     auth = authentication_context(headers, sender)
     auth_adjustments = SCORING.get("authentication_adjustments", {})
-    if auth["pass_count"] >= 3:
-        points = auth_adjustments.get("three_or_more_passes", -24); score += points; adjustments.append({"label": "Multiple receiver-reported authentication passes", "points": points})
-    if auth["dmarc_pass"]:
-        points = auth_adjustments.get("dmarc_pass", -8); score += points; adjustments.append({"label": "DMARC reported pass", "points": points})
-    if auth["aligned_from_return_path"]:
-        points = auth_adjustments.get("aligned_from_return_path", -8); score += points; adjustments.append({"label": "From and Return-Path organizational domains align", "points": points})
+    # Authentication and content safety are separate axes. A reported pass or a
+    # benign-looking category must never erase positive evidence signals.
     if auth["any_fail"]:
-        points = auth_adjustments.get("any_fail", 24); score += points; adjustments.append({"label": "An authentication method reported fail/permerror", "points": points})
-    benign_points = SCORING.get("benign_context_adjustments", {}).get(category_id)
-    if benign_points:
-        score += benign_points; adjustments.append({"label": f"{category_id} context adjustment", "points": benign_points})
+        points = auth_adjustments.get("any_fail", 24)
+        score += points
+        adjustments.append({"label": "An authentication method reported fail/permerror", "points": points})
     limits = SCORING.get("limits", {"min": 0, "max": 100})
     final_score = round(max(limits.get("min", 0), min(limits.get("max", 100), score)), 1)
     deduction_total = round(sum(float(item.get("points", 0)) for item in adjustments), 1)

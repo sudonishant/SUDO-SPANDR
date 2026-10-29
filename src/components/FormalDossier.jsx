@@ -96,7 +96,7 @@ export default function FormalDossier({ data, children }) {
         <div><span>PRIMARY CATEGORY</span><strong>{text(model.category.category_label)}</strong><small>{text(model.category.confidence, '0')}% evidence coverage</small></div>
         <div><span>SUBMITTED SIZE</span><strong>{formatBytes(data.evidence?.raw_size_bytes ?? data.parsed?.meta?.size_bytes)}</strong><small>Original bytes not embedded</small></div>
         <div><span>FILE MARKERS</span><strong>{model.attachments.length}</strong><small>Static browser inspection</small></div>
-        <div><span>PUBLIC IP EVIDENCE</span><strong>{model.relays.length}</strong><small>{model.networkResults.length} context result(s)</small></div>
+        <div><span>HEADER IP EVIDENCE</span><strong>{model.relays.length}</strong><small>{model.networkResults.length} public-context result(s)</small></div>
       </div>
 
       <ReportSection number="01" title="Case and evidence identification" subtitle="Submitted values and processing provenance">
@@ -128,6 +128,24 @@ export default function FormalDossier({ data, children }) {
         {model.authentication ? (
           <>
             <div className="formal-auth-grid">{model.authentication.values.map(([label, value]) => <div key={label}><span>{label}</span><strong>{text(value)}</strong></div>)}</div>
+            <h4 className="formal-subheading">Message identity and decoding coverage</h4>
+            <DetailTable rows={[
+              { label: 'Visible From', value: model.authentication.identity.visible_from },
+              { label: 'Reply-To', value: model.authentication.identity.reply_to || 'Not present' },
+              { label: 'Return-Path / SPF context', value: model.authentication.identity.return_path || 'Not present' },
+              { label: 'Visible-From organisation domain', value: model.authentication.identity.from_organization_domain || model.authentication.identity.from_domain },
+              { label: 'Parser', value: model.authentication.structure.parser },
+              { label: 'Decoded content', value: `Plain text: ${model.authentication.structure.plain_text_present ? 'yes' : 'no'} · HTML: ${model.authentication.structure.html_present ? 'yes' : 'no'} · attachments: ${model.authentication.structure.attachment_count ?? 0}` },
+            ]} />
+            <h4 className="formal-subheading">Reported identity alignment</h4>
+            <div className="formal-table-wrap" tabIndex={0} role="region" aria-label="Scrollable authentication alignment table">
+              <table className="formal-table"><thead><tr><th>Layer / result</th><th>Authenticated identity</th><th>Visible-From alignment</th><th>Reporting service</th></tr></thead><tbody>
+                {(model.authentication.alignment.rows || []).length ? model.authentication.alignment.rows.map((row, index) => <tr key={`${row.method}-${index}`}><td>{row.method} · {String(row.result).toUpperCase()}</td><td className="mono wrap-anywhere">{text(row.identity)}{row.identity_role ? <><br /><small>{row.identity_role}</small></> : null}</td><td>{row.aligned === true ? 'Aligned · relaxed' : row.aligned === false ? 'Not aligned' : 'Not determinable'}</td><td>{text(row.authserv_id, 'Not reported')}</td></tr>) : <tr><td colSpan="4">No structured identity alignment result was available.</td></tr>}
+              </tbody></table>
+            </div>
+            <p className="formal-note">{model.authentication.scorePolicy}</p>
+            {model.authentication.explanations.length ? <ol className="formal-list">{model.authentication.explanations.map((item, index) => <li key={index}>{item}</li>)}</ol> : null}
+            <h4 className="formal-subheading">Submitted authentication source</h4>
             <DetailTable rows={[{ label: 'Reported header', value: model.authentication.reportedHeader }, { label: 'Evidence source fields', value: model.authentication.sources.join(' · ') || 'None recognised' }, { label: 'Reported value (bounded)', value: model.authentication.raw, mono: true }]} />
             <p className="formal-note">{model.authentication.note}</p>
           </>
@@ -135,10 +153,12 @@ export default function FormalDossier({ data, children }) {
       </ReportSection>
 
       <ReportSection number="05" title="IP evidence and approximate network context" subtitle="IP addresses remain visible even when provider lookup or map coordinates fail">
+        {model.relayHops.length ? <><h4 className="formal-subheading">Submitted Received relay fields</h4><div className="formal-table-wrap" tabIndex={0} role="region" aria-label="Scrollable relay evidence table"><table className="formal-table"><thead><tr><th>#</th><th>From</th><th>By</th><th>Protocol</th><th>Reported date</th></tr></thead><tbody>{model.relayHops.map((hop) => <tr key={hop.position}><td>{hop.position}</td><td>{text(hop.from)}</td><td>{text(hop.by)}</td><td>{text(hop.protocol)}</td><td>{text(hop.date)}</td></tr>)}</tbody></table></div><p className="formal-note">Header order is recorded as submitted; it is not independent proof of chronology or sender location.</p></> : null}
+        <h4 className="formal-subheading">Extracted IP evidence</h4>
         <div className="formal-table-wrap" tabIndex={0} role="region" aria-label="Scrollable evidence table">
           <table className="formal-table">
             <thead><tr><th>#</th><th>Extracted IP</th><th>Header field</th><th>Evidence order</th></tr></thead>
-            <tbody>{model.relays.length ? model.relays.map((item, index) => <tr key={`${item.ip}-${index}`}><td>{index + 1}</td><td className="mono">{item.ip}</td><td>{text(item.field)}</td><td>{index + 1} of {model.relays.length}</td></tr>) : <tr><td colSpan="4">No public IP was extracted. Map and relay-context analysis are not available.</td></tr>}</tbody>
+            <tbody>{model.relays.length ? model.relays.map((item, index) => <tr key={`${item.ip}-${index}`}><td>{index + 1}</td><td className="mono">{item.ip}</td><td>{text(item.field)}</td><td>{index + 1} of {model.relays.length}</td></tr>) : <tr><td colSpan="4">No IP was extracted. Map and public relay-context analysis are not available.</td></tr>}</tbody>
           </table>
         </div>
         <p className="formal-note">{model.relayStatus}. {model.relayNote}</p>

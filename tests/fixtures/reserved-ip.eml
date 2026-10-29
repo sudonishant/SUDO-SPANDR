@@ -1,0 +1,11 @@
+From: "Network Notice" <notice@company.example>
+To: admin@company.example
+Received: from documentation ([2001:db8::1]) by mx.company.example with ESMTPS id fixture4; Thu, 29 Oct 2026 10:00:00 +0530
+Received: from public-v6 ([2606:4700:4700::1111]) by mx.company.example with ESMTPS id fixture3; Thu, 29 Oct 2026 09:59:00 +0530
+Received: from private-v4 ([10.20.30.40]) by mx.company.example with ESMTP id fixture2; Thu, 29 Oct 2026 09:58:00 +0530
+Received: from mapped-v6 ([::ffff:8.8.8.8]) by mx.company.example with ESMTP id fixture1; Thu, 29 Oct 2026 09:57:00 +0530
+Subject: Routine relay inventory
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+
+Routine relay inventory for controlled parser testing. No action is requested.

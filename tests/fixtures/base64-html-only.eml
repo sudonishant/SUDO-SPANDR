@@ -1,0 +1,12 @@
+From: "Account Security" <security@company.example>
+To: user@company.example
+Return-Path: <bounce@company.example>
+Authentication-Results: mx.company.example; spf=pass smtp.mailfrom=company.example; dkim=pass header.d=company.example; dmarc=pass header.from=company.example
+Subject: Session expired
+MIME-Version: 1.0
+Content-Type: text/html; charset=UTF-8
+Content-Transfer-Encoding: base64
+
+PGh0bWw+PGJvZHk+PHA+WW91ciBzZXNzaW9uIGV4cGlyZWQuIFZlcmlmeSB5b3VyIGFjY291bnQgYW5k
+IHBhc3N3b3JkIGltbWVkaWF0ZWx5LjwvcD48YSBocmVmPSJodHRwczovL2xvZ2luLXNlY3VyZS5hdHRh
+Y2tlci50ZXN0L2FjY291bnQiPkNvbXBhbnkgc2lnbiBpbjwvYT48L2JvZHk+PC9odG1sPg==

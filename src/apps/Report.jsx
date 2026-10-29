@@ -82,7 +82,7 @@ function ScoreBreakdown({ threat }) {
       <div className="score-formula">
         <span>FORMULA</span>
         <code>{breakdown.formula}</code>
-        <p className="score-ledger-note">Category points are classification evidence and are not automatically added to the threat score. Only the listed threat contributors affect this formula.</p>
+        <p className="score-ledger-note">Category points are classification evidence and are not automatically added to the threat score. Authentication passes and benign-looking categories never subtract from observed threat signals.</p>
       </div>
       <div className="score-ledger-columns">
         <div>
@@ -95,7 +95,7 @@ function ScoreBreakdown({ threat }) {
           )) : <p className="muted">No positive point contributor was recorded.</p>}
         </div>
         <div>
-          <div className="ledger-heading"><strong>Context deductions</strong><span className="signal-weight deduction">{breakdown.adjustment_total}</span></div>
+          <div className="ledger-heading"><strong>Authentication / context adjustments</strong><span className="signal-weight deduction">{breakdown.adjustment_total >= 0 ? '+' : ''}{breakdown.adjustment_total}</span></div>
           {deductions.length ? deductions.map((item, index) => (
             <div className="ledger-row" key={`deduction-${item.label}-${index}`}>
               <div><strong>{item.label}</strong><p>{item.evidence}</p><small>{item.source}</small></div>
@@ -105,7 +105,7 @@ function ScoreBreakdown({ threat }) {
         </div>
       </div>
       <div className="ledger-final"><span>FINAL TRIAGE SCORE</span><strong>{breakdown.final_score}/100</strong></div>
-      <p className="disclaimer">Positive points are observed signals, not proof of maliciousness. Negative adjustments are context only and do not prove that a message is safe. A zero contributor total means no explicit threat rule added points; it does not mean the message was cryptographically verified as safe.</p>
+      <p className="disclaimer">Points are observed signals, not proof of maliciousness. Authentication/context adjustments are listed separately. A zero contributor total means no explicit threat rule added points; it does not mean the message was verified as safe.</p>
     </div>
   );
 }
@@ -168,19 +168,101 @@ function AIReviewPanel({ review, onRun, question, onQuestionChange }) {
   );
 }
 
-function AuthenticationPanel({ auth }) {
+function AuthenticationPanel({ data }) {
+  const auth = data?.dns_auth;
   if (!auth) return <div className="empty-panel">Authentication does not apply to a standalone attachment.</div>;
+  const deep = data.deep_email || {};
+  const identity = deep.identity || {};
+  const structure = deep.message_structure || {};
+  const alignmentRows = auth.alignment?.rows || [];
   const rows = [['SPF', auth.spf], ['DKIM', auth.dkim], ['DMARC', auth.dmarc], ['ARC', auth.arc]];
+  const alignmentLabel = (value) => value === true ? 'Aligned · relaxed' : value === false ? 'Not aligned' : 'Not determinable';
   return (
-    <div className="auth-grid">
-      {rows.map(([label, value]) => (
-        <div className="auth-item" key={label}><span>{label}</span><strong>{value}</strong></div>
-      ))}
+    <div className="deep-email-panel">
+      <div className="deep-email-hero">
+        <div>
+          <span>DEEP EMAIL FORENSICS</span>
+          <h4>Authentication, identity and content are separate evidence layers.</h4>
+          <p>{deep.score_policy || 'A reported authentication pass is never treated as a content-safety verdict.'}</p>
+        </div>
+        <span className="deep-parser-badge">{structure.parser || 'Structured email parser'}</span>
+      </div>
+
+      <div className="identity-card-grid">
+        <article className="identity-card identity-card--from">
+          <span>VISIBLE FROM</span>
+          <strong>{identity.from_organization_domain || identity.from_domain || 'Not parsed'}</strong>
+          <code>{identity.visible_from || 'Not parsed'}</code>
+          <small>Displayed author domain · not proof of control</small>
+        </article>
+        <article className="identity-card identity-card--reply">
+          <span>REPLY PATH</span>
+          <strong>{identity.reply_to_domain || 'Not present'}</strong>
+          <code>{identity.reply_to || 'No Reply-To parsed'}</code>
+          <small>Where a reply would be directed</small>
+        </article>
+        <article className="identity-card identity-card--return">
+          <span>RETURN PATH / SPF CONTEXT</span>
+          <strong>{identity.return_path_domain || 'Not present'}</strong>
+          <code>{identity.return_path || 'No Return-Path parsed'}</code>
+          <small>{identity.return_path_domain ? `From/Return-Path relaxed alignment: ${alignmentLabel(identity.return_path_alignment?.aligned)}` : 'Envelope identity unavailable'}</small>
+        </article>
+      </div>
+
+      <div className="auth-grid">
+        {rows.map(([label, value]) => (
+          <div className="auth-item" key={label}><span>{label}</span><strong>{value}</strong></div>
+        ))}
+      </div>
+
+      <div className="alignment-section">
+        <div className="deep-section-heading"><div><span>IDENTITY ALIGNMENT</span><h4>Which domain did each result actually validate?</h4></div><small>PSL-aware relaxed comparison</small></div>
+        {alignmentRows.length ? (
+          <div className="alignment-table-wrap" tabIndex={0} role="region" aria-label="Authentication identity alignment table">
+            <table className="alignment-table">
+              <thead><tr><th>Layer</th><th>Reported result</th><th>Authenticated identity</th><th>Visible-From alignment</th><th>Reporting service</th></tr></thead>
+              <tbody>{alignmentRows.map((row, index) => (
+                <tr key={`${row.method}-${index}`}>
+                  <td><strong>{row.method}</strong></td>
+                  <td><span className={`alignment-result alignment-result--${String(row.result).toLowerCase()}`}>{String(row.result).toUpperCase()}</span></td>
+                  <td><code>{row.identity}</code>{row.identity_role ? <small className="alignment-identity-role">{row.identity_role}</small> : null}</td>
+                  <td><span className={`alignment-value ${row.aligned === true ? 'is-aligned' : row.aligned === false ? 'is-misaligned' : ''}`}>{alignmentLabel(row.aligned)}</span></td>
+                  <td>{row.authserv_id || 'Not reported'}</td>
+                </tr>
+              ))}</tbody>
+            </table>
+          </div>
+        ) : <div className="empty-panel">No SPF/DKIM/DMARC result with a structured identity was available. Missing results are not converted into a pass or fail.</div>}
+        <p className="disclaimer">{auth.alignment?.comparison}</p>
+      </div>
+
+      <div className="deep-explanation-grid">
+        <section className="deep-explanation-card">
+          <span>PLAIN-ENGLISH INTERPRETATION</span>
+          <h4>What this means</h4>
+          <ol>{(deep.explanations || []).map((item, index) => <li key={index}>{item}</li>)}</ol>
+        </section>
+        <section className="deep-explanation-card deep-explanation-card--structure">
+          <span>DECODING COVERAGE</span>
+          <h4>Message structure</h4>
+          <dl>
+            <div><dt>Plain text</dt><dd>{structure.plain_text_present ? 'Decoded and analyzed' : 'Not available'}</dd></div>
+            <div><dt>HTML</dt><dd>{structure.html_present ? 'Decoded and statically analyzed' : 'Not available'}</dd></div>
+            <div><dt>Attachments</dt><dd>{structure.attachment_count ?? data.attachment_analysis?.length ?? 0}</dd></div>
+            <div><dt>Header fields</dt><dd>{structure.header_count ?? data.parsed?.headerEntries?.length ?? 0}</dd></div>
+            <div><dt>Received hops</dt><dd>{data.relay_info?.hop_count ?? 0}</dd></div>
+          </dl>
+        </section>
+      </div>
+
       <div className="auth-evidence">
-        <span>AUTHENTICATION EVIDENCE FOUND</span>
+        <span>SUBMITTED AUTHENTICATION EVIDENCE</span>
         <strong>{auth.reported_header}</strong>
         <p>{auth.evidence_sources?.length ? auth.evidence_sources.join(' · ') : 'No recognised authentication header was found in the submitted EML/MSG headers.'}</p>
-        <code>{String(auth.raw_reported || '').slice(0, 1600)}</code>
+        <details className="raw-evidence-disclosure">
+          <summary>View submitted authentication headers</summary>
+          <pre tabIndex={0}><code>{String(auth.raw_reported || '').slice(0, 8000)}</code></pre>
+        </details>
       </div>
       <p className="disclaimer">{auth.note}</p>
     </div>
@@ -196,7 +278,7 @@ function HeaderPanel({ data }) {
       {headers.slice(0, 24).map((item, index) => (
         <div className="header-row" key={`${item.name}-${index}`}><span>{item.name}</span><code>{item.value}</code></div>
       ))}
-      {headers.length > 24 && <p className="muted">Showing first 24 headers. The complete raw evidence is not stored by this browser-only demo.</p>}
+      {headers.length > 24 && <p className="muted">Showing first 24 of {headers.length} parsed header fields. Original file bytes are not embedded in the saved browser case.</p>}
     </div>
   );
 }
@@ -206,9 +288,10 @@ function RelayPanel({ relay, onLookup, geoLoading }) {
   const ips = relay.ips || [];
   return (
     <div>
-      <div className="relay-summary">
-        <div><small>PUBLIC IPs EXTRACTED</small><strong>{ips.length}</strong></div>
-        <div><small>HOP STATUS</small><strong>{relay.status}</strong></div>
+      <div className="relay-summary relay-summary--deep">
+        <div><small>HEADER IPs EXTRACTED</small><strong>{ips.length}</strong></div>
+        <div><small>RECEIVED HOPS</small><strong>{relay.hop_count ?? relay.hops?.length ?? 0}</strong></div>
+        <div><small>EVIDENCE STATUS</small><strong>{relay.status}</strong></div>
       </div>
       {ips.length ? (
         <div className="ip-route-visual" aria-label="Observed IP relay order">
@@ -223,7 +306,21 @@ function RelayPanel({ relay, onLookup, geoLoading }) {
             </React.Fragment>
           ))}
         </div>
-      ) : <div className="empty-panel">No public IP was extracted from the submitted headers; route visualisation is unavailable.</div>}
+      ) : <div className="empty-panel">No IP was extracted from the submitted headers; route visualisation is unavailable.</div>}
+      {relay.hops?.length ? (
+        <div className="relay-hop-section">
+          <div className="deep-section-heading"><div><span>RECEIVED CHAIN</span><h4>Submitted relay fields, top to bottom</h4></div><small>Not independent chronology proof</small></div>
+          <div className="relay-hop-list">
+            {relay.hops.slice(0, 12).map((hop) => (
+              <article className="relay-hop" key={hop.position}>
+                <span className="relay-hop__number">{String(hop.position).padStart(2, '0')}</span>
+                <div><strong>{hop.from} <span aria-hidden="true">→</span> {hop.by}</strong><small>{hop.protocol} · {hop.date}</small><details><summary>View Received field</summary><code>{hop.raw}</code></details></div>
+              </article>
+            ))}
+          </div>
+          {relay.hops.length > 12 ? <p className="muted">Showing first 12 of {relay.hops.length} Received fields.</p> : null}
+        </div>
+      ) : null}
       <div className="ip-context-action">
         <button type="button" className="app-btn app-btn--sm" onClick={onLookup} disabled={!ips.length || geoLoading} style={{ width: 'fit-content' }}>
           <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#5aa8f5,#2f7fe0)' }}><Globe size={12} /></span>
@@ -344,7 +441,7 @@ function AnalysisResultView({ data }) {
         <div className="verdict__score"><strong>{score}</strong><span>triage score / 100</span></div>
       </div>
 
-      {data.parseError && <div className="error-banner" role="alert">MSG parser could not read this file: {data.parseError}</div>}
+      {data.parseError && <div className="error-banner" role="alert">{data.format_type} parser warning: {data.parseError}</div>}
 
       <div className="report-toolbar">
         <div className="report-toolbar__left">
@@ -357,6 +454,18 @@ function AnalysisResultView({ data }) {
           <button type="button" className="app-btn app-btn--sm" onClick={resetResult}><span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#ff8a7a,#e4392f)' }}><XCircle size={13} /></span>Clear</button>
         </div>
       </div>
+
+      {data.deep_email ? (
+        <button type="button" className="deep-insight-strip" onClick={() => setActive('auth')}>
+          <span className="deep-insight-strip__icon"><ScanSearch size={18} /></span>
+          <span className="deep-insight-strip__copy">
+            <small>DEEP EMAIL EXPLANATION</small>
+            <strong>{data.deep_email.top_findings?.[0]?.label || 'Review identity, authentication and message structure'}</strong>
+            <span>{data.deep_email.explanations?.[0] || 'Open the layer-by-layer forensic interpretation.'}</span>
+          </span>
+          <span className="deep-insight-strip__action">Open analysis <ChevronRight size={14} /></span>
+        </button>
+      ) : null}
 
       <div className="tabs" role="tablist">
         {tabs.map(([id, label, Icon]) => (
@@ -371,7 +480,7 @@ function AnalysisResultView({ data }) {
           <Panel icon={Tag} eyebrow="Category & alert" title="What kind of mail is this?">
             <CategoryPanel category={data.category_analysis} />
           </Panel>
-          <Panel icon={Hash} eyebrow="Transparent risk score" title="Why is the score this high?">
+          <Panel icon={Hash} eyebrow="Transparent risk score" title="How was this score calculated?">
             <ScoreBreakdown threat={threat} />
           </Panel>
           <Panel icon={Bot} eyebrow="Optional AI interpretation" title="Second opinion">
@@ -414,7 +523,7 @@ function AnalysisResultView({ data }) {
       {active === 'auth' && (
         <div className="report-grid">
           <Panel icon={Shield} eyebrow="No fabricated verdicts" title="Authentication checks" full>
-            <AuthenticationPanel auth={data.dns_auth} />
+            <AuthenticationPanel data={data} />
           </Panel>
         </div>
       )}

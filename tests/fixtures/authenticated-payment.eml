@@ -1,0 +1,15 @@
+From: "Chief Financial Officer" <cfo@company.example>
+To: "Accounts Payable" <ap@company.example>
+Reply-To: "Chief Financial Officer" <cfo@company.example>
+Return-Path: <bounce@company.example>
+Authentication-Results: mx.company.example;
+ spf=pass smtp.mailfrom=company.example;
+ dkim=pass header.d=company.example;
+ dmarc=pass header.from=company.example
+DKIM-Signature: v=1; a=rsa-sha256; d=company.example; s=mail; bh=fixture; b=fixture
+Subject: Urgent payment today
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+Urgent: please change the bank account details and wire transfer payment today. Do not call me; I cannot take calls.

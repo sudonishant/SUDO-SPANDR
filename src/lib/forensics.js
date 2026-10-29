@@ -1,5 +1,17 @@
+import PostalMime from 'postal-mime';
 import taxonomy from '../../shared/category_taxonomy.json';
 import scoringRules from '../../shared/scoring_rules.json';
+import {
+  addressDomain,
+  authenticationContext as buildAuthenticationContext,
+  authenticationSnapshot as buildAuthenticationSnapshot,
+  decodeHeaderValue,
+  domainAlignment,
+  headerAnomalies as findHeaderAnomalies,
+  organizationDomain,
+  relayHops as buildRelayHops,
+  reviewDomain,
+} from './emailIntelligence';
 
 const CATEGORY_DEFINITIONS = Object.fromEntries(taxonomy.categories.map((category) => [category.id, category]));
 const EMAIL_EXTENSIONS = ['eml', 'msg'];
@@ -11,10 +23,10 @@ const URL_PATTERN = /https?:\/\/[^\s<>"{}|\\^`]+/gi;
 const EMAIL_PATTERN = /[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}/gi;
 
 const RISK_RULES = [
-  { id: 'urgency', label: 'Urgency or pressure language', weight: 12, pattern: /\b(urgent|immediately|asap|action required|within \d+ hours|final notice|today|now)\b/i },
-  { id: 'credential', label: 'Credential or login request', weight: 18, pattern: /\b(password|login|sign in|verify your account|credential|one[- ]time password|otp|security code|session expired)\b/i },
-  { id: 'financial', label: 'Financial or payment request', weight: 22, pattern: /\b(wire transfer|bank account|payment|invoice|gift card|crypto|bitcoin|remittance|change.*account|funds)\b/i },
-  { id: 'secrecy', label: 'Secrecy or bypass language', weight: 10, pattern: /\b(do not call|keep confidential|do not tell|bypass|secret|discreet)\b/i },
+  { id: 'urgency', label: 'Urgency or pressure language', weight: 12, pattern: /\b(urgent|immediately|asap|action required|within \d+ hours|within 24 hours|final notice|today|now|deadline|before (?:eod|close of business)|account (?:will be|gets) (?:closed|suspended|locked)|permanent closure|expires?)\b/i },
+  { id: 'credential', label: 'Credential, account or login request', weight: 20, pattern: /\b(password|login|log into|sign in|verify your (?:account|identity)|confirm your (?:account|identity)|credential|one[- ]time (?:password|code)|otp|security code|session expired|webmail|account suspended|unusual sign[- ]in|update your account|recovery code)\b/i },
+  { id: 'financial', label: 'Financial, payment or beneficiary request', weight: 22, pattern: /\b(wire transfer|bank account|bank details|account details|beneficiary|payment|invoice|gift card|crypto|bitcoin|remittance|change.*account|funds|upi|neft|rtgs|imps|swift|iban|payment details)\b/i },
+  { id: 'secrecy', label: 'Secrecy, callback avoidance or bypass language', weight: 10, pattern: /\b(do not call|cannot take calls?|no calls?|keep confidential|keep this between us|do not tell|do not inform|don['’]t tell|bypass|secret|discreet|confidential acquisition)\b/i },
   { id: 'suspicious-url', label: 'Suspicious URL characteristics', weight: 18, pattern: /\b(?:login|verify|secure|auth)[-_.]/i },
   { id: 'attachment', label: 'Executable or script attachment indicator', weight: 22, pattern: /\.(?:exe|scr|bat|cmd|js|vbs|ps1|hta|jar|apk)(?:\b|$)/i },
 ];
@@ -69,9 +81,9 @@ function stripHtml(value = '') {
   return clean(String(value).replace(/<style[\s\S]*?<\/style>/gi, ' ').replace(/<script[\s\S]*?<\/script>/gi, ' ').replace(/<[^>]+>/g, ' ')).replace(/\s+/g, ' ');
 }
 
-function extractMimeText(rawBody = '', contentType = '') {
+function extractMimeText(rawBody = '', contentType = '', transferEncoding = '') {
   const boundary = String(contentType).match(/boundary\s*=\s*"?([^";]+)"?/i)?.[1];
-  if (!boundary) return stripHtml(decodeQuotedPrintableText(rawBody));
+  if (!boundary) return stripHtml(/quoted-printable/i.test(transferEncoding) ? decodeQuotedPrintableText(rawBody) : rawBody);
   const parts = rawBody.split(`--${boundary}`);
   let htmlCandidate = '';
   for (const part of parts) {
@@ -79,7 +91,8 @@ function extractMimeText(rawBody = '', contentType = '') {
     if (!separator) continue;
     const index = separator.index ?? 0;
     const partHeaders = parseHeaderBlock(part.slice(0, index)).headers;
-    const content = decodeQuotedPrintableText(part.slice(index + separator[0].length).replace(/--\s*$/, ''));
+    const encodedContent = part.slice(index + separator[0].length).replace(/--\s*$/, '');
+    const content = /quoted-printable/i.test(partHeaders['content-transfer-encoding'] || '') ? decodeQuotedPrintableText(encodedContent) : encodedContent;
     if (/text\/plain/i.test(partHeaders['content-type'] || '')) return stripHtml(content);
     if (/text\/html/i.test(partHeaders['content-type'] || '')) htmlCandidate = content;
   }
@@ -99,6 +112,39 @@ function unique(values) {
   return [...new Set(values.filter(Boolean))];
 }
 
+function isIpv4Address(value = '') {
+  const parts = String(value).split('.');
+  return parts.length === 4 && parts.every((part) => /^\d{1,3}$/.test(part) && Number(part) >= 0 && Number(part) <= 255);
+}
+
+function isIpv6Address(value = '') {
+  const input = clean(value).replace(/^IPv6:/i, '').replace(/%.*$/, '');
+  if (!input.includes(':') || input.split('::').length > 2) return false;
+  const compressed = input.includes('::');
+  const [head = '', tail = ''] = input.split('::');
+  const headParts = head ? head.split(':') : [];
+  const tailParts = tail ? tail.split(':') : [];
+  const parts = [...headParts, ...tailParts];
+  if (parts.some((part) => !part)) return false;
+  let units = parts.length;
+  parts.forEach((part, index) => {
+    if (index === parts.length - 1 && part.includes('.')) {
+      if (!isIpv4Address(part)) units = -1;
+      else units += 1;
+    } else if (!/^[0-9a-f]{1,4}$/i.test(part)) units = -1;
+  });
+  if (units < 0) return false;
+  return compressed ? units < 8 : units === 8;
+}
+
+function ipv6Candidates(value = '') {
+  const text = String(value);
+  const candidates = new Set();
+  for (const match of text.matchAll(/\[([^\]\r\n]+)\]/g)) if (match[1].includes(':')) candidates.add(match[1]);
+  text.split(/[\s,;()<>]+/).forEach((token) => { if (token.includes(':')) candidates.add(token); });
+  return [...candidates].map((candidate) => clean(candidate).replace(/^IPv6:/i, '').replace(/^[[(]+/, '').replace(/[\]),;.]+$/, '')).filter(isIpv6Address);
+}
+
 function extractIps(headers, rawText = '') {
   const values = [];
   const source = [];
@@ -108,16 +154,28 @@ function extractIps(headers, rawText = '') {
     if (headers[name]) source.push([name, headers[name]]);
   });
   source.forEach(([field, value]) => {
-    [...String(value).matchAll(PUBLIC_IPV4)].forEach((match) => values.push({ ip: match[0], field }));
+    const text = String(value);
+    [...text.matchAll(PUBLIC_IPV4)].forEach((match) => {
+      // Do not turn the dotted tail of an IPv4-mapped IPv6 address into a
+      // separate public IPv4 observation before the API boundary sees it.
+      if (text[Math.max(0, (match.index || 0) - 1)] === ':') return;
+      if (isIpv4Address(match[0])) values.push({ ip: match[0], field });
+    });
+    ipv6Candidates(value).forEach((ip) => values.push({ ip, field }));
   });
-  return unique(values.map((value) => `${value.field}:${value.ip}`)).map((item) => {
-    const [field, ip] = item.split(':');
-    return { field, ip };
+  const seen = new Set();
+  return values.filter(({ field, ip }) => {
+    const key = `${field}\u0000${ip.toLowerCase()}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
   });
 }
 
 function extractUrls(rawText = '') {
-  const normalizedText = decodeQuotedPrintableText(rawText);
+  // Input is decoded by the MIME/MSG parser. Blindly applying quoted-printable
+  // decoding here would corrupt ordinary query strings such as "session=ae91".
+  const normalizedText = String(rawText);
   const seen = new Set();
   return [...String(normalizedText).matchAll(URL_PATTERN)].map((match) => match[0].replace(/[),.;]+$/, '')).filter((rawUrl) => {
     const key = rawUrl.toLowerCase();
@@ -132,119 +190,141 @@ function extractUrls(rawText = '') {
       const isAsset = hostname === 'www.w3.org' || hostname.includes('stripocdn.email') || /\.(css|png|jpe?g|gif|webp|svg)$/i.test(path) || path.includes('/images/');
       const isTracking = hostname.endsWith('.awstrack.me') || hostname.includes('track') || hostname.includes('click');
       const reasons = [];
+      const domainFindings = isAsset ? [] : reviewDomain(hostname);
       if (!isAsset && url.protocol !== 'https:') reasons.push('Not HTTPS');
-      if (!isAsset && hostname.includes('xn--')) reasons.push('Punycode hostname');
+      if (!isAsset && (url.username || url.password)) reasons.push('URL contains userinfo; the visible prefix can hide the real destination');
+      if (!isAsset && /^(?:\d{1,3}\.){3}\d{1,3}$/.test(hostname)) reasons.push('IP-literal hostname instead of a domain name');
+      if (!isAsset && url.port && !['80', '443'].includes(url.port)) reasons.push(`Non-standard web port ${url.port}`);
       if (!isAsset && !isTracking && hostname.split('.').length > 3) reasons.push('Deep subdomain');
       if (!isAsset && /[0-9]{7,}/.test(hostname)) reasons.push('Numeric hostname pattern');
       if (!isAsset && /(login|verify|secure|auth|account|payment|update)/i.test(`${url.pathname} ${hostname}`)) reasons.push('Credential/payment-themed path or hostname');
-      return { url: rawUrl, domain: hostname, risk: reasons.length ? 'REVIEW' : 'UNASSESSED', kind: isAsset ? 'email asset/reference' : isTracking ? 'tracking redirect' : 'actionable link', reasons };
+      reasons.push(...domainFindings.map((item) => item.label));
+      return { url: rawUrl, domain: hostname, risk: reasons.length ? 'REVIEW' : 'UNASSESSED', kind: isAsset ? 'email asset/reference' : isTracking ? 'tracking redirect' : 'actionable link', reasons, domain_findings: domainFindings };
     } catch {
       return { url: rawUrl, domain: 'Invalid URL', risk: 'REVIEW', kind: 'unparsed', reasons: ['URL parser rejected this value'] };
     }
   });
 }
 
-function authenticationSnapshot(headers) {
-  const normalizedHeaders = headers || {};
-  const authResultHeaders = [
-    ['Authentication-Results', normalizedHeaders['authentication-results']],
-    ['ARC-Authentication-Results', normalizedHeaders['arc-authentication-results']],
-    ['X-Authentication-Results', normalizedHeaders['x-authentication-results']],
-  ].filter(([, value]) => value).map(([name, value]) => `${name}: ${value}`);
-  const authResults = authResultHeaders.join('\n');
-  const receivedSpf = normalizedHeaders['received-spf'] || normalizedHeaders['x-received-spf'] || '';
-  const reported = {};
-  AUTHENTICATION_METHODS.forEach((method) => {
-    const match = authResults.match(new RegExp(`\\b${method}\\s*=\\s*(pass|fail|softfail|neutral|none|temperror|permerror)`, 'i'));
-    if (match) reported[method] = `REPORTED ${match[1].toUpperCase()}`;
-    else if (method === 'spf') {
-      const spfMatch = String(receivedSpf).match(/^\\s*(pass|fail|softfail|neutral|none|temperror|permerror)\\b/i);
-      reported[method] = spfMatch ? `REPORTED ${spfMatch[1].toUpperCase()} (Received-SPF)` : 'NOT VERIFIED';
-    } else reported[method] = 'NOT VERIFIED';
-  });
-  const dkim = reported.dkim !== 'NOT VERIFIED' ? reported.dkim : normalizedHeaders['dkim-signature'] ? 'PRESENT — signature not cryptographically verified in browser' : 'NOT PRESENT';
-  const arc = reported.arc !== 'NOT VERIFIED' ? reported.arc : normalizedHeaders['arc-seal'] || normalizedHeaders['arc-message-signature'] || normalizedHeaders['arc-authentication-results'] ? 'PRESENT — chain not independently verified in browser' : 'NOT PRESENT';
-  return {
-    spf: reported.spf,
-    dkim,
-    dmarc: reported.dmarc,
-    arc,
-    reported_header: authResults || receivedSpf ? 'Present; receiver provenance not verified in browser' : 'Not present',
-    evidence_sources: [...authResultHeaders.map((item) => item.split(':', 1)[0]), ...(receivedSpf ? ['Received-SPF'] : []), ...(normalizedHeaders['dkim-signature'] ? ['DKIM-Signature'] : [])],
-    raw_reported: authResults || receivedSpf || 'No Authentication-Results, ARC-Authentication-Results, X-Authentication-Results, or Received-SPF header was supplied.',
-    note: 'REPORTED values come from submitted receiver headers. Browser analysis does not perform SPF/DKIM/DMARC/ARC cryptographic or DNS verification; a reported pass is not proof that the message content is safe.',
-  };
+function decodeHtmlEntities(value = '') {
+  return String(value).replace(/&amp;/gi, '&').replace(/&quot;/gi, '"').replace(/&#39;|&apos;/gi, "'").replace(/&lt;/gi, '<').replace(/&gt;/gi, '>');
 }
 
-function headerAnomalies({ headers, sender, replyTo }) {
+function combineMessageText(text = '', html = '') {
+  const plain = clean(text);
+  const htmlText = clean(stripHtml(decodeHtmlEntities(html)));
+  if (plain && htmlText) {
+    if (plain.includes(htmlText)) return plain;
+    if (htmlText.includes(plain)) return htmlText;
+    return `${plain}\n${htmlText}`;
+  }
+  return plain || htmlText;
+}
+
+function extractHtmlLinkFindings(html = '') {
+  if (!html) return [];
   const findings = [];
-  const fromDomain = firstAddress(sender).split('@')[1]?.toLowerCase();
-  const replyDomain = firstAddress(replyTo).split('@')[1]?.toLowerCase();
-  if (replyTo && fromDomain && replyDomain && fromDomain !== replyDomain) {
-    findings.push({ id: 'reply-to-mismatch', label: 'Reply-To domain differs from From domain', weight: 16 });
+  const anchorPattern = /<a\b[^>]*?href\s*=\s*(?:"([^"]+)"|'([^']+)'|([^\s>]+))[^>]*>([\s\S]*?)<\/a>/gi;
+  for (const match of String(html).matchAll(anchorPattern)) {
+    const href = decodeHtmlEntities(match[1] || match[2] || match[3] || '').trim();
+    const visibleText = clean(stripHtml(decodeHtmlEntities(match[4] || '')));
+    if (/^(?:javascript|data):/i.test(href)) {
+      findings.push({ id: 'active-link-scheme', label: 'HTML link uses an active/data scheme', weight: 20, evidence: `${href.slice(0, 80)} is not an ordinary web destination and requires static review.` });
+      continue;
+    }
+    if (!/^https?:\/\//i.test(href)) continue;
+    const visibleHost = visibleText.match(/(?:https?:\/\/)?(?:www\.)?([a-z0-9.-]+\.[a-z]{2,})(?:\/|\s|$)/i)?.[1];
+    if (!visibleHost) continue;
+    try {
+      const destinationHost = new URL(href).hostname;
+      if (!domainAlignment(visibleHost, destinationHost).aligned) {
+        findings.push({ id: 'link-text-mismatch', label: 'Visible link text and actual destination differ', weight: 16, evidence: `Link text suggests ${visibleHost}, but the HTML destination is ${destinationHost}.` });
+      }
+    } catch { /* The URL extractor records malformed HTTP values separately. */ }
+    if (findings.length >= 5) break;
   }
-  const displayName = clean(headers['from']).replace(/<[^>]+>/g, '').trim();
-  if (displayName && !EMAIL_PATTERN.test(displayName) && /\b(ceo|cfo|director|admin|support|security|bank|microsoft|google|apple)\b/i.test(displayName)) {
-    findings.push({ id: 'display-name-review', label: 'Trusted-brand or authority display name needs verification', weight: 8 });
-  }
-  if (!headers['message-id']) findings.push({ id: 'missing-message-id', label: 'Message-ID header is missing', weight: 4 });
-  if (!headers['date']) findings.push({ id: 'missing-date', label: 'Date header is missing', weight: 3 });
-  if (!headers['received']) findings.push({ id: 'missing-received', label: 'No Received header was supplied; relay path unavailable', weight: 8 });
   return findings;
 }
 
-function organizationDomain(value = '') {
-  const parts = clean(value).toLowerCase().split('.').filter(Boolean);
-  return parts.length >= 2 ? parts.slice(-2).join('.') : parts[0] || '';
+function authenticationSnapshot(headers, headerEntries = [], sender = '') {
+  return buildAuthenticationSnapshot(headers, headerEntries, sender);
 }
 
-function authenticationContext(headers = {}, sender = '') {
-  const authResults = String(headers['authentication-results'] || '');
-  const passMatches = authResults.match(/\b(?:spf|dkim|dmarc|arc)\s*=\s*pass\b/gi) || [];
-  const dmarcPass = /\bdmarc\s*=\s*pass\b/i.test(authResults);
-  const anyFail = /\b(?:spf|dkim|dmarc|arc)\s*=\s*(?:fail|permerror)\b/i.test(authResults);
-  const fromDomain = firstAddress(sender).split('@')[1] || '';
-  const returnDomain = firstAddress(headers['return-path']).split('@')[1] || '';
-  return { pass_count: passMatches.length, dmarc_pass: dmarcPass, any_fail: anyFail, aligned_from_return_path: Boolean(fromDomain && returnDomain && organizationDomain(fromDomain) === organizationDomain(returnDomain)) };
+function headerAnomalies({ headers, sender, replyTo, fromName = '', sourceMode = '', headerEntries = [] }) {
+  return findHeaderAnomalies({ headers, sender, replyTo, fromName, sourceMode, headerEntries });
 }
 
-function assessTextSignals({ subject, body, sender, urls, attachments, headerFindings, headers = {}, categoryId = 'unknown' }) {
+function authenticationContext(headers = {}, headerEntries = [], sender = '') {
+  return buildAuthenticationContext(headers, headerEntries, sender);
+}
+
+function assessTextSignals({ subject, body, sender, urls, attachments, headerFindings, contentFindings = [], headers = {}, headerEntries = [] }) {
   const text = `${subject}\n${body}`;
   const signals = [];
   const adjustments = [];
   let baselineScore = 0;
+  const addSignal = (signal) => {
+    const weight = Number(signal.weight || 0);
+    baselineScore += weight;
+    signals.push({ ...signal, weight, evidence: signal.evidence || 'Observed in submitted evidence' });
+  };
+
   RISK_RULES.forEach((rule) => {
-    if (rule.pattern.test(text)) {
-      baselineScore += rule.weight;
-      signals.push({ id: rule.id, label: rule.label, weight: rule.weight, evidence: 'Matched in submitted subject/body content' });
-    }
+    if (rule.pattern.test(text)) addSignal({ id: rule.id, label: rule.label, weight: rule.weight, evidence: 'Matched in decoded subject, plain-text and/or HTML message content.' });
   });
   urls.filter((url) => url.risk === 'REVIEW').forEach((url) => {
-    signals.push({ id: 'url-review', label: `URL requires review: ${url.domain}`, weight: scoringRules.content_weights.url_review, evidence: url.reasons.join(', ') || 'URL structure' });
-    baselineScore += scoringRules.content_weights.url_review;
+    addSignal({ id: 'url-review', label: `URL requires review: ${url.domain}`, weight: scoringRules.content_weights.url_review, evidence: url.reasons.join(', ') || 'URL structure' });
   });
   attachments.filter((attachment) => attachment.risk_level !== 'LOW').forEach((attachment) => {
     const weight = Math.min(scoringRules.content_weights.attachment, attachment.risk_score || 0);
-    baselineScore += weight;
-    signals.push({ id: 'attachment-review', label: `Attachment requires review: ${attachment.filename}`, weight, evidence: attachment.findings.join('; ') });
+    addSignal({ id: 'attachment-review', label: `Attachment requires review: ${attachment.filename}`, weight, evidence: attachment.findings.join('; ') });
   });
-  headerFindings.forEach((finding) => {
-    baselineScore += finding.weight;
-    signals.push({ ...finding, evidence: 'Observed in submitted headers' });
-  });
+  [...headerFindings, ...contentFindings].forEach((finding) => addSignal(finding));
+
+  const has = (id) => signals.some((signal) => signal.id === id);
+  const combinations = [
+    { when: has('credential') && has('urgency'), id: 'combo-credential-pressure', label: 'Credential request is combined with pressure language', weight: scoringRules.combination_weights?.credential_pressure ?? 8 },
+    { when: has('financial') && (has('urgency') || has('secrecy')), id: 'combo-payment-pressure', label: 'Payment request is combined with urgency or secrecy', weight: scoringRules.combination_weights?.payment_pressure ?? 10 },
+    { when: has('reply-to-mismatch') && (has('financial') || has('credential')), id: 'combo-reply-path-request', label: 'Reply-path mismatch amplifies a payment or credential request', weight: scoringRules.combination_weights?.reply_path_request ?? 10 },
+    { when: has('link-text-mismatch') && has('credential'), id: 'combo-misleading-credential-link', label: 'Misleading destination is combined with a credential request', weight: scoringRules.combination_weights?.misleading_credential_link ?? 8 },
+    { when: has('financial') && (has('display-name-review') || has('display-name-domain-mismatch') || has('lookalike-domain')), id: 'combo-authority-payment', label: 'Authority or look-alike identity is combined with a payment request', weight: scoringRules.combination_weights?.authority_payment ?? 10 },
+  ];
+  combinations.filter((item) => item.when).forEach((item) => addSignal({ id: item.id, label: item.label, weight: item.weight, evidence: 'Added only because all listed evidence signals co-occur; this is a transparent combination rule, not an AI inference.' }));
+
   let score = baselineScore;
-  const auth = authenticationContext(headers, sender);
-  if (auth.pass_count >= 3) { score += scoringRules.authentication_adjustments.three_or_more_passes; adjustments.push({ label: 'Multiple receiver-reported authentication passes', points: scoringRules.authentication_adjustments.three_or_more_passes }); }
-  if (auth.dmarc_pass) { score += scoringRules.authentication_adjustments.dmarc_pass; adjustments.push({ label: 'DMARC reported pass', points: scoringRules.authentication_adjustments.dmarc_pass }); }
-  if (auth.aligned_from_return_path) { score += scoringRules.authentication_adjustments.aligned_from_return_path; adjustments.push({ label: 'From and Return-Path organizational domains align', points: scoringRules.authentication_adjustments.aligned_from_return_path }); }
-  if (auth.any_fail) { score += scoringRules.authentication_adjustments.any_fail; adjustments.push({ label: 'An authentication method reported fail/permerror', points: scoringRules.authentication_adjustments.any_fail }); }
-  const benignAdjustment = scoringRules.benign_context_adjustments[categoryId];
-  if (benignAdjustment) { score += benignAdjustment; adjustments.push({ label: `${categoryId} context adjustment`, points: benignAdjustment }); }
+  const auth = authenticationContext(headers, headerEntries, sender);
+  if (auth.any_fail) {
+    const points = scoringRules.authentication_adjustments.any_fail;
+    score += points;
+    adjustments.push({ label: `Authentication failure reported${auth.failed_methods.length ? `: ${auth.failed_methods.join(', ')}` : ''}`, points, evidence: 'Receiver-reported fail/permerror/hardfail in submitted headers; independently re-verify before attribution.', source: 'authentication-header-check' });
+  } else if (auth.passes_without_visible_from_alignment && (has('financial') || has('credential') || has('reply-to-mismatch'))) {
+    const points = scoringRules.authentication_adjustments.unaligned_pass_with_request ?? 8;
+    score += points;
+    adjustments.push({ label: 'Reported protocol pass does not validate the visible From domain', points, evidence: 'SPF/DKIM pass evidence lacks visible-From alignment while a sensitive request is present. DMARC alignment was not independently recomputed.', source: 'authentication-alignment-check' });
+  }
+
   const bounded = Math.max(scoringRules.limits.min, Math.min(scoringRules.limits.max, score));
   const status = bounded >= scoringRules.thresholds.high ? 'HIGH RISK' : bounded >= scoringRules.thresholds.review ? 'REVIEW' : 'NO HIGH-RISK SIGNALS OBSERVED';
   const positiveContributors = signals.map((signal) => ({ label: signal.label, points: Number(signal.weight || 0), evidence: signal.evidence || 'Observed in submitted evidence', source: signal.id || 'deterministic-rule' })).filter((item) => item.points > 0);
-  const deductions = adjustments.map((adjustment) => ({ label: adjustment.label, points: Number(adjustment.points || 0), evidence: 'Context adjustment from submitted authentication/category evidence', source: 'shared-scoring-rules' }));
-  return { risk_score: bounded, baseline_score: baselineScore, adjustments, authentication_context: auth, status, signals, score_breakdown: { positive_contributors: positiveContributors, deductions, positive_total: baselineScore, adjustment_total: deductions.reduce((total, item) => total + item.points, 0), final_score: bounded, formula: `${baselineScore} observed points ${deductions.length ? `plus ${deductions.map((item) => item.points).join(' + ')} adjustments` : ''} = ${bounded} final triage score` }, note: scoringRules.confidence_note };
+  const deductions = adjustments.map((adjustment) => ({ label: adjustment.label, points: Number(adjustment.points || 0), evidence: adjustment.evidence || 'Context adjustment from submitted authentication evidence', source: adjustment.source || 'shared-scoring-rules' }));
+  const adjustmentTotal = deductions.reduce((total, item) => total + item.points, 0);
+  return {
+    risk_score: bounded,
+    baseline_score: baselineScore,
+    adjustments,
+    authentication_context: auth,
+    status,
+    signals,
+    score_breakdown: {
+      positive_contributors: positiveContributors,
+      deductions,
+      positive_total: baselineScore,
+      adjustment_total: adjustmentTotal,
+      final_score: bounded,
+      formula: `${baselineScore} observed points ${adjustmentTotal >= 0 ? '+' : '-'} ${Math.abs(adjustmentTotal)} authentication/context adjustment = ${bounded} final triage score`,
+    },
+    note: scoringRules.confidence_note,
+  };
 }
 
 const CATEGORY_RULES = {
@@ -468,17 +548,42 @@ export async function inspectAttachment({ filename, buffer, content }) {
   };
 }
 
+function postalAddress(value) {
+  if (!value) return '';
+  if (value.address) return clean(value.address);
+  if (Array.isArray(value.group)) return value.group.map((item) => postalAddress(item)).filter(Boolean).join(', ');
+  return '';
+}
+
+function postalAddressList(values) {
+  return (Array.isArray(values) ? values : values ? [values] : []).flatMap((value) => postalAddress(value).split(',')).map(clean).filter(Boolean);
+}
+
+function firstUsefulEmail(...values) {
+  for (const value of values) {
+    const address = firstAddress(value);
+    if (address.includes('@')) return address;
+  }
+  return clean(values.find((value) => clean(value)) || '');
+}
+
 function parseRawEmail(rawText, filename, sourceMode) {
   const normalizedRawText = String(rawText || '').replace(/^(?:\r?\n)+/, '');
   const { headerText, body } = splitEmailText(normalizedRawText);
   const { headers, entries } = parseHeaderBlock(headerText);
   const sender = firstAddress(headers.from || headers.sender);
   const recipient = firstAddress(headers.to);
-  const subject = clean(headers.subject) || filename || 'No subject';
+  const subject = decodeHeaderValue(headers.subject) || filename || 'No subject';
   const replyTo = firstAddress(headers['reply-to']);
   const ips = extractIps(headers, headerText);
-  const displayBody = extractMimeText(body, headers['content-type']);
-  return { sourceMode, filename, rawText: normalizedRawText, headers, headerEntries: entries, body: displayBody, sender, recipient, subject, replyTo, ips, urls: extractUrls(`${headerText}\n${body}`), attachments: [] };
+  const displayBody = extractMimeText(body, headers['content-type'], headers['content-transfer-encoding']);
+  const html = /text\/html/i.test(headers['content-type'] || '') ? body : '';
+  return {
+    sourceMode, filename, rawText: normalizedRawText, headers, headerEntries: entries, body: displayBody, sender, recipient, subject, replyTo, ips,
+    fromName: decodeHeaderValue(headers.from || '').replace(/<[^>]+>/g, '').replace(/^['"]|['"]$/g, '').trim(),
+    urls: extractUrls(`${headerText}\n${displayBody}`), contentFindings: extractHtmlLinkFindings(html), attachments: [],
+    message_structure: { parser: 'Built-in pasted-text parser', plain_text_present: Boolean(displayBody), html_present: Boolean(html), attachment_count: 0, transport_headers_present: Boolean(entries.length) },
+  };
 }
 
 /* Carve MIME attachment parts (base64 or text) out of a raw EML body so
@@ -526,11 +631,94 @@ export function parseTextInput({ sender = '', recipient = '', subject = '', body
 
 export async function parseEmlFile(file) {
   const buffer = await file.arrayBuffer();
-  const rawText = decodeBytes(buffer);
-  const parsed = parseRawEmail(rawText, file.name, 'eml');
-  parsed.attachments = extractMimeAttachments(rawText);
   const report = await inspectAttachment({ filename: file.name, buffer });
-  return { ...parsed, rawBytes: buffer, rawHash: report.sha256, fileReport: report, input_note: 'RFC-style raw email text parsed locally. Authentication results are reported only, not independently verified.' };
+  try {
+    const email = await PostalMime.parse(buffer, {
+      attachmentEncoding: 'arraybuffer',
+      rfc822Attachments: true,
+      maxNestingDepth: 32,
+      maxRfc822NestingDepth: 3,
+      maxHeadersSize: 1_000_000,
+      maxPartCount: 2000,
+    });
+    const headerEntries = (email.headers || []).map((header) => ({ name: header.originalKey || header.key, value: clean(header.value) }));
+    const headers = {};
+    headerEntries.forEach(({ name, value }) => {
+      const key = String(name).toLowerCase();
+      headers[key] = headers[key] ? `${headers[key]}\n${value}` : value;
+    });
+    const headerText = headerEntries.map((entry) => `${entry.name}: ${entry.value}`).join('\n');
+    const sender = firstUsefulEmail(postalAddress(email.from), postalAddress(email.sender), headers.from, headers.sender);
+    const recipient = postalAddressList(email.to).join(', ') || firstAddress(headers.to);
+    const replyTo = postalAddressList(email.replyTo)[0] || firstAddress(headers['reply-to']);
+    const subject = clean(email.subject) || decodeHeaderValue(headers.subject) || file.name || 'No subject';
+    const body = combineMessageText(email.text, email.html);
+    const attachments = (email.attachments || []).map((attachment, index) => ({
+      filename: clean(attachment.filename) || `unnamed-attachment-${index + 1}`,
+      buffer: attachment.content instanceof Uint8Array ? attachment.content : new Uint8Array(attachment.content || new ArrayBuffer(0)),
+    }));
+    return {
+      sourceMode: 'eml', filename: file.name, rawText: decodeBytes(buffer), rawBytes: buffer, rawHash: report.sha256, fileReport: report,
+      headers, headerEntries, body, sender, recipient, subject, replyTo,
+      fromName: clean(email.from?.name) || decodeHeaderValue(headers.from || '').replace(/<[^>]+>/g, '').replace(/^['"]|['"]$/g, '').trim(),
+      ips: extractIps(headers, headerText),
+      urls: extractUrls(`${headerText}\n${subject}\n${email.text || ''}\n${email.html || ''}`),
+      contentFindings: extractHtmlLinkFindings(email.html),
+      attachments,
+      message_structure: {
+        parser: 'PostalMime · RFC MIME decoding', plain_text_present: Boolean(clean(email.text)), html_present: Boolean(clean(email.html)),
+        attachment_count: attachments.length, inline_attachment_count: (email.attachments || []).filter((item) => item.disposition === 'inline').length,
+        transport_headers_present: Boolean(headerEntries.length), header_count: headerEntries.length,
+      },
+      input_note: 'EML parsed locally with standards-oriented nested MIME, charset, base64 and quoted-printable decoding. Plain text and HTML are analyzed separately before triage. Authentication results remain receiver-reported, not independently verified.',
+    };
+  } catch (error) {
+    const rawText = decodeBytes(buffer);
+    const parsed = parseRawEmail(rawText, file.name, 'eml');
+    try { parsed.attachments = extractMimeAttachments(rawText); } catch { parsed.attachments = []; }
+    return {
+      ...parsed, rawBytes: buffer, rawHash: report.sha256, fileReport: report,
+      parseError: `PostalMime could not fully parse this EML (${error?.message || 'unknown parser error'}); a limited built-in fallback was used.`,
+      input_note: 'Deep EML parsing was incomplete. The result uses a limited fallback and must not be treated as a complete MIME inspection.',
+    };
+  }
+}
+
+export function normalizeMsgData(info, { filename = 'message.msg', attachments = [], containerReport = null, rawBytes = new Uint8Array() } = {}) {
+  const headersText = clean(info.headers);
+  const parsedHeaders = parseHeaderBlock(headersText);
+  const sender = firstUsefulEmail(info.senderSmtpAddress, info.senderEmail, info.sentRepresentingSmtpAddress, info.creatorSMTPAddress, parsedHeaders.headers.from, parsedHeaders.headers.sender);
+  const recipient = addressList((info.recipients || []).map((recipientInfo) => recipientInfo.email || recipientInfo.name).join(', ')).join(', ') || firstAddress(parsedHeaders.headers.to);
+  const subject = clean(info.subject) || decodeHeaderValue(parsedHeaders.headers.subject) || filename;
+  const parsed = parseRawEmail(headersText, filename, 'msg');
+  const htmlSource = typeof info.bodyHtml === 'string' ? info.bodyHtml : typeof info.html === 'string' ? info.html : info.html ? decodeBytes(info.html) : '';
+  const bodyText = combineMessageText(info.body, htmlSource);
+  return {
+    ...parsed,
+    sender,
+    recipient,
+    subject,
+    body: bodyText,
+    fromName: clean(info.senderName) || parsed.fromName,
+    headers: parsedHeaders.headers,
+    headerEntries: parsedHeaders.entries,
+    attachments: (attachments || []).map((attachment, index) => ({
+      filename: attachment.filename || attachment.fileName || `unnamed-attachment-${index + 1}`,
+      buffer: attachment.buffer || attachment.content || new Uint8Array(),
+    })),
+    // Analyze both MSG plain and HTML bodies. A plain-body-only flow misses
+    // HTML-only credential lures and their actual link destinations.
+    urls: extractUrls(`${headersText}\n${subject}\n${info.body || ''}\n${htmlSource}`),
+    contentFindings: extractHtmlLinkFindings(htmlSource),
+    message_structure: {
+      parser: '@kenjiuno/msgreader · Outlook property decoding', plain_text_present: Boolean(clean(info.body)), html_present: Boolean(clean(htmlSource)),
+      attachment_count: attachments.length, transport_headers_present: Boolean(headersText), header_count: parsedHeaders.entries.length,
+    },
+    rawBytes,
+    rawHash: containerReport?.sha256,
+    fileReport: containerReport,
+    input_note: 'Outlook MSG container parsed with a dedicated MSG reader. Plain and HTML bodies are analyzed when present. Embedded transport headers are shown when available; missing headers are reported as unavailable rather than reconstructed as original evidence.',
+  };
 }
 
 export async function parseMsgFile(file) {
@@ -550,11 +738,6 @@ export async function parseMsgFile(file) {
     if (typeof MsgReader !== 'function') throw new Error('MSG reader module did not expose a constructor');
     const reader = new MsgReader(buffer);
     const info = reader.getFileData();
-    const headersText = clean(info.headers);
-    const parsedHeaders = parseHeaderBlock(headersText);
-    const sender = firstAddress(info.senderEmail || parsedHeaders.headers.from);
-    const recipient = addressList((info.recipients || []).map((recipientInfo) => recipientInfo.email || recipientInfo.name).join(', ')).join(', ');
-    const subject = clean(info.subject) || file.name;
     const attachments = [];
     (info.attachments || []).forEach((attachmentInfo) => {
       try {
@@ -564,27 +747,7 @@ export async function parseMsgFile(file) {
         attachments.push({ filename: attachmentInfo.fileName || 'attachment-unreadable', content: new Uint8Array() });
       }
     });
-    const parsed = parseRawEmail(headersText, file.name, 'msg');
-    const bodyText = clean(info.body);
-    // URLs must come from the MESSAGE body too — header-only extraction misses
-    // every phishing link in a .msg and collapses the score toward zero.
-    const merged = {
-      ...parsed,
-      sender,
-      recipient,
-      subject,
-      body: bodyText,
-      headers: parsedHeaders.headers,
-      headerEntries: parsedHeaders.entries,
-      // attachment `content` is the bytes; inspectAttachment accepts the alias
-      attachments: attachments.map((a) => ({ filename: a.filename, buffer: a.content })),
-      urls: extractUrls(`${headersText}\n${subject}\n${bodyText}`),
-      rawBytes: buffer,
-      rawHash: containerReport.sha256,
-      fileReport: containerReport,
-      input_note: 'Outlook MSG container parsed with a dedicated MSG reader. Embedded transport headers are shown when present; browser mode does not re-run DNS/cryptographic verification.',
-    };
-    return merged;
+    return normalizeMsgData(info, { filename: file.name, attachments, containerReport, rawBytes: buffer });
   } catch (error) {
     return { sourceMode: 'msg', filename: file.name, rawBytes: buffer, rawHash: containerReport.sha256, sender: '', recipient: '', subject: '', body: '', headers: {}, headerEntries: [], ips: [], urls: [], attachments: [], fileReport: containerReport, parseError: `MSG parsing failed: ${error?.message || 'unknown parser error'}`, input_note: 'This is a binary Outlook MSG file that could not be parsed. No sender, body, route, or attachment claims were invented.' };
   }
@@ -593,11 +756,45 @@ export async function parseMsgFile(file) {
 export async function buildEmailAnalysis(parsed) {
   const attachments = [];
   for (const attachment of parsed.attachments || []) attachments.push(await inspectAttachment(attachment));
-  const headerFindings = headerAnomalies({ headers: parsed.headers || {}, sender: parsed.sender, replyTo: parsed.replyTo });
+  const headers = parsed.headers || {};
+  const headerEntries = parsed.headerEntries || [];
+  const headerFindings = headerAnomalies({ headers, sender: parsed.sender, replyTo: parsed.replyTo, fromName: parsed.fromName, sourceMode: parsed.sourceMode, headerEntries });
+  const contentFindings = parsed.contentFindings || [];
+  const dnsAuth = authenticationSnapshot(headers, headerEntries, parsed.sender);
   const categoryCandidate = classifyMail({ subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, threatScore: 0 });
-  const threat = assessTextSignals({ subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, headerFindings, headers: parsed.headers || {}, categoryId: categoryCandidate.category_id });
+  const threat = assessTextSignals({ subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, headerFindings, contentFindings, headers, headerEntries, categoryId: categoryCandidate.category_id });
   const categoryAnalysis = classifyMail({ subject: parsed.subject, body: parsed.body, sender: parsed.sender, urls: parsed.urls || [], attachments, threatScore: threat.risk_score });
   const rawHash = parsed.rawHash || await sha256Hex(new TextEncoder().encode(parsed.rawText || parsed.body || ''));
+  const hops = buildRelayHops(headerEntries);
+  const explanations = [];
+  if (!dnsAuth.results.length) explanations.push('No supported receiver authentication result was parsed. Missing Authentication-Results is not treated as proof of either legitimacy or spoofing.');
+  if (dnsAuth.alignment.reported_dmarc_fail) explanations.push('A submitted receiver header reports DMARC failure for the visible author domain. Independently verify the receiver and original authentication evidence.');
+  if (dnsAuth.alignment.visible_from_reported_validated) explanations.push('At least one reported result supports visible-From validation or alignment. This addresses an authentication layer only; it does not make the message content, links or requests trustworthy.');
+  if (dnsAuth.alignment.passes_without_visible_from_alignment) explanations.push('SPF/DKIM pass evidence is present without demonstrated alignment to the visible From domain. A protocol pass—including HELO-only SPF or a signature for another domain—must not be read as validation of the displayed sender.');
+  if (threat.authentication_context.mixed_methods.length) explanations.push(`Conflicting results appear for ${threat.authentication_context.mixed_methods.join(', ')} across submitted headers. All results are retained instead of silently selecting one.`);
+  if (parsed.message_structure?.html_present) explanations.push('HTML content was decoded and inspected for text signals, destinations and display-versus-destination mismatches; it was not rendered or executed.');
+  explanations.push('Scoring is additive: reported authentication passes and benign-looking category labels do not subtract from observed threat signals.');
+
+  const fromDomain = addressDomain(parsed.sender);
+  const replyDomain = addressDomain(parsed.replyTo);
+  const returnPath = firstAddress(headers['return-path']);
+  const returnDomain = addressDomain(returnPath);
+  const deepEmail = {
+    message_structure: parsed.message_structure || { parser: 'Built-in parser', transport_headers_present: Boolean(headerEntries.length) },
+    identity: {
+      visible_from: parsed.sender || 'Not parsed', display_name: parsed.fromName || 'Not parsed',
+      from_domain: fromDomain || 'Not parsed', from_organization_domain: organizationDomain(fromDomain) || 'Not parsed',
+      reply_to: parsed.replyTo || 'Not present', reply_to_domain: replyDomain || 'Not present',
+      return_path: returnPath || 'Not present', return_path_domain: returnDomain || 'Not present',
+      return_path_alignment: domainAlignment(fromDomain, returnDomain),
+    },
+    authentication_alignment: dnsAuth.alignment,
+    content_findings: contentFindings,
+    top_findings: [...threat.signals].sort((a, b) => Number(b.weight || 0) - Number(a.weight || 0)).slice(0, 6).map((signal) => ({ label: signal.label, weight: signal.weight, evidence: signal.evidence })),
+    explanations,
+    score_policy: 'Observed signals are additive. Authentication passes and message-category labels never erase those signals. Scores remain heuristic triage, not probability or a final attribution verdict.',
+  };
+
   return {
     mode: parsed.sourceMode,
     parseError: parsed.parseError || null,
@@ -607,15 +804,21 @@ export async function buildEmailAnalysis(parsed) {
     parsed: { ...parsed, rawBytes: undefined, rawText: undefined, attachments: undefined, sha256_hash: rawHash },
     threat,
     category_analysis: categoryAnalysis,
-    dns_auth: authenticationSnapshot(parsed.headers || {}),
-    relay_info: { ips: parsed.ips || [], hop_count: parsed.ips?.length || 0, status: parsed.ips?.length ? 'Visible IPs extracted from submitted header fields' : 'No public IP extracted from submitted headers', note: 'IP extraction does not prove original sender identity or physical location.' },
+    dns_auth: dnsAuth,
+    deep_email: deepEmail,
+    relay_info: {
+      ips: parsed.ips || [], hops, hop_count: hops.length, ip_count: parsed.ips?.length || 0,
+      status: parsed.ips?.length ? 'Header IPs extracted from submitted evidence' : 'No IP extracted from submitted headers',
+      note: 'Received entries and IPs are submitted evidence, not proof of original sender identity, complete chronology or physical location.',
+    },
     geo_data: { status: 'NOT LOOKED UP', sender: null, receiver: null, note: 'No analyst/device IP fallback. Browser mode does not send extracted IPs to a geolocation provider.' },
     aitm_analysis: parsed.urls || [],
     attachment_analysis: attachments,
     authorship_analysis: { classification: 'NOT ASSESSED', ai_likeness_percent: null, confidence: 'N/A', observed_indicators: [], explanation: 'AI-generated text detection is intentionally not claimed by this web-only heuristic flow.' },
     header_findings: headerFindings,
+    content_findings: contentFindings,
     evidence: { sha256: rawHash, raw_size_bytes: parsed.rawBytes?.byteLength || null, preservation: 'Parsed case data is stored in this browser profile when IndexedDB is available; original bytes are not uploaded to an immutable evidence vault by this static web app.' },
-    limitations: [parsed.input_note, 'Risk score is heuristic triage, not a probability.', 'No external threat-intelligence, DNS, sandbox, AV, YARA, or cryptographic verification was performed in browser mode.'],
+    limitations: [parsed.input_note, 'Risk score is heuristic triage, not a probability.', 'No external threat-intelligence, live DNS, sandbox, AV, YARA, or cryptographic verification was performed in browser mode.', 'Authentication-Results and related receiver headers are treated as submitted, unauthenticated provenance unless independently verified.'],
   };
 }
 
