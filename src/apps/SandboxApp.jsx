@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Activity, AlertTriangle, CheckCircle2, Cpu, Crosshair, Globe, Loader2, Lock, MonitorPlay, Power, RotateCw,
+  Activity, AlertTriangle, CheckCircle2, Cpu, Crosshair, ExternalLink, Globe, Loader2, Lock, MonitorPlay, Power, RotateCw,
   ShieldAlert, TerminalSquare, Wifi, WifiOff, X,
 } from 'lucide-react';
 import { staticUrlChecks } from '../lib/urlChecks';
@@ -46,7 +46,7 @@ async function sha256HexOfFile(file) {
 
 const GUEST_APPS = {
   browser: { title: 'Chromium · air-gapped', short: 'Chromium', icon: Globe, x: 33, y: 5, w: 61, h: 63 },
-  realpc: { title: 'Real PC · noVNC desktop (docker)', short: 'Real PC', icon: MonitorPlay, x: 8, y: 8, w: 82, h: 74 },
+  realpc: { title: 'Real PC · WebAssembly Linux (WebVM / v86)', short: 'Real PC', icon: MonitorPlay, x: 6, y: 6, w: 88, h: 84 },
   lab: { title: 'Threat Lab · attachment & link analysis', short: 'ThreatLab', icon: Crosshair, x: 2, y: 5, w: 48, h: 43 },
   monitor: { title: 'System Monitor', short: 'Monitor', icon: Activity, x: 57, y: 20, w: 40, h: 52 },
   terminal: { title: 'guest@spandr-sbx:~', short: 'Terminal', icon: TerminalSquare, x: 2, y: 50, w: 47, h: 43 },
@@ -66,90 +66,150 @@ function stamp(date = new Date()) {
   return date.toLocaleTimeString('en-GB', { hour12: false });
 }
 
+const VM_ENGINES = {
+  webvm: {
+    id: 'webvm',
+    name: 'Debian WebVM',
+    badge: 'CheerpX Wasm',
+    description: 'Real Debian Linux x86 terminal in WebAssembly · ₹0 Server Cost · Client CPU/RAM',
+    url: 'https://webvm.io/',
+  },
+  v86: {
+    id: 'v86',
+    name: 'v86 Linux',
+    badge: 'x86 PC Wasm',
+    description: 'Instant x86 PC Linux 2.6 in WebAssembly · ₹0 Server Cost · Client CPU/RAM',
+    url: 'https://copy.sh/v86/?profile=linux26',
+  },
+  docker: {
+    id: 'docker',
+    name: 'Docker noVNC',
+    badge: 'Local Desktop',
+    description: 'Local air-gapped Debian desktop container over noVNC (docker compose up isolated-sandbox)',
+    url: '/novnc/vnc.html?autoconnect=true&resize=scale&path=novnc/websockify&view_only=0',
+  },
+};
+
 /*
- * Real PC window — streams the REAL Debian/Chromium desktop from the
- * air-gapped container over noVNC when the VM endpoint is reachable.
- * When the stream is offline (e.g. production without the docker sandbox),
- * it boots the local analysis VM fallback so the window is always usable.
+ * Real PC window — runs real Linux directly in the browser via WebAssembly
+ * (WebVM CheerpX Debian / v86 x86 PC) with ₹0 server cost, or connects to
+ * local container over noVNC when docker is running.
  */
 function RealPcWindow({ openGuest }) {
-  const [state, setState] = React.useState('probing'); // probing | online | offline
+  const [engine, setEngine] = React.useState('webvm');
+  const [dockerState, setDockerState] = React.useState('probing'); // probing | online | offline
   const [bootStep, setBootStep] = React.useState(0);
 
-  const probe = React.useCallback(() => {
-    setState('probing');
+  const probeDocker = React.useCallback(() => {
+    setDockerState('probing');
     try {
       const ws = new WebSocket(`${location.protocol === 'https:' ? 'wss' : 'ws'}://${location.host}/novnc/websockify`);
-      const timer = setTimeout(() => { try { ws.close(); } catch (e) {} setState('offline'); }, 2500);
-      ws.onopen = () => { clearTimeout(timer); setState('online'); try { ws.close(); } catch (e) {} };
-      ws.onerror = () => { clearTimeout(timer); setState('offline'); };
+      const timer = setTimeout(() => { try { ws.close(); } catch (e) {} setDockerState('offline'); }, 2000);
+      ws.onopen = () => { clearTimeout(timer); setDockerState('online'); try { ws.close(); } catch (e) {} };
+      ws.onerror = () => { clearTimeout(timer); setDockerState('offline'); };
     } catch {
-      setState('offline');
+      setDockerState('offline');
     }
   }, []);
 
-  React.useEffect(() => { probe(); }, [probe]);
+  React.useEffect(() => {
+    if (engine === 'docker') {
+      probeDocker();
+    }
+  }, [engine, probeDocker]);
 
   React.useEffect(() => {
-    if (state !== 'offline') return undefined;
+    if (dockerState !== 'offline') return undefined;
     setBootStep(0);
-    const timers = [1, 2, 3, 4].map((i) => setTimeout(() => setBootStep(i), i * 550));
+    const timers = [1, 2, 3, 4].map((i) => setTimeout(() => setBootStep(i), i * 500));
     return () => timers.forEach(clearTimeout);
-  }, [state]);
+  }, [dockerState]);
 
-  if (state === 'probing') {
-    return (
-      <div className="gwin__splash">
-        <Loader2 size={22} className="spin" style={{ color: '#7ee2a8' }} />
-        <strong>Connecting to real VM stream…</strong>
-        <p>probing wss://…/novnc/websockify for the air-gapped desktop container</p>
-      </div>
-    );
-  }
-
-  if (state === 'online') {
-    return (
-      <div className="gwin__realpc">
-        <div className="gwin__realpc-note">
-          <MonitorPlay size={12} />
-          <span>Real virtual computer — actual Debian desktop + Chromium + analysis tools over noVNC (TryHackMe-style attack box).</span>
-        </div>
-        <iframe
-          title="Real PC desktop (noVNC)"
-          className="gwin__realpc-frame"
-          src="/novnc/vnc.html?autoconnect=true&resize=scale&path=novnc/websockify&view_only=0"
-          sandbox="allow-scripts allow-same-origin"
-        />
-      </div>
-    );
-  }
+  const current = VM_ENGINES[engine] || VM_ENGINES.webvm;
 
   return (
     <div className="gwin__realpc">
+      <div className="gwin__realpc-topbar">
+        <div className="gwin__realpc-modes">
+          {Object.values(VM_ENGINES).map((eng) => (
+            <button
+              key={eng.id}
+              type="button"
+              className={`gwin__mode-chip ${engine === eng.id ? 'is-active' : ''}`}
+              onClick={() => setEngine(eng.id)}
+            >
+              <span>{eng.name}</span>
+              <small>{eng.badge}</small>
+            </button>
+          ))}
+        </div>
+        <div className="gwin__realpc-meta">
+          <span className="gwin__badge-zero">⚡ 100% Free · Client Wasm · ₹0 Cost</span>
+          <a
+            href={current.url}
+            target="_blank"
+            rel="noreferrer"
+            className="gwin__popout-btn"
+            title={`Open ${current.name} in new tab`}
+          >
+            <ExternalLink size={12} />
+          </a>
+        </div>
+      </div>
+
       <div className="gwin__realpc-note">
-        <WifiOff size={12} />
-        <span>
-          VM stream offline — the noVNC desktop container (<code>docker compose up isolated-sandbox</code>) is not
-          reachable from this deployment. Booting the <b>local analysis VM</b> instead — same tools, real engines, runs in this tab.
-        </span>
+        <MonitorPlay size={12} />
+        <span>{current.description}</span>
       </div>
-      <div className="gwin__realpc-boot">
-        {[
-          'spandr-pc uefi · booting kernel 6.8.0-hardened …',
-          'mounting /evidence (read-only) · egress policy DROP',
-          'starting analysis services: forensic engine · NLP lanes · threat lab',
-          'local VM ready — real tools available in Terminal & Threat Lab',
-        ].slice(0, bootStep + 1).map((line) => (
-          <div key={line} className="gwin__bootline"><CheckCircle2 size={11} /> {line}</div>
-        ))}
-      </div>
-      <div className="gwin__realpc-actions">
-        <button type="button" className="btn btn--primary btn--xs" disabled={bootStep < 3} onClick={() => { openGuest('terminal'); openGuest('lab'); }}>
-          <TerminalSquare size={11} /> Open Terminal + Threat Lab
-        </button>
-        <button type="button" className="btn btn--xs" onClick={() => openGuest('monitor')}><Activity size={11} /> System Monitor</button>
-        <button type="button" className="btn btn--xs" onClick={probe}><RotateCw size={11} /> Retry VM stream</button>
-      </div>
+
+      {engine === 'docker' ? (
+        dockerState === 'probing' ? (
+          <div className="gwin__splash">
+            <Loader2 size={22} className="spin" style={{ color: '#7ee2a8' }} />
+            <strong>Connecting to real VM stream…</strong>
+            <p>probing wss://…/novnc/websockify for the air-gapped desktop container</p>
+          </div>
+        ) : dockerState === 'online' ? (
+          <iframe
+            title="Real PC desktop (noVNC)"
+            className="gwin__realpc-frame"
+            src={current.url}
+            sandbox="allow-scripts allow-same-origin"
+          />
+        ) : (
+          <div className="gwin__realpc-boot">
+            <div className="gwin__bootline" style={{ color: '#ff97a3' }}>
+              <WifiOff size={11} /> Docker container offline (<code>docker compose up isolated-sandbox</code>)
+            </div>
+            {[
+              'Switch to WebVM (Debian CheerpX) or v86 for instant zero-cost Linux in this tab',
+              'spandr-pc uefi · booting kernel 6.8.0-hardened …',
+              'mounting /evidence (read-only) · egress policy DROP',
+              'local analysis tools available in Terminal & Threat Lab',
+            ].slice(0, bootStep + 1).map((line) => (
+              <div key={line} className="gwin__bootline"><CheckCircle2 size={11} /> {line}</div>
+            ))}
+            <div className="gwin__realpc-actions" style={{ marginTop: 'auto', padding: 0 }}>
+              <button type="button" className="btn btn--primary btn--xs" onClick={() => setEngine('webvm')}>
+                ⚡ Boot WebVM (Zero Server Cost)
+              </button>
+              <button type="button" className="btn btn--xs" onClick={() => { openGuest('terminal'); openGuest('lab'); }}>
+                <TerminalSquare size={11} /> Local Terminal + Lab
+              </button>
+              <button type="button" className="btn btn--xs" onClick={probeDocker}><RotateCw size={11} /> Retry Docker</button>
+            </div>
+          </div>
+        )
+      ) : (
+        <iframe
+          key={engine}
+          title={`Real PC desktop (${current.name})`}
+          className="gwin__realpc-frame"
+          src={current.url}
+          allow="clipboard-read; clipboard-write; fullscreen"
+          sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-downloads allow-modals allow-pointer-lock"
+        />
+      )}
     </div>
   );
 }

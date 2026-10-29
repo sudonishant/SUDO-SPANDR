@@ -1,6 +1,6 @@
 import React from 'react';
 import {
-  Bot, Code2, FileCode2, Fingerprint, Github, Hash, Lock, Network, Paperclip, Shield, ShieldCheck, Tag,
+  Bot, Code2, FileCode2, Fingerprint, Github, Globe, Hash, Linkedin, Lock, Network, Paperclip, Shield, ShieldCheck, Tag, Youtube,
 } from 'lucide-react';
 
 const CAPS = [
@@ -32,6 +32,20 @@ export default function AboutApp({ onOpen }) {
             <p>{copy}</p>
           </div>
         ))}
+      </div>
+
+      <div className="about__author">
+        <div className="about__author-header">
+          <span className="about__author-tag">Lead Researcher & Developer</span>
+          <h3>Nishant Kumar (Neeshant)</h3>
+          <p>Ethical Hacker & Full Stack Developer · Cyber Security Researcher · Building defensive tools and securing the web.</p>
+        </div>
+        <div className="btn-row">
+          <a className="btn btn--sm" href="https://neeshant.in" target="_blank" rel="noreferrer"><Globe size={11} /> neeshant.in</a>
+          <a className="btn btn--sm" href="https://github.com/sudonishant" target="_blank" rel="noreferrer"><Github size={11} /> @sudonishant</a>
+          <a className="btn btn--sm" href="https://in.linkedin.com/in/nishant-kumar-423870291" target="_blank" rel="noreferrer"><Linkedin size={11} /> LinkedIn</a>
+          <a className="btn btn--sm" href="https://youtube.com/@neeshant01?si=53cEbxV4qUCvMlTj" target="_blank" rel="noreferrer"><Youtube size={11} /> YouTube</a>
+        </div>
       </div>
 
       <div className="btn-row">
