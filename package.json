@@ -17,7 +17,8 @@
     "verify:headers": "node scripts/verify-deploy-headers.mjs",
     "assets:v86": "node scripts/fetch-v86-assets.mjs",
     "verify:v86-assets": "node scripts/fetch-v86-assets.mjs --check",
-    "smoke:agent-pc": "node scripts/smoke-agent-pc.mjs"
+    "smoke:agent-pc": "node scripts/smoke-agent-pc.mjs",
+    "check:functions": "node scripts/check-vercel-functions.mjs"
   },
   "dependencies": {
     "@kenjiuno/msgreader": "^1.28.0",

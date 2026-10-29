@@ -80,6 +80,18 @@
       "destination": "/api/v1/blockchain/verify?tx_hash=:tx_hash"
     },
     {
+      "source": "/api/v1/rea-analyze",
+      "destination": "/api/v1/rea/analyze"
+    },
+    {
+      "source": "/api/v1/rea-status",
+      "destination": "/api/v1/rea/status"
+    },
+    {
+      "source": "/api/v1/sandbox/preview-frame",
+      "destination": "/api/v1/sandbox/lab/preview-frame"
+    },
+    {
       "source": "/api/:path*",
       "destination": "/api/:path*"
     },

@@ -177,3 +177,66 @@ nothing), audio, and performance on low-end hardware.
 
 SeaBIOS (LGPL-3.0), Bochs VGABIOS (LGPL-2.1), KolibriOS (GPL-2.0), v86 (BSD-2-Clause). Details and
 pinned SHA-256 values: `public/v86/NOTICE.md` and `scripts/fetch-v86-assets.mjs`.
+
+---
+
+# Addendum 2 — why the Vercel deploy was failing (and the fix)
+
+Production had been serving an old build: every recent deployment ended in **failure**, so the live
+site kept the previous bundle *and the previous headers*. That is the real reason
+`npm run verify:headers` reported 7/10 on production and why Agent PC's fixes looked absent.
+
+## Root cause
+
+Vercel Hobby allows **12 serverless functions per deployment**; every non-underscore file under
+`api/` counts as one. The project had **14**:
+
+```
+api/v1/ai-review.js            api/v1/ip-context.js
+api/v1/analyze-batch.js        api/v1/mitre/navigator-layer.js
+api/v1/analyze-eml.js          api/v1/rea-analyze.js        ← merge
+api/v1/blockchain/verify.js    api/v1/rea-status.js         ← merge
+api/v1/gateway-milter-check.js api/v1/sandbox/detonate.js
+api/v1/health.js               api/v1/sandbox/lab/[...path].js
+                               api/v1/sandbox/preview-frame.js ← merge
+                               api/v1/supabase/schema.js
+```
+
+The repository already contained a commit from an earlier encounter with this limit
+(`baab79f — fix(vercel): merge lab endpoints into one function — Hobby 12-function limit`), and two
+more files were added afterwards without merging, which broke deploys again.
+
+There was a second, silent bug underneath it: the UI has always called
+`/api/v1/rea/status` and `/api/v1/rea/analyze`, but the files were `rea-status.js` and
+`rea-analyze.js` with no rewrite — so those requests **404'd in production** even when deploys
+succeeded.
+
+## Fix
+
+| Change | Effect |
+| --- | --- |
+| `api/v1/rea/[...path].js` (new catch-all) | serves `/api/v1/rea/status` (GET) and `/api/v1/rea/analyze` (POST); 405/404 are explicit. Fixes the 404 bug *and* merges two functions into one. |
+| `handlePreviewFrame` moved into `api/_lib/labcore.js`, routed as `lab/preview-frame` | the disabled same-origin proxy still answers `410` with the same security headers, from the existing catch-all. |
+| `vercel.json` rewrites | `/api/v1/rea-analyze`, `/api/v1/rea-status`, `/api/v1/sandbox/preview-frame` keep working for bookmarks and older clients. |
+| `scripts/check-vercel-functions.mjs` (`npm run check:functions`) | fails when `api/` exceeds 12 functions, when a required route has no function, when a moved URL loses its rewrite, or when the legacy rewrites disappear. Wired into CI. |
+
+Result: **12/12 functions**, all required routes resolved, legacy URLs preserved.
+
+## Verified locally
+
+- Route harness with mocked `req`/`res` — **8/8**: unconfigured REA answers `503 not_configured`
+  (never a fake success), wrong method `405`, unknown route `404` with the route list,
+  `preview-frame` still `410` with `X-Frame-Options: DENY`, existing `lab/toolbox` unaffected.
+- `npm run check:functions` → `12/12 functions, all required routes routed`.
+- `npm run lint` (52 files) and `npm run build` pass.
+
+## Not verified
+
+The actual Vercel deploy. The suspected cause is well supported (function count 14 > 12, plus the
+author's earlier commit about the same limit), but the only way to be certain is the deployment log:
+
+```bash
+npx vercel inspect dpl_5dKsUexcPe9kubELJE637HuXErHh --logs
+```
+
+If a deploy still fails after this change, the log — not the function count — is the next thing to read.

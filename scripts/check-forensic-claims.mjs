@@ -46,8 +46,7 @@ const activeFiles = [
   'api/v1/ai-review.js',
   'api/v1/ip-context.js',
   'api/_lib/reaProxy.js',
-  'api/v1/rea-status.js',
-  'api/v1/rea-analyze.js',
+  'api/v1/rea/[...path].js',
   'scripts/rea-analysis-server.mjs',
   'api/v1/analyze-eml.js',
   'api/v1/analyze-batch.js',
@@ -56,7 +55,8 @@ const activeFiles = [
   'api/v1/health.js',
   'api/v1/mitre/navigator-layer.js',
   'api/v1/sandbox/detonate.js',
-  'api/v1/sandbox/preview-frame.js',
+  'api/_lib/labcore.js',
+  'scripts/check-vercel-functions.mjs',
   'api/v1/supabase/schema.js',
 ];
 const forbidden = [
