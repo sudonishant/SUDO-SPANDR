@@ -105,12 +105,12 @@ export default function SandboxPage({ onNavigate, onViewCase }) {
       <PageHeader
         eyebrow="Real GUI workstation · agent operations"
         title="Agent PC"
-        description={storageStatus === 'ready' ? 'Boot a real Linux GUI with Chromium, terminal and files. Browser Node.js is available as a secondary workshop; submitted EML/MSG evidence can still become a saved device case.' : storageStatus === 'loading' ? 'Boot a real Linux GUI with Chromium, terminal and files. Device case storage is being restored.' : 'Boot a real Linux GUI with Chromium, terminal and files. Device case storage is unavailable, so new cases remain in this tab.'}
+        description={storageStatus === 'ready' ? 'Pick a runtime: a WebAssembly Linux inside this tab, a desktop you host yourself, or the browser Node.js workshop. Each card states what it really runs; no mailbox is connected.' : storageStatus === 'loading' ? 'Pick a runtime. Each card states what it really runs. Device case storage is being restored.' : 'Pick a runtime. Each card states what it really runs. Device case storage is unavailable, so new cases remain in this tab.'}
         meta={<StatusLine tone={running ? 'ready' : 'neutral'}>{running ? `${runtimeMode === 'browser' ? 'Browser runtime' : 'Linux desktop'} running` : 'Selected runtime stopped'}</StatusLine>}
       />
 
       <div className="runtime-mode-switch" role="group" aria-label="Computer runtime type">
-        <button type="button" className={runtimeMode === 'linux' ? 'is-active' : ''} aria-pressed={runtimeMode === 'linux'} onClick={() => selectRuntime('linux')}><Container size={17} /><span><strong>Agent PC GUI</strong><small>Real Chromium + terminal + files</small></span></button>
+        <button type="button" className={runtimeMode === 'linux' ? 'is-active' : ''} aria-pressed={runtimeMode === 'linux'} onClick={() => selectRuntime('linux')}><Container size={17} /><span><strong>Agent PC GUI</strong><small>Real emulated PC · in this tab</small></span></button>
         <button type="button" className={runtimeMode === 'browser' ? 'is-active' : ''} aria-pressed={runtimeMode === 'browser'} onClick={() => selectRuntime('browser')}><Code2 size={17} /><span><strong>Browser Node.js</strong><small>Secondary WebContainers workshop</small></span></button>
       </div>
 

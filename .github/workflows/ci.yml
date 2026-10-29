@@ -31,6 +31,10 @@ jobs:
         run: |
           node scripts/check-forensic-claims.mjs
 
+      - name: Check Vercel function budget
+        run: |
+          node scripts/check-vercel-functions.mjs
+
       - name: Run Backend Smoke Tests
         run: |
           python3 backend/api_smoke_test.py

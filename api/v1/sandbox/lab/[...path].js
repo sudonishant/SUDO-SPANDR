@@ -7,7 +7,7 @@
  * function). Endpoint URLs are unchanged.
  *
  * Routes:  POST /api/v1/sandbox/lab/attachment | /url | /auto-triage | /pcap
- *          GET  /api/v1/sandbox/lab/toolbox
+ *          GET  /api/v1/sandbox/lab/toolbox | /preview-frame (always 410)
  *
  * NOTE: route matching parses req.url directly instead of req.query — dynamic
  * catch-all param naming is inconsistent across Vercel runtimes; the pathname
@@ -19,6 +19,7 @@ import {
   handleAutoTriage,
   handlePcap,
   handleToolbox,
+  handlePreviewFrame,
 } from '../../../_lib/labcore.js';
 
 const ROUTES = {
@@ -27,6 +28,7 @@ const ROUTES = {
   'auto-triage': handleAutoTriage,
   pcap: handlePcap,
   toolbox: handleToolbox,
+  'preview-frame': handlePreviewFrame,
 };
 
 // largest body needed is auto-triage with base64 attachments

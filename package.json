@@ -13,7 +13,12 @@
     "preview": "vite preview --config vite.config.mjs",
     "rea:service": "node scripts/rea-analysis-server.mjs",
     "deploy": "npx wrangler pages deploy dist",
-    "start": "vite --config vite.config.mjs"
+    "start": "vite --config vite.config.mjs",
+    "verify:headers": "node scripts/verify-deploy-headers.mjs",
+    "assets:v86": "node scripts/fetch-v86-assets.mjs",
+    "verify:v86-assets": "node scripts/fetch-v86-assets.mjs --check",
+    "smoke:agent-pc": "node scripts/smoke-agent-pc.mjs",
+    "check:functions": "node scripts/check-vercel-functions.mjs"
   },
   "dependencies": {
     "@kenjiuno/msgreader": "^1.28.0",
@@ -27,6 +32,7 @@
     "react-dom": "^18.3.1",
     "tailwind-merge": "^2.6.0",
     "topojson-client": "3.1.0",
+    "v86": "^0.5.472",
     "world-atlas": "2.0.2"
   },
   "devDependencies": {
