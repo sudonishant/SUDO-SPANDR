@@ -13,6 +13,10 @@ cloudflared
 test-results/
 playwright-report/
 
+# Local agent artifacts
+.agents/
+.claude/
+
 # Credential hygiene: never commit local secrets or generated key stores.
 .env
 .env.*

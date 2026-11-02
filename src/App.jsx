@@ -42,6 +42,37 @@ const NAVIGATION = [
 const ROUTES = Object.fromEntries(NAVIGATION.flatMap((group) => group.items.map((item) => [item.id, item])));
 const MOBILE_ROUTES = ['overview', 'analysis', 'cases', 'sandbox'];
 
+class WorkspaceErrorBoundary extends React.Component {
+  constructor(props) {
+    super(props);
+    this.state = { hasError: false, error: null };
+  }
+  static getDerivedStateFromError(error) {
+    return { hasError: true, error };
+  }
+  componentDidCatch(error, errorInfo) {
+    console.error('WorkspaceErrorBoundary caught an error:', error, errorInfo);
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: '40px 24px', background: '#0a0f1d', color: '#f8fafc', minHeight: '400px', borderRadius: '8px', border: '1px solid #1e293b', textAlign: 'center', margin: '20px' }}>
+          <h2 style={{ color: '#ef4444', fontSize: '18px', fontWeight: 600 }}>⚠️ Workspace encountered an issue loading this view</h2>
+          <p style={{ color: '#94a3b8', marginTop: '10px', fontSize: '14px' }}>{this.state.error?.message || 'An unexpected error occurred.'}</p>
+          <button
+            type="button"
+            onClick={() => { this.setState({ hasError: false }); window.location.reload(); }}
+            style={{ marginTop: '20px', padding: '8px 18px', background: '#0284c7', color: '#fff', border: 'none', borderRadius: '6px', cursor: 'pointer', fontWeight: 600 }}
+          >
+            Reload View
+          </button>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
 function routeFromHash() {
   const value = window.location.hash.replace(/^#\/?/, '').split('/')[0];
   if (value === 'url-lab') {
@@ -114,7 +145,7 @@ export default function App() {
   useEffect(() => {
     document.documentElement.dataset.theme = theme;
     document.documentElement.style.colorScheme = theme;
-    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#1d2c27' : '#f2ecdf');
+    document.querySelector('meta[name="theme-color"]')?.setAttribute('content', theme === 'dark' ? '#0b0f19' : '#f8fafc');
     try { localStorage.setItem('spandr-theme', theme); } catch { /* preference persistence is optional */ }
   }, [theme]);
 
@@ -278,7 +309,9 @@ export default function App() {
         </header>
 
         <main id="main-workspace" className="app-main" ref={mainRef} tabIndex={-1}>
-          {page}
+          <WorkspaceErrorBoundary key={route}>
+            {page}
+          </WorkspaceErrorBoundary>
           <footer className="workspace-footer"><span>SUDO SPANDR · Evidence-based triage</span><span>Scores support review; they do not prove maliciousness or safety.</span></footer>
         </main>
       </div>

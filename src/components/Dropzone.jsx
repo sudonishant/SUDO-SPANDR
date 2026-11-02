@@ -52,7 +52,7 @@ export default function Dropzone() {
             className="app-btn app-btn--sm"
             onClick={() => { window.location.hash = '/sandbox'; }}
           >
-            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#8fc3a7,#0d6257)' }}><MonitorPlay size={13} /></span>
+            <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#60a5fa,#2563eb)' }}><MonitorPlay size={13} /></span>
             Open Agent PC
           </button>
         </div>
@@ -102,7 +102,7 @@ export default function Dropzone() {
           <div className="form-actions">
             <span className="form-note">No DNS, reputation, sandbox or geolocation lookup runs in this flow. You get an observed-value reading of what you pasted.</span>
             <button className="app-btn" type="button" onClick={() => analyzeText()} disabled={loading || !body.trim()}>
-              <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#8fc3a7,#0d6257)' }}><Play size={14} /></span>
+              <span className="app-btn__icon" style={{ background: 'linear-gradient(160deg,#60a5fa,#2563eb)' }}><Play size={14} /></span>
               {loading ? 'Analysing…' : 'Analyse pasted input'}
             </button>
           </div>
